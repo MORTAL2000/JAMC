@@ -1,0 +1,264 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Managers">
+      <UniqueIdentifier>{ad8af331-8210-4fa9-9964-51c4ed6d89a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers">
+      <UniqueIdentifier>{88a9a41a-6a63-45ff-9f3d-e76d224cbecc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Objects">
+      <UniqueIdentifier>{ee7c12ca-e84d-4cd8-af9a-e70b9e40e0ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Objects">
+      <UniqueIdentifier>{ac698314-a728-4b88-8b63-29708c1ee19e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\ChunkMgr">
+      <UniqueIdentifier>{22b98c72-b418-4c43-999f-342ae50021a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\ClientMgr">
+      <UniqueIdentifier>{67ee4aa9-6572-422d-8c39-58e667cc0b90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\DisplayMgr">
+      <UniqueIdentifier>{f58fc833-4b0e-4472-96b4-a54812fe9af2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\InputMgr">
+      <UniqueIdentifier>{ee980a8d-882a-40b6-98c4-34c528877bdd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\ResourceMgr">
+      <UniqueIdentifier>{9ca6dd99-dcb4-49d8-b41c-641a58762ee7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\TextureMgr">
+      <UniqueIdentifier>{bc9466a9-8b99-4870-ac41-407cc7421e15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\ThreadMgr">
+      <UniqueIdentifier>{62829923-3aca-4998-b1d8-e5dcc5d8fe4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\TimeMgr">
+      <UniqueIdentifier>{d6b9a95e-6347-4cff-8fa1-b4075536bd09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\ChunkMgr">
+      <UniqueIdentifier>{ba9b6580-538c-4e56-9b32-3cc8eac576f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\ClientMgr">
+      <UniqueIdentifier>{9c0566a5-522b-406e-91e5-7193e8725075}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\DisplayMgr">
+      <UniqueIdentifier>{7889fbc4-4b8d-4798-82dc-7bdef29f9172}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\InputMgr">
+      <UniqueIdentifier>{c1b4a193-6b1b-416f-96d2-14b870f65d7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\TimeMgr">
+      <UniqueIdentifier>{c8f7eac8-6950-4a76-a05c-6b9df5a77090}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\ThreadMgr">
+      <UniqueIdentifier>{d1740537-8e91-45f5-981a-f659709d64b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\TextureMgr">
+      <UniqueIdentifier>{1d4d06d9-0826-49eb-a4f6-0cce0deb5057}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\ResourceMgr">
+      <UniqueIdentifier>{7ef58c5e-a622-4ec6-a718-4a57162d29ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\EntityMgr">
+      <UniqueIdentifier>{b6e03671-4fde-4f57-81d3-d81f6219695e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\EntityMgr">
+      <UniqueIdentifier>{53b3b21c-e8d8-4752-b763-951182942ea2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\GuiMgr">
+      <UniqueIdentifier>{0b28d5cd-7ced-4532-ae67-16d09d6b88ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\GuiMgr">
+      <UniqueIdentifier>{ce8f8f3e-8189-4283-9dd8-1449a6d49ab8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Manager.cpp">
+      <Filter>Source Files\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Color4.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="simplexnoise.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Directional.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="CircularDequeue.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="ChunkMgr.cpp">
+      <Filter>Source Files\Managers\ChunkMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientMgr.cpp">
+      <Filter>Source Files\Managers\ClientMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="Client.cpp">
+      <Filter>Source Files\Managers\ClientMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadMgr.cpp">
+      <Filter>Source Files\Managers\ThreadMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="TimeMgr.cpp">
+      <Filter>Source Files\Managers\TimeMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureMgr.cpp">
+      <Filter>Source Files\Managers\TextureMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceMgr.cpp">
+      <Filter>Source Files\Managers\ResourceMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="InputMgr.cpp">
+      <Filter>Source Files\Managers\InputMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="DisplayMgr.cpp">
+      <Filter>Source Files\Managers\DisplayMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="ResPool.cpp">
+      <Filter>Source Files\Managers\ResourceMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="EntityMgr.cpp">
+      <Filter>Source Files\Managers\EntityMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>Source Files\Managers\EntityMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="Chunk.cpp">
+      <Filter>Source Files\Managers\ChunkMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="Block.cpp">
+      <Filter>Source Files\Managers\ChunkMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="GuiMgr.cpp">
+      <Filter>Source Files\Managers\GuiMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="ChunkData.cpp">
+      <Filter>Source Files\Managers\ChunkMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="Page.cpp">
+      <Filter>Source Files\Managers\GuiMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="PageComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="PageCompData.cpp">
+      <Filter>Source Files\Managers\GuiMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="PageFuncs.cpp">
+      <Filter>Source Files\Managers\GuiMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="PageCompFuncs.cpp">
+      <Filter>Source Files\Managers\GuiMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="VBO.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Globals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Color4.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="simplexnoise.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Manager.h">
+      <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Directional.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="CircularDequeue.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="ChunkMgr.h">
+      <Filter>Header Files\Managers\ChunkMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientMgr.h">
+      <Filter>Header Files\Managers\ClientMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="Client.h">
+      <Filter>Header Files\Managers\ClientMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplayMgr.h">
+      <Filter>Header Files\Managers\DisplayMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="InputMgr.h">
+      <Filter>Header Files\Managers\InputMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceMgr.h">
+      <Filter>Header Files\Managers\ResourceMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="ResPool.h">
+      <Filter>Header Files\Managers\ResourceMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureMgr.h">
+      <Filter>Header Files\Managers\TextureMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadMgr.h">
+      <Filter>Header Files\Managers\ThreadMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="TimeMgr.h">
+      <Filter>Header Files\Managers\TimeMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="EntityMgr.h">
+      <Filter>Header Files\Managers\EntityMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.h">
+      <Filter>Header Files\Managers\EntityMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="Chunk.h">
+      <Filter>Header Files\Managers\ChunkMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="Block.h">
+      <Filter>Header Files\Managers\ChunkMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="GuiMgr.h">
+      <Filter>Header Files\Managers\GuiMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="ChunkData.h">
+      <Filter>Header Files\Managers\ChunkMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="Page.h">
+      <Filter>Header Files\Managers\GuiMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="PageComp.h">
+      <Filter>Header Files\Managers\GuiMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="PageCompData.h">
+      <Filter>Header Files\Managers\GuiMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="PageFuncs.h">
+      <Filter>Header Files\Managers\GuiMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="PageCompFuncs.h">
+      <Filter>Header Files\Managers\GuiMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="VBO.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

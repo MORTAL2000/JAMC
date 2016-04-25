@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<ArrayOfArrayOfArrayOfString xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ArrayOfArrayOfString>
+    <ArrayOfString>
+      <string>C:\Users\Amani\Documents\Visual Studio 2015\Projects\ClientMgr - Minecraft\ClientMgr\ClientMgr.h</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>C:\Users\Amani\Documents\Visual Studio 2015\Projects\ClientMgr - Minecraft\ClientMgr\Client.h</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>C:\Users\Amani\Documents\Visual Studio 2015\Projects\ClientMgr - Minecraft\ClientMgr\ChunkMgr.h</string>
+    </ArrayOfString>
+  </ArrayOfArrayOfString>
+</ArrayOfArrayOfArrayOfString>
