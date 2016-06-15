@@ -12,18 +12,23 @@ struct ChunkVert {
 	GLfloat vert[ 3 ];
 	GLfloat color[ 4 ];
 	GLfloat norm[ 3 ];
-	GLfloat uv[ 2 ];
-	GLfloat padding[ 4 ];
+	GLfloat uv[ 3 ];
+	//GLfloat padding[ 4 ];
 };
 
-struct ChunkFace { 
-	ChunkVert verts[ 6 ];
+struct ChunkFaceIndices { 
+	GLuint indicies[ 6 ];
 };
 
-struct ChunkBuffer { 
+struct ChunkFaceVertices { 
+	ChunkVert verts[ 4 ];
+};
+
+struct ChunkBuffer {
 	int size_solid, size_trans;
-	std::vector< ChunkFace > list_solid;
-	std::vector< ChunkFace > list_trans;
+	std::vector< ChunkFaceIndices > list_indices;
+	std::vector< ChunkFaceVertices > list_vertices_solid;
+	std::vector< ChunkFaceVertices > list_vertices_trans;
 	std::vector< std::pair< float, int > > list_sort;
 };
 
@@ -44,7 +49,7 @@ enum ChunkState {
 class Chunk {
 public:
 	static int const size_x = 32;
-	static int const size_y = 32;
+	static int const size_y = 64;
 	static int const size_z = 32;
 	static glm::ivec3 const vec_size;
 	static int const size_mesh_b = sizeof( ChunkVert ) * size_x * size_y * size_z * 4 * 6;
@@ -69,10 +74,10 @@ public:
 	std::mutex mtx_adj;
 	std::array< Chunk *, FD_Size > ptr_adj;
 
-	GLuint id_vao, id_vbo;
+	GLuint id_vao, id_vbo, id_ibo;
 
 	int idx_solid, idx_trans;
-	ChunkBuffer * ptr_buffer;
+	ChunkBuffer * ptr_buffer = nullptr;
 	ChunkFile * ptr_file;
 	ChunkNoise * ptr_noise;
 

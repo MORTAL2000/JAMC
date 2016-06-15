@@ -174,6 +174,9 @@
     <ClCompile Include="VBO.cpp">
       <Filter>Source Files\Objects</Filter>
     </ClCompile>
+    <ClCompile Include="BlockSelector.cpp">
+      <Filter>Source Files\Managers\DisplayMgr</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Globals.h">
@@ -260,5 +263,40 @@
     <ClInclude Include="VBO.h">
       <Filter>Header Files\Objects</Filter>
     </ClInclude>
+    <ClInclude Include="BlockSelector.h">
+      <Filter>Header Files\Managers\DisplayMgr</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Terrain.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\Terrain.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\Selector.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\Selector.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\Entity.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\Entity.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\ShadowMap.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\ShadowMap.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\Basic.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\Basic.vert">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -67,6 +67,9 @@ public:
 	static std::string print_vec( glm::ivec3 vec );
 	static std::string print_vec( glm::vec3 vec );
 
+	static std::string print_vec( glm::ivec4 vec );
+	static std::string print_vec( glm::vec4 vec );
+
 	static int get_max( glm::ivec3 pos ) {
 		int temp = std::abs( pos.x );
 		if( std::abs( pos.y ) > temp ) temp = std::abs( pos.y );

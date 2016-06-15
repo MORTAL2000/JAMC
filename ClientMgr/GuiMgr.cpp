@@ -1,6 +1,7 @@
 #include "GuiMgr.h"
 #include "Client.h"
 #include "glm/glm.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 GuiMgr::GuiMgr( Client & client ) :
 	Manager( client ) { }
@@ -46,47 +47,21 @@ void GuiMgr::update( ) {
 }
 
 void GuiMgr::render( ) {
-	if( is_visible ) {
-		for( int i = 0; i < list_order.size( ); i++ ) {
-			auto & page = *list_order[ i ];
-			if( page.is_visibile ) {
-				client.texture_mgr.bind_materials( );
-				auto & uvs = client.texture_mgr.get_uvs_materials( );
+	client.texture_mgr.bind_program( "Basic" );
+	static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
 
-				client.display_mgr.draw_quad( page.vec_pos, page.vec_dim, page.color, uvs );
-				for( int i = 0; i < page.list_comps.size( ); i++ ) {
-					auto & comp = page.list_comps[ i ].get( );
-					if( comp.is_visible ) {
-						client.display_mgr.draw_quad( page.vec_pos + comp.vec_pos, comp.vec_dim, comp.color, uvs );
-					}
-				}
-				
-				client.texture_mgr.bind_fonts( );
-				auto & map_data = page.get_map_data< PCDTextField >( );
-				auto iter_data = map_data.begin( );
+	if( !is_visible ) {
+		return;
+	}
 
-				std::lock_guard< std::mutex > lock( mtx_console );
-
-				for( iter_data; iter_data != map_data.end( ); iter_data ++ ) {
-					auto & data_text = ( ( Handle< PCDTextField > * ) iter_data->second )->get( );
-					glm::ivec2 vect_size_text( data_text.size_text * 2 / 3, data_text.size_text );
-					glm::ivec2 vect_pos_char;
-
-					for( int j = 0; j < data_text.ptr_str->size( ); j++ ) {
-						auto & uvs = client.texture_mgr.get_uvs_fonts( data_text.ptr_str->at( j ) - 32 );
-						vect_pos_char = *data_text.ptr_vec_pos + data_text.vec_offset + glm::ivec2( vect_size_text.x * j, 0 );
-
-						if( vect_pos_char.x > page.vec_dim.x - vect_size_text.x - 5 ) break;
-
-						client.display_mgr.draw_quad(
-							page.vec_pos + vect_pos_char,
-							vect_size_text,
-							Color4( 0.0f, 0.0f, 0.0f, 1.0f ),
-							uvs );
-					}
-				}
-			}
+	for( int i = 0; i < list_order.size( ); i++ ) {
+		auto & page = *list_order[ i ];
+		if( !page.is_visibile ) {
+			continue;
 		}
+
+		glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( page.mat_model ) );
+		page.vbo.render( client );
 	}
 }
 
@@ -162,6 +137,8 @@ void GuiMgr::add_page( std::string & str_name, FuncPage func_alloc, FuncPage fun
 		page.str_name = str_name;
 
 		if( func_alloc( page ) && func_custom( page ) ) {
+			page.vbo.init( );
+			page.is_dirty = true;
 			page.resize( );
 			list_page.push_back( handle_page );
 			map_page.insert( { page.str_name, &page } );
@@ -490,7 +467,7 @@ void GuiMgr::process_input( ) {
 		}
 		else if( token == "sphere" ) { 
 			int r = 0;
-			int id = client.display_mgr.block_select.id_block;
+			int id = client.display_mgr.block_selector.get_id_block( );
 			auto & pos_camera = client.display_mgr.camera.pos_camera;
 			glm::ivec3 vec_pos( floor( pos_camera.x ), floor( pos_camera.y ), floor( pos_camera.z ) );
 			std::vector< std::string > list_delim { "r:", "p:", "id:" };
@@ -522,14 +499,21 @@ void GuiMgr::process_input( ) {
 					token = str_command.substr( pos_start + 2, pos_end - ( pos_start + 2 ) );
 					pos_start = pos_end;
 
-					while( ( pos_end = str_command.find( " ", pos_start + 1 ) ) < str_command.find( ":", pos_start + 1 ) ) {
-						token += str_command.substr( pos_start, ( pos_end - pos_start ) );
-						pos_start = pos_end;
+					if( pos_end != std::string::npos ) {
+						while( pos_end != std::string::npos && ( pos_end = str_command.find( " ", pos_start + 1 ) ) <= str_command.find( ":", pos_start + 1 ) ) {
+							token += str_command.substr( pos_start, ( pos_end - pos_start ) );
+							pos_start = pos_end;
+						}
 					}
 
-					Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
-					if( ptr_block ) {
-						id = ptr_block->id;
+					if( token == "Air" ) {
+						id = -1;
+					}
+					else {
+						Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
+						if( ptr_block ) {
+							id = ptr_block->id;
+						}
 					}
 				}
 
@@ -550,7 +534,7 @@ void GuiMgr::process_input( ) {
 			}
 		}
 		else if( token == "rectangle" ) {
-			int id = client.display_mgr.block_select.id_block;
+			int id = client.display_mgr.block_selector.get_id_block( );
 			auto & pos_camera = client.display_mgr.camera.pos_camera;
 			glm::ivec3 vec_pos( floor( pos_camera.x ), floor( pos_camera.y ), floor( pos_camera.z ) );
 			glm::ivec3 vec_dim( 0, 0, 0 );
@@ -581,14 +565,21 @@ void GuiMgr::process_input( ) {
 					token = str_command.substr( pos_start + 2, pos_end - ( pos_start + 2 ) );
 					pos_start = pos_end;
 
-					while( pos_end != std::string::npos && ( pos_end = str_command.find( " ", pos_start + 1 ) ) < str_command.find( ":", pos_start + 1 )  ) { 
-						token += str_command.substr( pos_start, ( pos_end - pos_start ) );
-						pos_start = pos_end;
+					if( pos_end != std::string::npos ) {
+						while( pos_end != std::string::npos && ( pos_end = str_command.find( " ", pos_start + 1 ) ) <= str_command.find( ":", pos_start + 1 ) ) {
+							token += str_command.substr( pos_start, ( pos_end - pos_start ) );
+							pos_start = pos_end;
+						}
 					}
 
-					Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
-					if( ptr_block ) { 
-						id = ptr_block->id;
+					if( token == "Air" ) { 
+						id = -1;
+					}
+					else {
+						Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
+						if( ptr_block ) {
+							id = ptr_block->id;
+						}
 					}
 				}
 
@@ -610,7 +601,7 @@ void GuiMgr::process_input( ) {
 			}
 		}
 		else if( token == "ellipsoid" ) {
-			int id = client.display_mgr.block_select.id_block;
+			int id = client.display_mgr.block_selector.get_id_block( );
 			auto & pos_camera = client.display_mgr.camera.pos_camera;
 			glm::ivec3 vec_pos( floor( pos_camera.x ), floor( pos_camera.y ), floor( pos_camera.z ) );
 			glm::ivec3 vec_dim( 0, 0, 0 );
@@ -641,14 +632,21 @@ void GuiMgr::process_input( ) {
 					token = str_command.substr( pos_start + 2, pos_end - ( pos_start + 2 ) );
 					pos_start = pos_end;
 
-					while( ( pos_end = str_command.find( " ", pos_start + 1 ) ) < str_command.find( ":", pos_start + 1 ) ) {
-						token += str_command.substr( pos_start, ( pos_end - pos_start ) );
-						pos_start = pos_end;
+					if( pos_end != std::string::npos ) {
+						while( pos_end != std::string::npos && ( pos_end = str_command.find( " ", pos_start + 1 ) ) <= str_command.find( ":", pos_start + 1 ) ) {
+							token += str_command.substr( pos_start, ( pos_end - pos_start ) );
+							pos_start = pos_end;
+						}
 					}
 
-					Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
-					if( ptr_block ) {
-						id = ptr_block->id;
+					if( token == "Air" ) {
+						id = -1;
+					}
+					else {
+						Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
+						if( ptr_block ) {
+							id = ptr_block->id;
+						}
 					}
 				}
 
@@ -690,6 +688,62 @@ void GuiMgr::process_input( ) {
 				client.chunk_mgr.set_sun_pause( ( bool ) iter_map->second[ 0 ] );
 			}
 		}
+		else if( token == "bias_l" ) {
+			pos_start = str_command.find( "f:", 0 );
+			if( pos_start == std::string::npos ) {
+				return;
+			}
+
+			pos_start += 2;
+			float bias = atof( str_command.substr( pos_start ).c_str( ) );
+
+			auto & out = client.display_mgr.out;
+			out.str( "" );
+			out << "Setting bias_l to: \'" << bias << "\'";
+			print_to_console( out.str( ) );
+
+			client.texture_mgr.bind_program( "Terrain" );
+			int idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_l" );
+			glUniform1f( idx_bias, bias );
+		}
+		else if( token == "bias_b" ) {
+			pos_start = str_command.find( "f:", 0 );
+			if( pos_start == std::string::npos ) {
+				return;
+			}
+
+			pos_start += 2;
+			float bias = atof( str_command.substr( pos_start ).c_str( ) );
+
+			auto & out = client.display_mgr.out;
+			out.str( "" );
+			out << "Setting bias_b to: \'" << bias << "\'";
+			print_to_console( out.str( ) );
+
+			client.texture_mgr.bind_program( "Terrain" );
+			int idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_l" );
+			glUniform1f( idx_bias, bias );
+			idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_h" );
+			glUniform1f( idx_bias, bias );
+		}
+		else if( token == "bias_h" ) {
+			pos_start = str_command.find( "f:", 0 );
+			if( pos_start == std::string::npos ) {
+				return;
+			}
+
+			pos_start += 2;
+			float bias = atof( str_command.substr( pos_start ).c_str( ) );
+
+			auto & out = client.display_mgr.out;
+			out.str( "" );
+			out << "Setting bias_h to: \'" << bias << "\'";
+			print_to_console( out.str( ) );
+
+			client.texture_mgr.bind_program( "Terrain" );
+			int idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_h" );
+			glUniform1f( idx_bias, bias );
+		}
 		else if( token == "addemitter" ) {
 			std::vector< std::string > list_delim { "p:", "c:", "r:" };
 			auto map = get_tokenized_ints( str_command, list_delim );
@@ -700,13 +754,17 @@ void GuiMgr::process_input( ) {
 				e.pos.x = iter_map->second[ 0 ];
 				e.pos.y = iter_map->second[ 1 ];
 				e.pos.z = iter_map->second[ 2 ];
+				e.pos.w = 1.0f;
 
-				e.color = glm::vec3( 1.0f, 1.0f, 1.0f );
+				e.color = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
 				iter_map = map.find( list_delim[ 1 ] );
-				if( iter_map != map.end( ) && iter_map->second.size( ) == 3 ) { 
-					e.color.r = iter_map->second[ 0 ] / 255.0f;
-					e.color.g = iter_map->second[ 1 ] / 255.0f;
-					e.color.b = iter_map->second[ 2 ] / 255.0f;
+				if( iter_map != map.end( ) && iter_map->second.size( ) == 3 ) {
+					e.color = { 
+						e.color.r = iter_map->second[ 0 ] / 255.0f,
+						e.color.g = iter_map->second[ 1 ] / 255.0f,
+						e.color.b = iter_map->second[ 2 ] / 255.0f,
+						e.color.a = 0.0f
+					};
 				}
 
 				e.radius = 10.0f;
@@ -737,6 +795,24 @@ void GuiMgr::process_input( ) {
 		}
 		else if( token == "printdirty" ) { 
 			client.chunk_mgr.print_dirty( );
+		}
+		else if( token == "togglewireframe" ) { 
+			static bool is_wireframe = false;
+			is_wireframe = !is_wireframe;
+			if( is_wireframe ) { 
+				glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+				glDisable( GL_CULL_FACE );
+			}
+			else { 
+				glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+				glEnable( GL_CULL_FACE );
+			}
+		}
+		else if( token == "toggleshadows" ) {
+			client.chunk_mgr.toggle_shadows( );
+		}
+		else if( token == "toggleshadowmap" ) { 
+			client.chunk_mgr.toggle_shadow_debug( );
 		}
 		else {
 			out.str( "" );

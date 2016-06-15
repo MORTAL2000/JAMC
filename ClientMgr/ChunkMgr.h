@@ -6,6 +6,7 @@
 #include "Block.h"
 #include "Chunk.h"
 #include "ResPool.h" 
+#include "VBO.h"
 
 #include <fstream>
 #include <unordered_map>
@@ -25,12 +26,30 @@ struct GetState {
 	std::unordered_map< int, Handle< Chunk > >::iterator iter;
 };
 
+struct LightData {
+	static int const max_emitters = 128;
+
+	struct SunData {
+		glm::vec4 pos_sun;
+		glm::vec4 ambient;
+		glm::vec4 diffuse;
+		glm::vec4 specular;
+	} sun_data;
+
+	glm::ivec4 num_emitters;
+	glm::vec4 list_pos[ max_emitters ];
+	glm::vec4 list_color[ max_emitters ];
+	glm::vec4 list_radius[ max_emitters ];
+};
+
 struct World { 
 	static int const size_x = 16;
-	static int const size_y = 8;
+	static int const size_y = 4;
 	static int const size_z = 16;
 	static glm::ivec3 const size_vect;
-	static int const num_chunks = ( size_x * 2 + 1 ) * ( size_y * 2 + 1 ) * ( size_z * 2 + 1 );
+	static int const num_chunks = 
+		( size_x * 2 + 1 ) * ( size_y * 2 + 1 ) * ( size_z * 2 + 1 ) + 
+		( size_x * 2 + 1 ) * ( size_z * 2 + 1 );
 	static int const level_sea = Chunk::size_y / 2;
 };
 
@@ -71,28 +90,24 @@ static int const size_buffer = SectionIndex::size_section_bytes / sizeof( int );
 static int buffer_section[ size_buffer ];
 
 struct Emitter { 
-	glm::vec3 pos;
-	glm::vec3 color;
+	glm::vec4 pos;
+	glm::vec4 color;
 	float radius;
-};
-
-struct EmitterManager { 
-	int num_emitter;
-	std::vector< glm::vec3 > list_pos;
-	std::vector< glm::vec3 > list_color;
-	std::vector< float > list_radius;
 };
 
 class ChunkMgr :
 	public Manager {
 
 private:
+	VBO vbo;
+
 	static int const dist_sun = 1000;
 	bool is_sun_pause;
-	glm::vec3 pos_sun;
 	float pos_deg_light;
 
 	bool is_chunk_debug;
+	bool is_shadow_debug;
+	bool is_shadows;
 
 	GLuint id_vbo_chunk_outline;
 	int size_chunk_outline;
@@ -122,7 +137,7 @@ private:
 	std::unordered_map< int, Chunk & > map_render;
 
 	// Mesh pool data
-	static int const size_pool_buff = 64;
+	static int const size_pool_buff = 128;
 	std::mutex mtx_pool_buff;
 	std::array< ChunkBuffer, size_pool_buff > list_pool_buff;
 	std::vector< ChunkBuffer * > list_avail_buff;
@@ -130,9 +145,17 @@ private:
 	std::vector< Chunk * > list_render;
 
 	// Emitter data
-	EmitterManager mgr_emitter;
+	LightData light_data;
 
 private:
+	GLuint const SHADOW_WIDTH = 8192, SHADOW_HEIGHT = 8192;
+	GLfloat const near_plane = 1.0f;
+	GLfloat const far_plane = 756.0f;
+	GLfloat const dim_ortho = 64.0f;
+
+	GLuint id_depth_fbo;
+	GLuint id_tex_depth;
+
 	// Light functions
 	void init_light( );
 	void calc_light( );
@@ -146,8 +169,16 @@ private:
 	void chunk_state_clear( Chunk & chunk );
 
 	// Chunk functions
+	void render_skybox( );
+	void render_exlude( );
+	void render_sort( );
+	void render_pass_shadow( );
+	void render_pass_norm( );
+	void render_debug( );
+
 	void chunk_update( Chunk & chunk );
 	void chunk_render( Chunk & chunk );
+	void chunk_render_shadowmap( Chunk & chunk );
 
 	void chunk_vbo( Chunk & chunk );
 
@@ -184,6 +215,8 @@ public:
 	void sec( );
 
 	void toggle_chunk_debug( );
+	void toggle_shadow_debug( );
+	void toggle_shadows( );
 
 	int get_block( glm::vec3 const & pos_gw );
 
@@ -233,7 +266,20 @@ public:
 	// Emitter Functions
 	void add_emitter( Emitter & emitter );
 	void clear_emitters( );
+	LightData & get_light_data( ) {
+		return light_data;
+	}
 };
 
-extern void put_face( std::vector< ChunkFace > & buffer, glm::ivec3 const & pos, 
-	FaceVerts const & verts, Color4 const & color, glm::vec3 const & normal, FaceUvs const & uvs );
+// Change to block pointer and face
+
+extern void put_face( 
+	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
+	FaceVerts const & verts, Color4 const & color, 
+	glm::vec3 const & normal, FaceUvs const & uvs );
+
+extern void put_face(
+	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
+	FaceVerts const & verts, glm::ivec3 const & scale_verts,
+	Color4 const & color, glm::vec3 const & normal,
+	FaceUvs const & uvs, glm::ivec2 const & scale_uvs );

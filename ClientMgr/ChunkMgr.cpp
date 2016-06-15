@@ -3,6 +3,7 @@
 #include "Client.h"
 
 #include "glm/gtc/type_ptr.hpp"
+#include "glm/gtc/matrix_inverse.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -26,6 +27,7 @@ void ChunkMgr::init( ) {
 
 	load_block_data( );
 
+	std::cout << std::endl;
 	printTabbedLine( 1, "Init Pools..." );
 
 	client.resource_mgr.reg_pool< Chunk >( World::num_chunks );
@@ -40,8 +42,6 @@ void ChunkMgr::init( ) {
 	for( int i = 0; i < ChunkMgr::size_pool_buff; i++ ) { 
 		list_avail_buff.push_back( &list_pool_buff[ i ] );
 	}
-
-	printTabbedLine( 1, "...Init Pools" );
 
 	pos_center_chunk_lw = glm::ivec3( 0, 0, 0 );
 
@@ -91,7 +91,52 @@ void ChunkMgr::init( ) {
 		glBufferData( GL_ARRAY_BUFFER, size_chunk_outline * sizeof( GLfloat ), temp_verts.data( ), GL_STATIC_DRAW );
 	}
 
+	std::cout << std::endl;
+	printTabbedLine( 1, "Init Light..." );
 	init_light( );
+
+	std::cout << std::endl;
+	printTabbedLine( 1, "Creating FBO..." );
+	glGenFramebuffers( 1, &id_depth_fbo );
+	glBindFramebuffer( GL_FRAMEBUFFER, id_depth_fbo );
+
+	std::cout << std::endl;
+	printTabbedLine( 1, "Creating shadowmap texture..." );
+	glGenTextures( 1, &id_tex_depth );
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_2D, id_tex_depth );
+
+	std::cout << std::endl;
+	printTabbedLine( 1, "Binding shadowmap data..." );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER );
+	GLfloat borderColor[ ] = { 1.0, 1.0, 1.0, 1.0 };
+	glTexParameterfv( GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor );
+
+	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, id_tex_depth, 0 );
+	glDrawBuffer( GL_NONE );
+	glReadBuffer( GL_NONE );
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	client.texture_mgr.bind_program( "ShadowMap" );
+	int idx_sampler = glGetUniformLocation( client.texture_mgr.id_prog, "frag_sampler" );
+	glUniform1i( idx_sampler, 0 );
+
+	client.texture_mgr.bind_program( "Terrain" );
+	idx_sampler = glGetUniformLocation( client.texture_mgr.id_prog, "frag_shadow" );
+	glUniform1i( idx_sampler, 1 );
+
+	int idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_l" );
+	glUniform1f( idx_bias, 0.000005f );
+
+	idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_h" );
+	glUniform1f( idx_bias, 0.000005f );
+
+	glActiveTexture( GL_TEXTURE0 );
 
 	using namespace std::tr2::sys;
 	path path_world( "./World" );
@@ -100,9 +145,13 @@ void ChunkMgr::init( ) {
 		create_directory( path_world );
 	}
 
-	printTabbedLine( 1, checkGlErrors( ) );
+	is_chunk_debug = false;
+	is_shadow_debug = false;
+	is_shadows = true;
 
-	printTabbedLine( 0, "...Init ChunkMgr" );
+	std::cout << std::endl;
+	printTabbedLine( 1, checkGlErrors( ) );
+	std::cout << std::endl;
 }
 
 int time_last_map = 0;
@@ -113,6 +162,8 @@ int cooldown_remesh = 200;
 glm::ivec3 vect_refresh = { 1, 1, 1 };
 
 void ChunkMgr::update( ) {
+	client.time_mgr.begin_record( RecordStrings::UPDATE_MAP );
+
 	calc_light( );
 
 	Directional::pos_gw_to_lw( client.display_mgr.camera.pos_camera, pos_center_chunk_lw );
@@ -182,7 +233,7 @@ void ChunkMgr::update( ) {
 		time_last_remesh = time_now;
 	}
 
-	client.thread_mgr.task_async( 10, [ & ] ( ) {
+	//client.thread_mgr.task_async( 10, [ & ] ( ) {
 		std::lock_guard< std::recursive_mutex > lock_dirty( mtx_dirty );
 
 		auto iter = map_dirty.begin( );
@@ -197,7 +248,10 @@ void ChunkMgr::update( ) {
 				iter = map_dirty.erase( iter );
 			}
 		}
-	} );
+	//} );
+
+	client.time_mgr.end_record( RecordStrings::UPDATE_MAP );
+	client.time_mgr.push_record( RecordStrings::UPDATE_MAP );
 
 	auto & out = client.display_mgr.out;
 	out.str( "" );
@@ -215,22 +269,31 @@ void ChunkMgr::update( ) {
 		" File: " << map_file.bucket_count( ) <<
 		" Dirty: " << map_dirty.bucket_count( );
 	client.gui_mgr.print_to_static( out.str( ) );
+	out.str( "" );
+	out << "[Sun] Deg:" << pos_deg_light;
+	client.gui_mgr.print_to_static( out.str( ) );
 }
 
 void ChunkMgr::render( ) {
-	GLfloat pos[ ] = { pos_sun.x, pos_sun.y, pos_sun.z, 0.0 };
-	glLightfv( GL_LIGHT0, GL_POSITION, pos );
+	client.texture_mgr.bind_terrain( );
+	render_skybox( );
+	render_exlude( );
+	render_sort( );
+	render_pass_shadow( );
+	render_pass_norm( );
+	render_debug( );
+}
 
-	client.texture_mgr.unuse_prog( );
+void ChunkMgr::render_skybox( ) { 
+	client.texture_mgr.unbind_program( );
 	client.texture_mgr.bind_skybox( );
 
 	client.display_mgr.draw_skybox( client.display_mgr.camera.pos_camera + glm::vec3( 0, -200, 0 ), 2500 );
-	client.display_mgr.draw_sun( client.display_mgr.camera.pos_camera + pos_sun, 50 );
+	client.display_mgr.draw_sun( glm::vec3( light_data.sun_data.pos_sun ), 50 );
+}
 
+void ChunkMgr::render_exlude( ) {
 	auto & camera = client.display_mgr.camera.pos_camera;
-
-	client.texture_mgr.use_prog( );
-	client.texture_mgr.bind_terrain( );
 
 	client.time_mgr.begin_record( RecordStrings::RENDER_EXLUSION );
 
@@ -239,10 +302,10 @@ void ChunkMgr::render( ) {
 	for( auto & pair_render : map_render ) {
 		auto & chunk = pair_render.second;
 		if( Directional::is_point_in_cone(
-				chunk.pos_gw,
-				client.display_mgr.camera.pos_camera,
-				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				70.0f ) ||
+			chunk.pos_gw,
+			client.display_mgr.camera.pos_camera,
+			client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
+			70.0f ) ||
 			Directional::is_point_in_cone(
 				chunk.pos_gw + glm::ivec3( Chunk::vec_size.x, 0, 0 ),
 				client.display_mgr.camera.pos_camera,
@@ -280,39 +343,146 @@ void ChunkMgr::render( ) {
 				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
 				70.0f ) ||
 			glm::distance( glm::vec3( chunk.pos_lw ), glm::vec3( pos_center_chunk_lw ) ) <= 3.0
-			) { 
+			) {
 			list_render.push_back( &chunk );
 		}
 	}
 
 	client.time_mgr.end_record( RecordStrings::RENDER_EXLUSION );
 	client.time_mgr.push_record( RecordStrings::RENDER_EXLUSION );
-	
+}
+
+void ChunkMgr::render_sort( ) {
 	client.time_mgr.begin_record( RecordStrings::RENDER_SORT );
 
-	std::sort( list_render.begin( ), list_render.end(), [ & ] ( Chunk * lro, Chunk * rho ) { 
+	std::sort( list_render.begin( ), list_render.end( ), [ & ] ( Chunk * lro, Chunk * rho ) {
 		return	glm::length( client.display_mgr.camera.pos_camera - glm::vec3( lro->pos_gw + Chunk::vec_size / 2 ) ) >
-				glm::length( client.display_mgr.camera.pos_camera - glm::vec3( rho->pos_gw + Chunk::vec_size / 2 ) );
+			glm::length( client.display_mgr.camera.pos_camera - glm::vec3( rho->pos_gw + Chunk::vec_size / 2 ) );
 	} );
 
 	client.time_mgr.end_record( RecordStrings::RENDER_SORT );
 	client.time_mgr.push_record( RecordStrings::RENDER_SORT );
+}
 
-	for( auto chunk : list_render ) { 
+static glm::mat4 mat_model;
+static glm::mat3 mat_norm;
+static glm::mat4 mat_ortho_light;
+static glm::mat4 mat_view_light;
+static glm::mat4 mat_proj_light;
+
+void ChunkMgr::render_pass_shadow( ) {
+	if( is_shadow_debug ) {
+		client.texture_mgr.unbind_program( );
+		client.display_mgr.set_ortho( );
+
+		glBindTexture( GL_TEXTURE_2D, id_tex_depth );
+
+		glDisable( GL_LIGHTING );
+
+		glBegin( GL_QUADS );
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex2f( 200.0f, 200.0f );
+
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex2f( 500.0f, 200.0f );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex2f( 500.0f, 500.0f );
+
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex2f( 200.0f, 500.0f );
+
+		glEnd( );
+
+		glEnable( GL_LIGHTING );
+
+		client.display_mgr.set_proj( );
+	}
+
+	if( is_shadows ) {
+		client.texture_mgr.bind_terrain( );
+		client.texture_mgr.bind_program( "ShadowMap" );
+		static GLuint idx_mat_light = glGetUniformLocation( client.texture_mgr.id_prog, "mat_light" );
+		static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
+
+		glViewport( 0, 0, SHADOW_WIDTH, SHADOW_HEIGHT );
+		glBindFramebuffer( GL_FRAMEBUFFER, id_depth_fbo );
+		glClear( GL_DEPTH_BUFFER_BIT );
+
+		mat_ortho_light = glm::ortho( -dim_ortho, dim_ortho, -dim_ortho, dim_ortho, near_plane, far_plane );
+
+		mat_view_light = glm::lookAt(
+			client.display_mgr.camera.pos_camera +
+			glm::normalize(
+				glm::vec3( client.chunk_mgr.light_data.sun_data.pos_sun ) - client.display_mgr.camera.pos_camera
+			) * ( far_plane / 2.0f ),
+			client.display_mgr.camera.pos_camera,
+			glm::vec3( 0.0f, 1.0f, 0.0f ) );
+
+		mat_view_light =
+			glm::rotate( glm::mat4( 1.0f ), glm::radians( client.display_mgr.camera.rot_camera.y ), glm::vec3( 0.0f, 0.0f, 1.0f ) ) *
+			mat_view_light;
+
+		mat_proj_light = mat_ortho_light * mat_view_light * glm::mat4( 1.0f );
+
+		glCullFace( GL_FRONT );
+
+		glUniformMatrix4fv( idx_mat_light, 1, GL_FALSE, glm::value_ptr( mat_proj_light ) );
+
+		for( auto chunk : list_render ) {
+			if( Directional::is_within_range( chunk->pos_lw, glm::ivec3( 4, 3, 4 ), pos_center_chunk_lw ) ) {
+				mat_model = glm::translate( glm::mat4( 1.0f ), glm::vec3( chunk->pos_gw ) );
+				glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( mat_model ) );
+
+				chunk_render_shadowmap( *chunk );
+			}
+		}
+
+		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+		glCullFace( GL_BACK );
+	}
+	else { 
+		glBindFramebuffer( GL_FRAMEBUFFER, id_depth_fbo );
+		glClear( GL_DEPTH_BUFFER_BIT );
+		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	}
+}
+
+void ChunkMgr::render_pass_norm( ) {
+	client.texture_mgr.bind_terrain( );
+	client.texture_mgr.bind_program( "Terrain" );
+	static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
+	static GLuint idx_mat_norm = glGetUniformLocation( client.texture_mgr.id_prog, "mat_norm" );
+	static GLuint idx_mat_light = glGetUniformLocation( client.texture_mgr.id_prog, "mat_light" );
+
+	glUniformMatrix4fv( idx_mat_light, 1, GL_FALSE, glm::value_ptr( mat_proj_light ) );
+
+	client.display_mgr.resize_window( client.display_mgr.get_window ( ) );
+
+	for( auto chunk : list_render ) {
+		mat_model = glm::translate( glm::mat4( 1.0f ), glm::vec3( chunk->pos_gw ) );
+		glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( mat_model ) );
+
+		mat_norm = glm::inverseTranspose( glm::mat3( mat_model ) );
+		glUniformMatrix3fv( idx_mat_norm, 1, GL_FALSE, glm::value_ptr( mat_norm ) );
+
 		chunk_render( *chunk );
 	}
-	
+}
+
+void ChunkMgr::render_debug( ) {
+	//vbo.render( client );
+
 	if( is_chunk_debug ) {
+		/*
+		client.display_mgr.set_camera( );
+
 		auto & camera = client.display_mgr.camera.pos_camera;
 
-		client.texture_mgr.unuse_prog( );
+		client.texture_mgr.unbind_program( );
 
-		//glEnable( GL_COLOR_MATERIAL );
 		glDisable( GL_TEXTURE_2D );
-
-		/*glDisableClientState( GL_COLOR_ARRAY );
-		glDisableClientState( GL_NORMAL_ARRAY );
-		glDisableClientState( GL_TEXTURE_COORD_ARRAY );*/
 
 		glBindBuffer( GL_ARRAY_BUFFER, id_vbo_chunk_outline );
 		glVertexPointer( 3, GL_FLOAT, sizeof( GLfloat ) * 3, BUFFER_OFFSET( 0 ) );
@@ -344,22 +514,16 @@ void ChunkMgr::render( ) {
 			}
 		}
 
-		/*glEnableClientState( GL_COLOR_ARRAY );
-		glEnableClientState( GL_NORMAL_ARRAY );
-		glEnableClientState( GL_TEXTURE_COORD_ARRAY );*/
-
-		//glPushMatrix( );
 		glBegin( GL_LINES );
 		glVertex3f( camera.x, camera.y - 1, camera.z );
-		glVertex3f( camera.x + pos_sun.x, camera.y + pos_sun.y, camera.z + pos_sun.z );
+		glVertex3f(
+			camera.x + light_data.sun_data.pos_sun.x,
+			camera.y + light_data.sun_data.pos_sun.y,
+			camera.z + light_data.sun_data.pos_sun.z );
 		glEnd( );
-		//glPopMatrix( );
 
 		glEnable( GL_TEXTURE_2D );
-		//glDisable( GL_COLOR_MATERIAL );
-		/*glMaterialf( GL_FRONT, GL_SHININESS, 64.0f );
-		glMaterialfv( GL_FRONT, GL_SPECULAR, specularLight );
-		glMaterialfv( GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mat_amb_diff );*/
+		*/
 	}
 }
 
@@ -383,7 +547,8 @@ GLfloat amb_mat[ ] = { 0.0f, 0.0f, 0.0f, 1.0f };
 GLfloat diff_mat[ ] = { 0.5f, 0.5f, 0.5f, 1.0f };
 GLfloat spec_mat[ ] = { 0.5f, 0.5f, 0.3f, 1.0f };
 
-void ChunkMgr::init_light( ) { 
+void ChunkMgr::init_light( ) {
+	light_data.num_emitters.x = 0;
 	pos_deg_light = 75;
 	is_sun_pause = true;
 
@@ -402,63 +567,45 @@ void ChunkMgr::init_light( ) {
 float const max_amb = 0.5f;
 float const min_amb = 0.1f;
 
-void ChunkMgr::calc_light( ) { 
+void ChunkMgr::calc_light( ) {
 	float time_game = client.time_mgr.get_time( TimeStrings::GAME );
-	if( !is_sun_pause ) pos_deg_light += DELTA_CORRECT * 10;
-	while ( pos_deg_light >= 360 ) pos_deg_light -= 360;
+	if( !is_sun_pause ) pos_deg_light += DELTA_CORRECT;
+	while( pos_deg_light >= 360 ) pos_deg_light -= 360;
 	float rad_time = pos_deg_light  * PI / 180;
 	float light_amb = 0.0f;
 
-	if( pos_deg_light >= 350 ) { 
+	if( pos_deg_light >= 350 ) {
 		light_amb = min_amb + ( pos_deg_light - 350 ) / 55 * ( max_amb - min_amb );
 	}
-	else if( pos_deg_light >= 190 && pos_deg_light < 350 ) { 
+	else if( pos_deg_light >= 190 && pos_deg_light < 350 ) {
 		light_amb = min_amb;
 	}
-	else if( pos_deg_light >= 135 && pos_deg_light < 180 ) { 
+	else if( pos_deg_light >= 135 && pos_deg_light < 180 ) {
 		light_amb = min_amb + ( 1 - ( pos_deg_light - 135 ) / 55 ) * ( max_amb - min_amb );
 	}
-	else if( pos_deg_light >= 180 && pos_deg_light < 190 ) { 
+	else if( pos_deg_light >= 180 && pos_deg_light < 190 ) {
 		light_amb = min_amb + ( 1 - ( pos_deg_light - 135 ) / 55 ) * ( max_amb - min_amb );
 	}
-	else if( pos_deg_light >= 0 && pos_deg_light < 45 ) { 
+	else if( pos_deg_light >= 0 && pos_deg_light < 45 ) {
 		light_amb = min_amb + ( 10 + pos_deg_light ) / 55 * ( max_amb - min_amb );
 	}
-	else { 
+	else {
 		light_amb = max_amb;
 	}
 
-	pos_sun = glm::ivec3(
+	light_data.sun_data.pos_sun = glm::vec4( client.display_mgr.camera.pos_camera, 0.0 ) + glm::vec4(
 		cos( rad_time ) * dist_sun,
 		sin( rad_time ) * dist_sun,
-		sin( rad_time + 90 ) * ( dist_sun / 2 )
-		);
+		sin( rad_time + 90 ) * ( dist_sun / 2 ),
+		1.0 );
 
-	glm::vec4 color_ambient = glm::vec4( light_amb, light_amb, light_amb, 1.0f );
-	glm::vec4 color_diffuse = glm::vec4( light_amb, light_amb, light_amb, 0.0f );
+	light_data.sun_data.ambient = glm::vec4( light_amb, light_amb, light_amb, 1.0f );
+	light_data.sun_data.diffuse = glm::vec4( light_amb, light_amb, light_amb, 0.0f );
 
-	glLightfv( GL_LIGHT0, GL_AMBIENT, glm::value_ptr( color_ambient ) );
-	glLightfv( GL_LIGHT0, GL_DIFFUSE, glm::value_ptr( color_diffuse ) );
-
-	client.texture_mgr.use_prog( );
-
-	GLuint prog_pos_light = glGetUniformLocation( client.texture_mgr.id_prog, "pos_light" );
-	GLuint prog_color_ambient = glGetUniformLocation( client.texture_mgr.id_prog, "color_ambient" );
-	GLuint prog_color_diffuse = glGetUniformLocation( client.texture_mgr.id_prog, "color_diffuse" );
-
-	GLuint prog_num_emitters = glGetUniformLocation( client.texture_mgr.id_prog, "num_emitters" );
-	GLuint prog_emitters_pos = glGetUniformLocation( client.texture_mgr.id_prog, "emitters_pos" );
-	GLuint prog_emitters_color = glGetUniformLocation( client.texture_mgr.id_prog, "emitters_color" );
-	GLuint prog_emitters_radius = glGetUniformLocation( client.texture_mgr.id_prog, "emitters_radius" );
-
-	glUniform3fv( prog_pos_light, 1, glm::value_ptr( pos_sun ) );
-	glUniform4fv( prog_color_ambient, 1, glm::value_ptr( color_ambient ) );
-	glUniform4fv( prog_color_diffuse, 1, glm::value_ptr( color_diffuse ) );
-
-	glUniform1f( prog_num_emitters, mgr_emitter.num_emitter );
-	glUniform3fv( prog_emitters_pos, mgr_emitter.num_emitter, glm::value_ptr( mgr_emitter.list_pos[ 0 ] ) );
-	glUniform3fv( prog_emitters_color, mgr_emitter.num_emitter, glm::value_ptr( mgr_emitter.list_color[ 0 ] ) );
-	glUniform1fv( prog_emitters_radius, mgr_emitter.num_emitter, &mgr_emitter.list_radius[ 0 ] );
+	GLfloat pos[ ] = { light_data.sun_data.pos_sun.x, light_data.sun_data.pos_sun.y, light_data.sun_data.pos_sun.z, 0.0 };
+	glLightfv( GL_LIGHT0, GL_POSITION, pos );
+	glLightfv( GL_LIGHT0, GL_AMBIENT, glm::value_ptr( light_data.sun_data.ambient ) );
+	glLightfv( GL_LIGHT0, GL_DIFFUSE, glm::value_ptr( light_data.sun_data.diffuse ) );
 }
 
 void ChunkMgr::proc_set_state( SetState & state ) {
@@ -572,12 +719,28 @@ void ChunkMgr::chunk_render( Chunk & chunk ) {
 	glBindVertexArray( chunk.id_vao );
 
 	if( chunk.idx_solid > 0 ) {
-		glDrawArrays( GL_TRIANGLES, 0, chunk.idx_solid * 6 );
+		glDrawElements( GL_TRIANGLES, chunk.idx_solid * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( 0 ) );
 	}
 
 	if( chunk.idx_trans > chunk.idx_solid ) {
 		glDisable( GL_CULL_FACE );
-		glDrawArrays( GL_TRIANGLES, chunk.idx_solid * 6, ( chunk.idx_trans - chunk.idx_solid ) * 6 );
+		glDrawElements( GL_TRIANGLES, ( chunk.idx_trans - chunk.idx_solid ) * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( chunk.idx_solid * sizeof( ChunkFaceIndices ) ) );
+		glEnable( GL_CULL_FACE );
+	}
+
+	glBindVertexArray( 0 );
+}
+
+void ChunkMgr::chunk_render_shadowmap( Chunk & chunk ) {
+	glBindVertexArray( chunk.id_vao );
+
+	if( chunk.idx_solid > 0 ) {
+		glDrawElements( GL_TRIANGLES, chunk.idx_solid * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( 0 ) );
+	}
+
+	if( chunk.idx_trans > chunk.idx_solid ) {
+		glDisable( GL_CULL_FACE );
+		glDrawElements( GL_TRIANGLES, ( chunk.idx_trans - chunk.idx_solid ) * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( chunk.idx_solid * sizeof( ChunkFaceIndices ) ) );
 		glEnable( GL_CULL_FACE );
 	}
 
@@ -587,6 +750,7 @@ void ChunkMgr::chunk_render( Chunk & chunk ) {
 void ChunkMgr::chunk_vbo( Chunk & chunk ) {
 	glGenVertexArrays( 1, &chunk.id_vao );
 	glGenBuffers( 1, &chunk.id_vbo );
+	glGenBuffers( 1, &chunk.id_ibo );
 
 	glBindVertexArray( chunk.id_vao );
 	glBindBuffer( GL_ARRAY_BUFFER, chunk.id_vbo );
@@ -603,9 +767,11 @@ void ChunkMgr::chunk_vbo( Chunk & chunk ) {
 	// Norm
 	glVertexAttribPointer( 2, 3, GL_FLOAT, GL_TRUE, sizeof( ChunkVert ), BUFFER_OFFSET( 28 ) );
 	// UV
-	glVertexAttribPointer( 3, 2, GL_FLOAT, GL_FALSE, sizeof( ChunkVert ), BUFFER_OFFSET( 40 ) );
+	glVertexAttribPointer( 3, 3, GL_FLOAT, GL_FALSE, sizeof( ChunkVert ), BUFFER_OFFSET( 40 ) );
 
-	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, chunk.id_ibo );
+
+	//glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindVertexArray( 0 );
 }
 
@@ -1121,207 +1287,297 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 		client.thread_mgr.task_async( priority, [ & ] ( ) {
 			chunk_state( chunk, ChunkState::CS_SMesh, false );
 
-			glm::ivec3 pos_lc;
-			glm::ivec3 pos_lc_next;
+			static FaceDirection list_face_z[ ] = { FD_Up, FD_Down, FD_Left, FD_Right };
+			static FaceDirection list_face_x[ ] = { FD_Front, FD_Back };
+			static glm::vec3 list_scale_verts[ ] = {
+				{ 1, 0, 0 }, { 1, 0, 0 },	// Front / Back
+				{ 0, 0, 1 }, { 0, 0, 1 },	// Left / Right
+				{ 0, 0, 1 }, { 0, 0, 1 }	// Up / Down
+			};
+
+			static glm::vec2 list_scale_uvs[ ] = { 
+				{ 1, 0 }, { 1, 0 },		// Front / Back
+				{ 1, 0 }, { 1, 0 },		// Left / Right
+				{ 0, 1 }, { 0, 1 }		// Up / Down
+			};
+
+			glm::ivec3 pos_curr;
+			glm::ivec3 pos_adj;
 			glm::ivec3 pos_min( 0, 0, 0 );
 			glm::ivec3 pos_max( Chunk::size_x - 1, Chunk::size_y - 1, Chunk::size_z - 1 );
 
-			FaceDirection face;
-			glm::vec3 const * normal;
-			FaceUvs * uvs;
-			FaceVerts const * verts;
+			int id_curr, id_adj;
 
-			Block * block;
-			Block * block_adj;
+			std::array< glm::ivec3, FaceDirection::FD_Size > list_pos_last;
+			std::array< std::pair< int, int >, FaceDirection::FD_Size > list_id_last;
+			std::array< int, FaceDirection::FD_Size > list_cnt_last;
+			std::array< Block *, FaceDirection::FD_Size > list_block_last;
+
+			FaceDirection dir_face;
+
+			Block * block_curr = nullptr;
+			Block * block_adj = nullptr;
 
 			Chunk * chunk_adj;
 
-			chunk.ptr_buffer->list_solid.clear( );
-			chunk.ptr_buffer->list_trans.clear( );
+			chunk.ptr_buffer->list_indices.clear( );
+			chunk.ptr_buffer->list_vertices_solid.clear( );
+			chunk.ptr_buffer->list_vertices_trans.clear( );
 			chunk.ptr_buffer->list_sort.clear( );
 			chunk.ptr_buffer->size_solid = 0;
 			chunk.ptr_buffer->size_trans = 0;
 
-			for( int i = 0; i < Chunk::size_x; i++ ) {
-				for( int j = 0; j < Chunk::size_y; j++ ) {
-					for( int k = 0; k < Chunk::size_z; k++ ) {
-						int id = chunk.id_blocks[ i ][ j ][ k ];
+			for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
+				dir_face = ( FaceDirection ) iter_face;
+				list_id_last[ dir_face ] = { -1, -1 };
+				list_cnt_last[ dir_face ] = 0;
+				list_block_last[ dir_face ] = nullptr;
+			}
 
-						if( id != -1 ) {
-							block = &get_block_data( id );
-							pos_lc = glm::ivec3( i, j, k );
+			for( pos_curr.x = 0; pos_curr.x < Chunk::size_x; pos_curr.x++ ) {
+				for( pos_curr.y = 0; pos_curr.y < Chunk::size_y; pos_curr.y++ ) {
+					for( pos_curr.z = 0; pos_curr.z < Chunk::size_z; pos_curr.z++ ) {
+						for( auto iter_face : list_face_z ) {
+							dir_face = iter_face;
+							id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
+						
+							if( id_curr == -1 ) {
+								// Is air, skip
+								list_id_last[ dir_face ].first = -1;
 
-							if( !block->is_trans ) {
-								for( int l = 0; l < FD_Size; l++ ) {
-									face = ( FaceDirection ) l;
-									normal = &Directional::get_vec_dir_f( face );
-									uvs = &block->get_uvs( face );
-									verts = &Block::get_verts( face );
-									pos_lc_next = pos_lc + glm::ivec3( *normal );
+								continue;
+							}
 
-									if( Directional::is_point_in_region( pos_lc_next, pos_min, pos_max ) ) {
-										if( chunk.id_blocks[ pos_lc_next.x ][ pos_lc_next.y ][ pos_lc_next.z ] != -1 ) {
-											block_adj = &get_block_data( chunk.id_blocks[ pos_lc_next.x ][ pos_lc_next.y ][ pos_lc_next.z ] );
+							block_curr = &get_block_data( id_curr );
 
-											if( block->is_visible( *block_adj ) ) {
-												put_face(
-													chunk.ptr_buffer->list_solid,
-													chunk.pos_gw + pos_lc,
-													*verts,
-													block->color,
-													*normal,
-													*uvs );
-											}
-										}
-										else {
-											put_face(
-												chunk.ptr_buffer->list_solid,
-												chunk.pos_gw + pos_lc,
-												*verts,
-												block->color,
-												*normal,
-												*uvs );
-										}
-									}
-									else {
-										std::lock_guard< std::mutex > lock( chunk.mtx_adj );
-										if( chunk.ptr_adj[ face ] != nullptr && chunk.ptr_adj[ face ]->is_loaded ) {
-											chunk_adj = chunk.ptr_adj[ face ];
+							if( block_curr->is_trans ) {
+								// Is trans, skip
+								list_id_last[ dir_face ].first = -1;
 
-											if( pos_lc_next.x < 0 ) pos_lc_next.x += Chunk::size_x;
-											else if( pos_lc_next.x >= Chunk::size_x ) pos_lc_next.x -= Chunk::size_x;
+								continue;
+							}
 
-											if( pos_lc_next.y < 0 ) pos_lc_next.y += Chunk::size_y;
-											else if( pos_lc_next.y >= Chunk::size_y ) pos_lc_next.y -= Chunk::size_y;
+							pos_adj = pos_curr + Directional::get_vec_dir_i( dir_face );
+							chunk_adj = &chunk;
 
-											if( pos_lc_next.z < 0 ) pos_lc_next.z += Chunk::size_z;
-											else if( pos_lc_next.z >= Chunk::size_z ) pos_lc_next.z -= Chunk::size_z;
+							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
+								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
 
-											if( chunk_adj->id_blocks[ pos_lc_next.x ][ pos_lc_next.y ][ pos_lc_next.z ] != -1 ) {
-												block_adj = &get_block_data( chunk_adj->id_blocks[ pos_lc_next.x ][ pos_lc_next.y ][ pos_lc_next.z ] );
+								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+								chunk_adj = chunk.ptr_adj[ dir_face ];
 
-												if( block->is_visible( *block_adj ) ) {
-													put_face(
-														chunk.ptr_buffer->list_solid,
-														chunk.pos_gw + pos_lc,
-														*verts,
-														block->color,
-														*normal,
-														*uvs );
-												}
-											}
-											else {
-												put_face(
-													chunk.ptr_buffer->list_solid,
-													chunk.pos_gw + pos_lc,
-													*verts,
-													block->color,
-													*normal,
-													*uvs );
-											}
-										}
-									}
+								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
+									// Chunk Aint loaded
+									list_id_last[ dir_face ].first = -1;
+
+									continue;
 								}
 							}
-							else {
-								for( int l = 0; l < FD_Size; l++ ) {
-									face = ( FaceDirection ) l;
-									normal = &Directional::get_vec_dir_f( face );
-									uvs = &block->get_uvs( face );
-									verts = &Block::get_verts( face );
-									pos_lc_next = pos_lc + glm::ivec3( *normal );
 
-									if( Directional::is_point_in_region( pos_lc_next, pos_min, pos_max ) ) {
-										if( chunk.id_blocks[ pos_lc_next.x ][ pos_lc_next.y ][ pos_lc_next.z ] != -1 ) {
-											block_adj = &get_block_data( chunk.id_blocks[ pos_lc_next.x ][ pos_lc_next.y ][ pos_lc_next.z ] );
+							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
 
-											if( block->is_visible( *block_adj ) ) {
-												chunk.ptr_buffer->list_sort.emplace_back( std::pair< float, int > {
-													glm::length( ( Block::get_center( face ) + glm::vec3( chunk.pos_gw + pos_lc ) ) - client.display_mgr.camera.pos_camera ),
-													chunk.ptr_buffer->list_trans.size( )
-												} );
+							if( id_adj == -1 ||
+								( block_adj = &get_block_data( id_adj ) )->is_trans ) {
+								// A face is visible!
 
-												put_face(
-													chunk.ptr_buffer->list_trans,
-													chunk.pos_gw + pos_lc,
-													*verts,
-													block->color,
-													*normal,
-													*uvs );
-											}
-										}
-										else {
-											chunk.ptr_buffer->list_sort.emplace_back( std::pair< float, int > {
-												glm::length( ( Block::get_center( face ) + glm::vec3( chunk.pos_gw + pos_lc ) ) - client.display_mgr.camera.pos_camera ),
-													chunk.ptr_buffer->list_trans.size( )
-											} );
-
-											put_face(
-												chunk.ptr_buffer->list_trans,
-												chunk.pos_gw + pos_lc,
-												*verts,
-												block->color,
-												*normal,
-												*uvs );
-										}
-									}
-									else {
-										std::lock_guard< std::mutex > lock( chunk.mtx_adj );
-
-										if( chunk.ptr_adj[ face ] != nullptr && chunk.ptr_adj[ face ]->is_loaded ) {
-											chunk_adj = chunk.ptr_adj[ face ];
-
-											if( pos_lc_next.x < 0 ) pos_lc_next.x += Chunk::size_x;
-											else if( pos_lc_next.x >= Chunk::size_x ) pos_lc_next.x -= Chunk::size_x;
-
-											if( pos_lc_next.y < 0 ) pos_lc_next.y += Chunk::size_y;
-											else if( pos_lc_next.y >= Chunk::size_y ) pos_lc_next.y -= Chunk::size_y;
-
-											if( pos_lc_next.z < 0 ) pos_lc_next.z += Chunk::size_z;
-											else if( pos_lc_next.z >= Chunk::size_z ) pos_lc_next.z -= Chunk::size_z;
-
-											if( chunk_adj->id_blocks[ pos_lc_next.x ][ pos_lc_next.y ][ pos_lc_next.z ] != -1 ) {
-												block_adj = &get_block_data( chunk_adj->id_blocks[ pos_lc_next.x ][ pos_lc_next.y ][ pos_lc_next.z ] );
-
-												if( block->is_visible( *block_adj ) ) {
-													chunk.ptr_buffer->list_sort.emplace_back( std::pair< float, int > {
-														glm::length( ( Block::get_center( face ) + glm::vec3( chunk.pos_gw + pos_lc ) ) - client.display_mgr.camera.pos_camera ),
-															chunk.ptr_buffer->list_trans.size( )
-													} );
-
-													put_face(
-														chunk.ptr_buffer->list_trans,
-														chunk.pos_gw + pos_lc,
-														*verts,
-														block->color,
-														*normal,
-														*uvs );
-												}
-											}
-											else {
-												chunk.ptr_buffer->list_sort.emplace_back( std::pair< float, int > {
-													glm::length( ( Block::get_center( face ) + glm::vec3( chunk.pos_gw + pos_lc ) ) - client.display_mgr.camera.pos_camera ),
-														chunk.ptr_buffer->list_trans.size( )
-												} );
-
-												put_face(
-													chunk.ptr_buffer->list_trans,
-													chunk.pos_gw + pos_lc,
-													*verts,
-													block->color,
-													*normal,
-													*uvs );
-											}
-										}
-									}
+								if( id_curr == list_id_last[ dir_face ].first ) {
+									// We have the same face in a row...
+									list_cnt_last[ dir_face ]++;
 								}
+								else {
+									// New face! Lets record some info...
+									if( list_cnt_last[ dir_face ] ) {
+										put_face(
+											chunk.ptr_buffer->list_vertices_solid,
+											list_pos_last[ dir_face ],
+											list_block_last[ dir_face ]->get_verts( dir_face ),
+											glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+											list_block_last[ dir_face ]->color,
+											Directional::get_vec_dir_f( dir_face ),
+											list_block_last[ dir_face ]->get_uvs( dir_face ),
+											glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+									}
+
+									list_id_last[ dir_face ] = { id_curr, id_curr };
+									list_pos_last[ dir_face ] = pos_curr;
+									list_block_last[ dir_face ] = block_curr;
+									list_cnt_last[ dir_face ] = 1;
+								}
+
+								continue;
+							}
+
+							list_id_last[ dir_face ].first = -1;
+						}
+
+						for( auto iter_face : list_face_x ) {
+							glm::ivec3 pos_curr_x = { pos_curr.z, pos_curr.y, pos_curr.x };
+							dir_face = iter_face;
+							id_curr = chunk.id_blocks[ pos_curr_x.x ][ pos_curr_x.y ][ pos_curr_x.z ];
+
+
+							if( id_curr == -1 ) {
+								// Is air, skip
+								list_id_last[ dir_face ].first = -1;
+
+								continue;
+							}
+
+							block_curr = &get_block_data( id_curr );
+
+							if( block_curr->is_trans ) {
+								// Is trans, skip
+								list_id_last[ dir_face ].first = -1;
+
+								continue;
+							}
+
+							pos_adj = pos_curr_x + Directional::get_vec_dir_i( dir_face );
+							chunk_adj = &chunk;
+
+
+							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
+								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
+
+								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+								chunk_adj = chunk.ptr_adj[ dir_face ];
+
+								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
+									// Chunk Aint loaded
+									list_id_last[ dir_face ].first = -1;
+
+									continue;
+								}
+							}
+
+							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+
+							if( id_adj == -1 ||
+								( block_adj = &get_block_data( id_adj ) )->is_trans ) {
+								// A face is visible!
+
+								if( id_curr == list_id_last[ dir_face ].first ) {
+									// We have the same face in a row...
+									list_cnt_last[ dir_face ]++;
+								}
+								else {
+									// New face! Lets record some info...
+
+									if( list_cnt_last[ dir_face ] ) {
+										put_face(
+											chunk.ptr_buffer->list_vertices_solid,
+											list_pos_last[ dir_face ],
+											list_block_last[ dir_face ]->get_verts( dir_face ),
+											glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+											list_block_last[ dir_face ]->color,
+											Directional::get_vec_dir_f( dir_face ),
+											list_block_last[ dir_face ]->get_uvs( dir_face ),
+											glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+									}
+
+									list_id_last[ dir_face ] = { id_curr, id_curr };
+									list_pos_last[ dir_face ] = pos_curr_x;
+									list_block_last[ dir_face ] = block_curr;
+									list_cnt_last[ dir_face ] = 1;
+								}
+
+								continue;
+							}
+
+							list_id_last[ dir_face ].first = -1;
+						}
+					}
+					// Woooo we made it through a row
+					for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
+						dir_face = ( FaceDirection ) iter_face;
+						list_id_last[ dir_face ].first = -1;
+					}
+				}
+			}
+
+			for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
+				dir_face = ( FaceDirection ) iter_face;
+				list_id_last[ dir_face ].first = -1;
+				if( list_cnt_last[ dir_face ] ) {
+					put_face(
+						chunk.ptr_buffer->list_vertices_solid,
+						list_pos_last[ dir_face ],
+						list_block_last[ dir_face ]->get_verts( dir_face ), 
+						glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+						list_block_last[ dir_face ]->color,
+						Directional::get_vec_dir_f( dir_face ),
+						list_block_last[ dir_face ]->get_uvs( dir_face ), 
+						glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+				}
+			}
+
+			// TRANS
+			for( pos_curr.x = 0; pos_curr.x < Chunk::size_x; pos_curr.x++ ) {
+				for( pos_curr.y = 0; pos_curr.y < Chunk::size_y; pos_curr.y++ ) {
+					for( pos_curr.z = 0; pos_curr.z < Chunk::size_z; pos_curr.z++ ) {
+						for( int i = 0; i < FaceDirection::FD_Size; i++ ) {
+							dir_face = ( FaceDirection ) i;
+							id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
+
+							if( id_curr == -1 ) {
+								continue;
+							}
+
+							block_curr = &get_block_data( id_curr );
+
+							if( !block_curr->is_trans ) {
+								continue;
+							}
+
+							pos_adj = pos_curr + Directional::get_vec_dir_i( dir_face );
+							chunk_adj = &chunk;
+
+							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
+								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
+								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+								chunk_adj = chunk.ptr_adj[ dir_face ];
+								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
+									continue;
+								}
+							}
+
+							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+
+							if( id_adj == -1 ||
+								( ( block_adj = &get_block_data( id_adj ) )->is_trans && id_adj != id_curr ) ) {
+
+								put_face(
+									chunk.ptr_buffer->list_vertices_trans,
+									pos_curr,
+									block_curr->get_verts( dir_face ),
+									block_curr->color,
+									Directional::get_vec_dir_f( dir_face ),
+									block_curr->get_uvs( dir_face ) );
+
+								chunk.ptr_buffer->list_sort.emplace_back( 
+									std::pair< float, int > { 
+										glm::distance( glm::vec3( chunk.pos_gw + pos_curr ) + Block::get_center( dir_face ), client.display_mgr.camera.pos_camera ), 
+										chunk.ptr_buffer->list_vertices_trans.size( ) - 1
+									} 
+								);
+
+								continue;
 							}
 						}
 					}
 				}
 			}
 
-			chunk.ptr_buffer->size_solid = chunk.ptr_buffer->list_solid.size( );
+			for( int unsigned i = 0; i < chunk.ptr_buffer->list_vertices_solid.size( ); i++ ) { 
+				chunk.ptr_buffer->list_indices.emplace_back(
+					ChunkFaceIndices {
+						i * 4 + 0, i * 4 + 1, i * 4 + 2,
+						i * 4 + 2, i * 4 + 3, i * 4 + 0
+					}
+				);
+			}
+
+			chunk.ptr_buffer->size_solid = chunk.ptr_buffer->list_vertices_solid.size( );
 
 			std::sort( chunk.ptr_buffer->list_sort.begin( ), chunk.ptr_buffer->list_sort.end( ),
 				[ ] ( std::pair< float, int > const & lho, std::pair< float, int > const & rho ) {
@@ -1329,10 +1585,19 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 			} );
 
 			for( auto & pair_sort : chunk.ptr_buffer->list_sort ) {
-				chunk.ptr_buffer->list_solid.emplace_back( chunk.ptr_buffer->list_trans[ pair_sort.second ] );
+				chunk.ptr_buffer->list_vertices_solid.emplace_back( chunk.ptr_buffer->list_vertices_trans[ pair_sort.second ] );
 			}
 
-			chunk.ptr_buffer->size_trans = chunk.ptr_buffer->list_solid.size( );
+			for( int unsigned i = chunk.ptr_buffer->size_solid; i < chunk.ptr_buffer->list_vertices_solid.size( ); i++ ) {
+				chunk.ptr_buffer->list_indices.emplace_back(
+					ChunkFaceIndices {
+						i * 4 + 0, i * 4 + 1, i * 4 + 2,
+						i * 4 + 2, i * 4 + 3, i * 4 + 0
+					}
+				);
+			}
+
+			chunk.ptr_buffer->size_trans = chunk.ptr_buffer->list_vertices_solid.size( );
 
 			if( chunk.ptr_buffer->size_trans > 0 ) { 
 				chunk_state( chunk, ChunkState::CS_Buffer, true );
@@ -1369,20 +1634,23 @@ void ChunkMgr::chunk_buffer( Chunk & chunk ) {
 	chunk.is_working = true;
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
-	int priority = 3;
-	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	int priority = 10;
+	//priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
 	client.thread_mgr.task_main( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Buffer, false );
 
 		if( chunk.ptr_buffer ) {
 			glBindBuffer( GL_ARRAY_BUFFER, chunk.id_vbo );
-			glBufferData( GL_ARRAY_BUFFER, chunk.idx_trans * sizeof( ChunkFace ), nullptr, GL_STATIC_DRAW );
+			glBufferData( GL_ARRAY_BUFFER, chunk.idx_trans * sizeof( ChunkFaceVertices ), nullptr, GL_STATIC_DRAW );
+			glBufferData( GL_ARRAY_BUFFER, chunk.ptr_buffer->size_trans * sizeof( ChunkFaceVertices ), chunk.ptr_buffer->list_vertices_solid.data( ), GL_STATIC_DRAW );
+
+			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, chunk.id_ibo );
+			glBufferData( GL_ELEMENT_ARRAY_BUFFER, chunk.idx_trans * sizeof( ChunkFaceIndices ), nullptr, GL_STATIC_DRAW );
+			glBufferData( GL_ELEMENT_ARRAY_BUFFER, chunk.ptr_buffer->size_trans * sizeof( ChunkFaceIndices ), chunk.ptr_buffer->list_indices.data( ), GL_STATIC_DRAW );
 
 			chunk.idx_solid = chunk.ptr_buffer->size_solid;
 			chunk.idx_trans = chunk.ptr_buffer->size_trans;
-
-			glBufferData( GL_ARRAY_BUFFER, chunk.idx_trans * sizeof( ChunkFace ), chunk.ptr_buffer->list_solid.data( ), GL_STATIC_DRAW );
 
 			put_buffer( chunk.ptr_buffer );
 		}
@@ -1502,6 +1770,10 @@ void ChunkMgr::chunk_remove( Chunk & chunk ) {
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Remove, false );
 
+		if( chunk.ptr_buffer ) { 
+			put_buffer( chunk.ptr_buffer );
+		}
+
 		{
 			std::lock_guard< std::mutex > lock( mtx_noise );
 
@@ -1602,12 +1874,12 @@ void ChunkMgr::load_block_data( ) {
 				std::string line; line.resize( 128 );
 				std::string token;
 				int pos_start, pos_end;
-				std::array< int, FD_Size > orientation_faces { };
 
 				Block block( id, name_block );
 
 				for( int i = 0; i < FD_Size; i++ ) {
 					block.uvs[ i ] = client.texture_mgr.get_uvs_block( id, 0 );
+					block.orientation[ i ] = 0;
 				}
 
 				while( std::getline( in_file, line ) ) {
@@ -1689,42 +1961,42 @@ void ChunkMgr::load_block_data( ) {
 							pos_end = line.find( ",", pos_start );
 							pos_start += 1;
 							token = line.substr( pos_start, pos_end - pos_start );
-							orientation_faces[ FD_Front ] = atoi( token.data( ) );
+							block.orientation[ FD_Front ] = atoi( token.data( ) );
 						}
 						else if( token == "Orientation Back" ) {
 							pos_start = line.find( " ", pos_end );
 							pos_end = line.find( ",", pos_start );
 							pos_start += 1;
 							token = line.substr( pos_start, pos_end - pos_start );
-							orientation_faces[ FD_Back ] = atoi( token.data( ) );
+							block.orientation[ FD_Back ] = atoi( token.data( ) );
 						}
 						else if( token == "Orientation Left" ) {
 							pos_start = line.find( " ", pos_end );
 							pos_end = line.find( ",", pos_start );
 							pos_start += 1;
 							token = line.substr( pos_start, pos_end - pos_start );
-							orientation_faces[ FD_Left ] = atoi( token.data( ) );
+							block.orientation[ FD_Left ] = atoi( token.data( ) );
 						}
 						else if( token == "Orientation Right" ) {
 							pos_start = line.find( " ", pos_end );
 							pos_end = line.find( ",", pos_start );
 							pos_start += 1;
 							token = line.substr( pos_start, pos_end - pos_start );
-							orientation_faces[ FD_Right ] = atoi( token.data( ) );
+							block.orientation[ FD_Right ] = atoi( token.data( ) );
 						}
 						else if( token == "Orientation Up" ) {
 							pos_start = line.find( " ", pos_end );
 							pos_end = line.find( ",", pos_start );
 							pos_start += 1;
 							token = line.substr( pos_start, pos_end - pos_start );
-							orientation_faces[ FD_Up ] = atoi( token.data( ) );
+							block.orientation[ FD_Up ] = atoi( token.data( ) );
 						}
 						else if( token == "Orientation Down" ) {
 							pos_start = line.find( " ", pos_end );
 							pos_end = line.find( ",", pos_start );
 							pos_start += 1;
 							token = line.substr( pos_start, pos_end - pos_start );
-							orientation_faces[ FD_Down ] = atoi( token.data( ) );
+							block.orientation[ FD_Down ] = atoi( token.data( ) );
 						}
 						else if( token == "Visibility" ) { 
 							pos_start = line.find( " ", pos_end );
@@ -1738,20 +2010,13 @@ void ChunkMgr::load_block_data( ) {
 					}
 				}
 
-				for( int i = 0; i < FD_Size; i++ ) { 
-					auto temp_uvs = block.uvs[ i ];
-					for( int j = 0; j < 4; j++ ) { 
-						block.uvs[ i ][ j ] = temp_uvs[ ( j + orientation_faces[ i ] ) % 4 ];
-					}
-				}
-
 				list_block_data.push_back( block );
 				map_block_data.insert( std::make_pair( name_block, id ) );
 
 				out.str( "" );
 				out << "SUCCESS: " << path_desc;
 				client.gui_mgr.print_to_console( out.str( ) );
-				printTabbedLine( 2, out.str( ) );
+				printTabbedLine( 1, out.str( ) );
 
 				succ++;
 
@@ -1769,7 +2034,7 @@ void ChunkMgr::load_block_data( ) {
 				out.str( "" );
 				out << "ERROR: " << path_desc;
 				client.gui_mgr.print_to_console( out.str( ) );
-				printTabbedLine( 2, out.str( ) );
+				printTabbedLine( 1, out.str( ) );
 			}
 		}
 		index++;
@@ -1779,13 +2044,19 @@ void ChunkMgr::load_block_data( ) {
 	out << "Loaded: " << succ << " Total: " << index;
 	client.gui_mgr.print_to_console( out.str( ) );
 
-	printTabbedLine( 2, out.str( ) );
-
-	printTabbedLine( 1, "...Loading blocks" );
+	printTabbedLine( 1, out.str( ) );
 }
 
 void ChunkMgr::toggle_chunk_debug( ) { 
 	is_chunk_debug = !is_chunk_debug;
+}
+
+void ChunkMgr::toggle_shadow_debug( ) {
+	is_shadow_debug = !is_shadow_debug;
+}
+
+void ChunkMgr::toggle_shadows( ) { 
+	is_shadows = !is_shadows;
 }
 
 int ChunkMgr::get_block( glm::vec3 const & pos_gw ) {
@@ -1810,40 +2081,44 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, int const id ) {
 	
 	std::lock_guard< std::recursive_mutex > lock( mtx_chunks );
 	auto iter = map_chunks.find( Directional::get_hash( pos_lw ) );
-	if( iter != map_chunks.end( ) ) {
-		auto & chunk = iter->second.get( );
-		glm::ivec3 pos_lc;
-		Directional::pos_gw_to_lc( pos_gw, pos_lc );
+	if( iter == map_chunks.end( ) ) {
+		return;
+	}
 
-		if( chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ] != id ) { 
-			chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ] = id;
+	auto & chunk = iter->second.get( );
+	glm::ivec3 pos_lc;
+	Directional::pos_gw_to_lc( pos_gw, pos_lc );
+	if( chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ] == id ) {
+		return;
+	}
 
-			{
-				std::lock_guard< std::mutex > lock( chunk.mtx_adj );
-				if( pos_lc.x == 0 && chunk.ptr_adj[ FD_Right ] != nullptr ) {
-					chunk_state( *chunk.ptr_adj[ FD_Right ], ChunkState::CS_SMesh, true );
-				}
-				else if( pos_lc.x == Chunk::size_x - 1 && chunk.ptr_adj[ FD_Left ] != nullptr ) {
-					chunk_state( *chunk.ptr_adj[ FD_Left ], ChunkState::CS_SMesh, true );
-				}
+	chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ] = id;
 
-				if( pos_lc.y == 0 && chunk.ptr_adj[ FD_Down ] != nullptr ) {
-					chunk_state( *chunk.ptr_adj[ FD_Down ], ChunkState::CS_SMesh, true );
-				}
-				else if( pos_lc.y == Chunk::size_y - 1 && chunk.ptr_adj[ FD_Up ] != nullptr ) {
-					chunk_state( *chunk.ptr_adj[ FD_Up ], ChunkState::CS_SMesh, true );
-				}
+	{
+		std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+		if( pos_lc.x == 0 && chunk.ptr_adj[ FD_Right ] != nullptr ) {
+			chunk_state( *chunk.ptr_adj[ FD_Right ], ChunkState::CS_SMesh, true );
+		}
+		else if( pos_lc.x == Chunk::size_x - 1 && chunk.ptr_adj[ FD_Left ] != nullptr ) {
+			chunk_state( *chunk.ptr_adj[ FD_Left ], ChunkState::CS_SMesh, true );
+		}
 
-				if( pos_lc.z == 0 && chunk.ptr_adj[ FD_Back ] != nullptr ) {
-					chunk_state( *chunk.ptr_adj[ FD_Back ], ChunkState::CS_SMesh, true );
-				}
-				else if( pos_lc.z == Chunk::size_z - 1 && chunk.ptr_adj[ FD_Front ] != nullptr ) {
-					chunk_state( *chunk.ptr_adj[ FD_Front ], ChunkState::CS_SMesh, true );
-				}
-			}
-			chunk_state( chunk, ChunkState::CS_SMesh, true );
+		if( pos_lc.y == 0 && chunk.ptr_adj[ FD_Down ] != nullptr ) {
+			chunk_state( *chunk.ptr_adj[ FD_Down ], ChunkState::CS_SMesh, true );
+		}
+		else if( pos_lc.y == Chunk::size_y - 1 && chunk.ptr_adj[ FD_Up ] != nullptr ) {
+			chunk_state( *chunk.ptr_adj[ FD_Up ], ChunkState::CS_SMesh, true );
+		}
+
+		if( pos_lc.z == 0 && chunk.ptr_adj[ FD_Back ] != nullptr ) {
+			chunk_state( *chunk.ptr_adj[ FD_Back ], ChunkState::CS_SMesh, true );
+		}
+		else if( pos_lc.z == Chunk::size_z - 1 && chunk.ptr_adj[ FD_Front ] != nullptr ) {
+			chunk_state( *chunk.ptr_adj[ FD_Front ], ChunkState::CS_SMesh, true );
 		}
 	}
+
+	chunk_state( chunk, ChunkState::CS_SMesh, true );
 }
 
 void ChunkMgr::set_block( glm::vec3 const & pos_gw, int const id ) { 
@@ -2280,8 +2555,9 @@ Block & ChunkMgr::get_block_data( std::string const & name ) {
 
 Block * ChunkMgr::get_block_data_safe( std::string const & name ) {
 	auto iter = map_block_data.find( name );
-	if( iter == map_block_data.end( ) )
+	if( iter == map_block_data.end( ) ) {
 		return nullptr;
+	}
 
 	return &list_block_data[ iter->second ];
 }
@@ -2359,66 +2635,83 @@ void ChunkMgr::print_prio( int const range, int const base_prio ) {
 }
 
 void ChunkMgr::add_emitter( Emitter & emitter ) { 
-	static int max_emitters = 128;
-	if( mgr_emitter.num_emitter < max_emitters ) {
-		mgr_emitter.num_emitter++;
-		mgr_emitter.list_pos.push_back( emitter.pos );
-		mgr_emitter.list_color.push_back( emitter.color );
-		mgr_emitter.list_radius.push_back( emitter.radius );
+	if( light_data.num_emitters.x < light_data.max_emitters ) {
+		light_data.list_pos[ light_data.num_emitters.x ] = emitter.pos;
+		light_data.list_color[ light_data.num_emitters.x ] = emitter.color;
+		light_data.list_radius[ light_data.num_emitters.x ].x = emitter.radius;
+		light_data.num_emitters.x++;
+
 		auto & out = client.display_mgr.out;
 		out.str( "" );
-		out << "Num emitters: " << mgr_emitter.num_emitter;
+		out << "Emitter Added: " << Directional::print_vec( emitter.pos );
+		client.gui_mgr.print_to_console( out.str( ) );
+		out.str( "" );
+		out << "Num emitters: " << light_data.num_emitters.x;
 		client.gui_mgr.print_to_console( out.str( ) );
 	}
 }
 
 void ChunkMgr::clear_emitters( ) { 
-	mgr_emitter.num_emitter = 0;
-	mgr_emitter.list_color.clear( );
-	mgr_emitter.list_pos.clear( );
-	mgr_emitter.list_radius.clear( );
+	light_data.num_emitters.x = 0;
 }
 
-void put_face( std::vector< ChunkFace > & buffer, glm::ivec3 const & pos, 
-	FaceVerts const & verts, Color4 const & color, glm::vec3 const & normal, FaceUvs const & uvs ) {
+void put_face( 
+	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos, 
+	FaceVerts const & verts, Color4 const & color, 
+	glm::vec3 const & normal, FaceUvs const & uvs ) {
 
-	buffer.emplace_back( ChunkFace 
-		{ {
+	buffer_verts.emplace_back( 
+		ChunkFaceVertices { {
 			{ { pos.x + verts[ 0 ][ 0 ], pos.y + verts[ 0 ][ 1 ], pos.z + verts[ 0 ][ 2 ] },
 			{ color.r, color.g, color.b, color.a },
 			{ normal.x, normal.y, normal.z },
-			{ uvs[ 0 ][ 0 ], uvs[ 0 ][ 1 ] },
-			{ 0, 0, 0, 0 } },
+			{ uvs[ 0 ][ 0 ], uvs[ 0 ][ 1 ], uvs[ 0 ][ 2 ] } },
 
 			{ { pos.x + verts[ 1 ][ 0 ], pos.y + verts[ 1 ][ 1 ], pos.z + verts[ 1 ][ 2 ] },
 			{ color.r, color.g, color.b, color.a },
 			{ normal.x, normal.y, normal.z },
-			{ uvs[ 1 ][ 0 ], uvs[ 1 ][ 1 ] },
-			{ 0, 0, 0, 0 } },
+			{ uvs[ 1 ][ 0 ], uvs[ 1 ][ 1 ], uvs[ 1 ][ 2 ] } },
 
 			{ { pos.x + verts[ 2 ][ 0 ], pos.y + verts[ 2 ][ 1 ], pos.z + verts[ 2 ][ 2 ] },
 			{ color.r, color.g, color.b, color.a },
 			{ normal.x, normal.y, normal.z },
-			{ uvs[ 2 ][ 0 ], uvs[ 2 ][ 1 ] },
-			{ 0, 0, 0, 0 } },
-
-			{ { pos.x + verts[ 2 ][ 0 ], pos.y + verts[ 2 ][ 1 ], pos.z + verts[ 2 ][ 2 ] },
-			{ color.r, color.g, color.b, color.a },
-			{ normal.x, normal.y, normal.z },
-			{ uvs[ 2 ][ 0 ], uvs[ 2 ][ 1 ] },
-			{ 0, 0, 0, 0 } },
+			{ uvs[ 2 ][ 0 ], uvs[ 2 ][ 1 ], uvs[ 2 ][ 2 ] } },
 
 			{ { pos.x + verts[ 3 ][ 0 ], pos.y + verts[ 3 ][ 1 ], pos.z + verts[ 3 ][ 2 ] },
 			{ color.r, color.g, color.b, color.a },
 			{ normal.x, normal.y, normal.z },
-			{ uvs[ 3 ][ 0 ], uvs[ 3 ][ 1 ] },
-			{ 0, 0, 0, 0 } },
+			{ uvs[ 3 ][ 0 ], uvs[ 3 ][ 1 ], uvs[ 3 ][ 2 ] } }
+		} } 
+	);
+}
 
-			{ { pos.x + verts[ 0 ][ 0 ], pos.y + verts[ 0 ][ 1 ], pos.z + verts[ 0 ][ 2 ] },
+void put_face( 
+	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
+	FaceVerts const & verts, glm::ivec3 const & scale_verts,
+	Color4 const & color, glm::vec3 const & normal, 
+	FaceUvs const & uvs, glm::ivec2 const & scale_uvs ) {
+
+	buffer_verts.emplace_back(
+		ChunkFaceVertices { {
+			{ { pos.x + verts[ 0 ][ 0 ] * scale_verts.x, pos.y + verts[ 0 ][ 1 ] * scale_verts.y, pos.z + verts[ 0 ][ 2 ] * scale_verts.z },
 			{ color.r, color.g, color.b, color.a },
 			{ normal.x, normal.y, normal.z },
-			{ uvs[ 0 ][ 0 ], uvs[ 0 ][ 1 ] },
-			{ 0, 0, 0, 0 } }
-		} } 
+			{ uvs[ 0 ][ 0 ] * scale_uvs.x, uvs[ 0 ][ 1 ] * scale_uvs.y, uvs[ 0 ][ 2 ] } },
+
+			{ { pos.x + verts[ 1 ][ 0 ] * scale_verts.x, pos.y + verts[ 1 ][ 1 ] * scale_verts.y, pos.z + verts[ 1 ][ 2 ] * scale_verts.z },
+			{ color.r, color.g, color.b, color.a },
+			{ normal.x, normal.y, normal.z },
+			{ uvs[ 1 ][ 0 ] * scale_uvs.x, uvs[ 1 ][ 1 ] * scale_uvs.y, uvs[ 1 ][ 2 ] } },
+
+			{ { pos.x + verts[ 2][ 0 ] * scale_verts.x, pos.y + verts[ 2 ][ 1 ] * scale_verts.y, pos.z + verts[ 2 ][ 2 ] * scale_verts.z },
+			{ color.r, color.g, color.b, color.a },
+			{ normal.x, normal.y, normal.z },
+			{ uvs[ 2 ][ 0 ] * scale_uvs.x, uvs[ 2 ][ 1 ] * scale_uvs.y, uvs[ 2 ][ 2 ] } },
+
+			{ { pos.x + verts[ 3 ][ 0 ] * scale_verts.x, pos.y + verts[ 3 ][ 1 ] * scale_verts.y, pos.z + verts[ 3 ][ 2 ] * scale_verts.z },
+			{ color.r, color.g, color.b, color.a },
+			{ normal.x, normal.y, normal.z },
+			{ uvs[ 3 ][ 0 ] * scale_uvs.x, uvs[ 3 ][ 1 ] * scale_uvs.y, uvs[ 3 ][ 2 ] } }
+			} }
 	);
 }

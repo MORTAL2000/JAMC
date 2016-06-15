@@ -1,0 +1,26 @@
+#version 430
+
+layout( std140 ) uniform mvp_matrices {
+	vec4 pos_camera;
+	mat4 mat_world;
+	mat4 mat_perspective;
+	mat4 mat_ortho;
+	mat4 mat_view;
+	float time_game;
+};
+
+layout( location = 0 ) in vec4 vert;
+layout( location = 1 ) in vec4 color;
+layout( location = 2 ) in vec3 norm;
+layout( location = 3 ) in vec3 uv;
+
+uniform mat4 mat_model;
+
+out vec3 frag_uvs;
+out vec4 frag_color;
+
+void main() {
+	gl_Position = mat_ortho * mat_model * vert;
+	frag_uvs = uv;
+	frag_color = color;
+}

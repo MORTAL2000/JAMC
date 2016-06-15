@@ -15,223 +15,180 @@ int const TextureMgr::size_terrain_texture = 64;
 int const TextureMgr::size_terrain_atlas = ( TextureMgr::size_terrain_texture + 2 * TextureMgr::size_terrain_texture_padding ) * 16 ;
 
 TextureMgr::TextureMgr( Client & client ) :
+	path_shaders( "./Shaders/" ),
 	Manager( client ) { }
 
 TextureMgr::~TextureMgr( ) { }
 
+void TextureMgr::init( ) {
+	printTabbedLine( 0, "Init TextureMgr..." );
+
+	printTabbedLine( 1, "Creating shaders and loading data..." );
+
+	loader_add( "Basic" );
+	loader_add( "Terrain" );
+	loader_add( "Selector" );
+	loader_add( "Entity" );
+	loader_add( "ShadowMap" );
+
+	std::cout << std::endl;
+	printTabbedLine( 1, "Creating Textures..." );
+	load_terrain( );
+	load_skybox( );
+	load_sun( );
+	load_fonts( );
+	load_materials( );
+
+	std::cout << std::endl;
+	printTabbedLine( 1, "Creating uniform buffer objects..." );
+
+	glGenBuffers( 1, &id_ubo_mvp );
+	glBindBuffer( GL_UNIFORM_BUFFER, id_ubo_mvp );
+	glBufferData( GL_UNIFORM_BUFFER, sizeof( MVPMatrices ), &client.display_mgr.camera.mvp_matrices, GL_DYNAMIC_DRAW );
+	glBindBufferBase( GL_UNIFORM_BUFFER, 0, id_ubo_mvp );
+
+	glGenBuffers( 1, &id_ubo_lights );
+	glBindBuffer( GL_UNIFORM_BUFFER, id_ubo_lights );
+	glBufferData( GL_UNIFORM_BUFFER, sizeof( LightData ), &client.chunk_mgr.get_light_data( ), GL_DYNAMIC_DRAW );
+	glBindBufferBase( GL_UNIFORM_BUFFER, 1, id_ubo_lights );
+
+	std::cout << std::endl;
+	printTabbedLine( 1, "Linking Uniform Buffer objects..." );
+	for( auto & shader : { "Basic", "Terrain", "Entity", "Selector" } ) {
+		bind_program( shader );
+		GLuint uniform_block_index = glGetUniformBlockIndex( id_prog, "mvp_matrices" );
+		glUniformBlockBinding( id_prog, uniform_block_index, 0 );
+	}
+
+	for( auto & shader : { "Terrain", "Entity", "Selector" } ) {
+		bind_program( shader );
+		GLuint uniform_block_index = glGetUniformBlockIndex( id_prog, "light_data" );
+		glUniformBlockBinding( id_prog, uniform_block_index, 1 );
+	}
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D_ARRAY, id_terrain );
+
+	for( auto & shader : { "Basic", "Terrain", "Selector", "Entity" } ) { 
+		bind_program( shader );
+		GLuint prog_sampler = glGetUniformLocation( id_prog, "frag_sampler" );
+		glUniform1i( prog_sampler, 0 );
+	}
+	
+	std::cout << std::endl;
+	printTabbedLine( 1, checkGlErrors( ) );
+	std::cout << std::endl;
+}
+
+void TextureMgr::loader_add( std::string const & name ) { 
+	ShaderLoader loader;
+	loader.name = name;
+
+	printTabbedLine( 1, "Loading shader: " + name );
+	load_shader( path_shaders + name + ".vert", path_shaders + name + ".frag", loader.id_prog );
+
+	list_shaders.emplace_back( loader );
+	map_shaders.insert( { name, list_shaders.size( ) - 1 } );
+}
+
+void TextureMgr::bind_program( std::string const & name ) { 
+	auto iter_map = map_shaders.find( name );
+	if( iter_map == map_shaders.end( ) ) { 
+		std::cout << "Error binding program " << name << std::endl;
+		return;
+	}
+
+	auto & loader = list_shaders[ iter_map->second ];
+	if( loader.id_prog == id_prog ) { 
+		return;
+	}
+
+	id_prog = loader.id_prog;
+	glUseProgram( id_prog );
+}
+
+void TextureMgr::unbind_program( ) {
+	id_prog = 0;
+	glUseProgram( 0 );
+}
+
+void TextureMgr::bind_texture( GLuint const id_active, GLuint const id_texture ) {
+	if( this->id_active != id_active ) {
+		this->id_active = id_active;
+		glActiveTexture( GL_TEXTURE0 + id_active );
+	}
+
+	if( this->id_texture != id_texture ) {
+		this->id_texture = id_texture;
+		glBindTexture( GL_TEXTURE_2D, id_texture );
+	}
+}
+
 void TextureMgr::load_terrain( ) {
 	using namespace std::tr2::sys;
 	auto & out = client.display_mgr.out;
+	path path_blocks( "./Blocks" );
+	int layer = 0;
 
-	// Lets allocate some texture space on the gfx card for atlas and temp space for copying
-	glGenTextures( 1, &id_temp );
-	glBindTexture( GL_TEXTURE_2D, id_temp );
+	glGenTextures( 1, &id_copy );
+	glBindTexture( GL_TEXTURE_2D, id_copy );
 	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, size_terrain_texture, size_terrain_texture, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr );
 
 	glGenTextures( 1, &id_terrain );
-	glBindTexture( GL_TEXTURE_2D, id_terrain );
+
+	glBindTexture( GL_TEXTURE_2D_ARRAY, id_terrain );
 	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, size_terrain_atlas, size_terrain_atlas, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr );
-	glTexStorage2D( GL_TEXTURE_2D, size_terrain_mip_map, GL_RGBA8, size_terrain_atlas, size_terrain_atlas );
-
-	// Lets start with our block directory
-	path path_blocks( "./Blocks" );
-
-	int index = 0;
-	int succ = 0;
-	int tex_succ = 0;
-	int x, y;
-	int padding = 0;
-	float pixel_correct = 0.5f;
-
-	// Lets iterate all the blocks in the block directory
-	if( !exists( path_blocks ) ) {
-		create_directory( path_blocks );
-	}
+	glTexStorage3D( GL_TEXTURE_2D_ARRAY, 6, GL_RGBA8, size_terrain_texture, size_terrain_texture, 1024 );
 
 	for( directory_iterator dir_iter_blocks( path_blocks ); dir_iter_blocks != directory_iterator( ); dir_iter_blocks++ ) {
-		if( is_directory( dir_iter_blocks->status( ) ) ) {
-			uvs_terrain.push_back( std::vector< face_uvs >( ) );
-			tex_succ = 0;
+		if( !is_directory( dir_iter_blocks->status( ) ) ) {
+			continue;
+		}
 
-			// Lets iterate all the png files in each block directory
-			for( directory_iterator dir_iter_texture( dir_iter_blocks->path( ) ); dir_iter_texture != directory_iterator( ); dir_iter_texture++ ) {
-				if( is_regular_file( dir_iter_texture->path( ) ) && dir_iter_texture->path( ).extension( ).string( ) == ".png" ) {
+		uvs_terrain.push_back( std::vector< FaceUvs >( ) );
 
-					// Load temp texture from each png
-					id_temp = SOIL_load_OGL_texture(
-						dir_iter_texture->path( ).string( ).c_str( ),
-						SOIL_LOAD_RGBA,
-						id_temp,
-						SOIL_FLAG_POWER_OF_TWO | SOIL_FLAG_INVERT_Y );
-
-					// If temp texutre was loaded
-					if( id_temp != 0 ) {
-						x = ( index * ( size_terrain_texture + 2 * size_terrain_texture_padding ) ) % size_terrain_atlas;
-						y = ( ( index * ( size_terrain_texture + 2 * size_terrain_texture_padding ) ) / size_terrain_atlas )
-							* ( size_terrain_texture + 2 * size_terrain_texture_padding );
-
-						// Copy the data to texture atlas
-						glCopyImageSubData(
-							id_temp, GL_TEXTURE_2D, 0,
-							0, 0, 0,
-							id_terrain, GL_TEXTURE_2D, 0,
-							x + size_terrain_texture_padding,
-							y + size_terrain_texture_padding,
-							0,
-							size_terrain_texture, size_terrain_texture, 1 );
-
-						for( int i = 0; i < size_terrain_texture_padding; i++ ) {
-							glCopyImageSubData(
-								id_temp, GL_TEXTURE_2D, 0,
-								0, 0, 0,
-								id_terrain, GL_TEXTURE_2D, 0,
-								x + i,
-								y + size_terrain_texture_padding,
-								0,
-								1, size_terrain_texture, 1 );
-
-							glCopyImageSubData(
-								id_temp, GL_TEXTURE_2D, 0,
-								size_terrain_texture - 1, 0, 0,
-								id_terrain, GL_TEXTURE_2D, 0,
-								x + size_terrain_texture_padding + size_terrain_texture + i,
-								y + size_terrain_texture_padding,
-								0,
-								1, size_terrain_texture, 1 );
-
-							glCopyImageSubData(
-								id_temp, GL_TEXTURE_2D, 0,
-								0, 0, 0,
-								id_terrain, GL_TEXTURE_2D, 0,
-								x + size_terrain_texture_padding,
-								y + i,
-								0,
-								size_terrain_texture, 1, 1 );
-
-							glCopyImageSubData(
-								id_temp, GL_TEXTURE_2D, 0,
-								0, size_terrain_texture - 1, 0,
-								id_terrain, GL_TEXTURE_2D, 0,
-								x + size_terrain_texture_padding,
-								y + size_terrain_texture_padding + size_terrain_texture + i,
-								0,
-								size_terrain_texture, 1, 1 );
-
-							for( int j = 0; j < size_terrain_texture_padding; j++ ) {
-								glCopyImageSubData(
-									id_temp, GL_TEXTURE_2D, 0,
-									0, 0, 0,
-									id_terrain, GL_TEXTURE_2D, 0,
-									x + i,
-									y + j,
-									0,
-									1, 1, 1 );
-
-								glCopyImageSubData(
-									id_temp, GL_TEXTURE_2D, 0,
-									size_terrain_texture - 1, 0, 0,
-									id_terrain, GL_TEXTURE_2D, 0,
-									x + size_terrain_texture_padding + size_terrain_texture + i,
-									y + j,
-									0,
-									1, 1, 1 );
-
-								glCopyImageSubData(
-									id_temp, GL_TEXTURE_2D, 0,
-									0, size_terrain_texture - 1, 0,
-									id_terrain, GL_TEXTURE_2D, 0,
-									x + i,
-									y + size_terrain_texture_padding + size_terrain_texture + j,
-									0,
-									1, 1, 1 );
-
-								glCopyImageSubData(
-									id_temp, GL_TEXTURE_2D, 0,
-									size_terrain_texture - 1, size_terrain_texture - 1, 0,
-									id_terrain, GL_TEXTURE_2D, 0,
-									x + size_terrain_texture_padding + size_terrain_texture + i,
-									y + size_terrain_texture_padding + size_terrain_texture + j,
-									0,
-									1, 1, 1 );
-							}
-						}
-
-						// Lets build the UVS per texture in the atlas map
-						auto & uvs_current = uvs_terrain.back( );
-						uvs_current.push_back(
-							face_uvs { {
-								{ ( float( x + size_terrain_texture_padding + padding ) + pixel_correct ) / size_terrain_atlas,
-								( float( y + size_terrain_texture_padding + padding ) + pixel_correct ) / size_terrain_atlas },
-								{ ( float( x + size_terrain_texture_padding + size_terrain_texture - padding ) - pixel_correct ) / size_terrain_atlas,
-								( float( y + size_terrain_texture_padding + padding ) + pixel_correct ) / size_terrain_atlas },
-								{ ( float( x + size_terrain_texture_padding + size_terrain_texture - padding ) - pixel_correct ) / size_terrain_atlas,
-								( float( y + size_terrain_texture_padding + size_terrain_texture - padding ) - pixel_correct ) / size_terrain_atlas },
-								{ ( float( x + size_terrain_texture_padding + padding ) + pixel_correct ) / size_terrain_atlas,
-								( float( y + size_terrain_texture_padding + size_terrain_texture - padding ) - pixel_correct ) / size_terrain_atlas }
-							} } 
-						);
-
-						succ++; tex_succ++;
-						index++;
-
-						out.str( "" );
-						out << "SUCCESS: " << dir_iter_texture->path( ).string( );
-						client.gui_mgr.print_to_console( out.str( ) );
-						printTabbedLine( 2, out.str( ) );
-					}
-					else {
-						out.str( "" );
-						out << "ERROR: " << dir_iter_texture->path( ).string( );
-						client.gui_mgr.print_to_console( out.str( ) );
-						printTabbedLine( 2, out.str( ) );
-					}
-				}
+		// Lets iterate all the png files in each block directory
+		for( directory_iterator dir_iter_texture( dir_iter_blocks->path( ) ); dir_iter_texture != directory_iterator( ); dir_iter_texture++ ) {
+			if( is_regular_file( dir_iter_texture->path( ) ) && dir_iter_texture->path( ).extension( ).string( ) != ".png" ) {
+				continue;
 			}
 
-			if( tex_succ == 0 ) {
-				x = ( index * ( size_terrain_texture + 2 * size_terrain_texture_padding ) ) % size_terrain_atlas;
-				y = ( ( index * ( size_terrain_texture + 2 * size_terrain_texture_padding ) ) / size_terrain_atlas )
-					* ( size_terrain_texture + 2 * size_terrain_texture_padding );
+			id_copy = SOIL_load_OGL_texture(
+				dir_iter_texture->path( ).string( ).c_str( ),
+				SOIL_LOAD_RGBA,
+				id_copy,
+				SOIL_FLAG_POWER_OF_TWO | SOIL_FLAG_INVERT_Y );
 
-				auto & uvs_current = uvs_terrain.back( );
-				uvs_current.push_back(
-					face_uvs { {
-						{ ( float( x + size_terrain_texture_padding + padding ) + pixel_correct ) / size_terrain_atlas,
-						( float( y + size_terrain_texture_padding + padding ) + pixel_correct ) / size_terrain_atlas },
-						{ ( float( x + size_terrain_texture_padding + size_terrain_texture - padding ) - pixel_correct ) / size_terrain_atlas,
-						( float( y + size_terrain_texture_padding + padding ) + pixel_correct ) / size_terrain_atlas },
-						{ ( float( x + size_terrain_texture_padding + size_terrain_texture - padding ) - pixel_correct ) / size_terrain_atlas,
-						( float( y + size_terrain_texture_padding + size_terrain_texture - padding ) - pixel_correct ) / size_terrain_atlas },
-						{ ( float( x + size_terrain_texture_padding + padding ) + pixel_correct ) / size_terrain_atlas,
-						( float( y + size_terrain_texture_padding + size_terrain_texture - padding ) - pixel_correct ) / size_terrain_atlas }
-						} } );
+			glCopyImageSubData(
+				id_copy, GL_TEXTURE_2D, 0,
+				0, 0, 0,
+				id_terrain, GL_TEXTURE_2D_ARRAY, 0,
+				0, 0, layer,
+				size_terrain_texture, size_terrain_texture, 1 );
 
-				out.str( "" );
-				out << "ERROR: There is no texture for " << dir_iter_blocks->path( ).filename( ).string( );
-				client.gui_mgr.print_to_console( out.str( ) );
-				printTabbedLine( 2, out.str( ) );
+			auto & uvs_current = uvs_terrain.back( );
+			uvs_current.push_back(
+				FaceUvs { {
+					{ 0.0f, 0.0f, ( float ) layer },
+					{ 1.0f, 0.0f, ( float ) layer },
+					{ 1.0f, 1.0f, ( float ) layer },
+					{ 0.0f, 1.0f, ( float ) layer }
+				} }
+			);
 
-				index++;
-			}
+			printTabbedLine( 1, "Texture: " + dir_iter_texture->path( ).string( ) );
+
+			layer++;
 		}
 	}
 
-	glBindTexture( GL_TEXTURE_2D, id_terrain );
+	glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT );
+	glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT );
+	glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 
-	glGenerateMipmap( GL_TEXTURE_2D );
-
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-
-	out.str( "" );
-	out << "Loaded: " << succ << " Total: " << index;
-	client.gui_mgr.print_to_console( out.str( ) );
-	client.gui_mgr.print_to_console( std::string( "" ) );
-	printTabbedLine( 2, out.str( ) );
+	glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 }
 
 void TextureMgr::load_skybox( ) { 
@@ -454,57 +411,26 @@ void TextureMgr::load_materials( ) {
 	} };
 }
 
-void TextureMgr::init( ) {
-	printTabbedLine( 0, "Init TextureMgr..." );
-
-	printTabbedLine( 1, "Loading textures..." );
-
-	client.gui_mgr.print_to_console( "Loading Raw Textures and UVs:" );
-
-	//client.gui_mgr.print_to_console( std::string( "Loading Raw Textures and UVs:" ) );
-
-	load_terrain( );
-	load_skybox( );
-	load_sun( );
-	load_fonts( );
-	load_materials( );
-
-	printTabbedLine( 2, checkGlErrors( ) );
-
-	printTabbedLine( 1, "...Loading textures" );
-
-	printTabbedLine( 0, "...Init TextureMgr" );
-	std::cout << std::endl;
-
-	load_shader( "./Shaders/Test.vs", "./Shaders/Test.fs", id_prog );
-	glUseProgram( id_prog );
-	int prog_sampler = glGetUniformLocation( id_prog, "frag_sampler" );
-
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, id_terrain );
-	glUniform1i( prog_sampler, 0 );
-
-	glActiveTexture( GL_TEXTURE0 );
-
-	int prog_fade_max = glGetUniformLocation( id_prog, "fade_max" );
-	glUniform1f( prog_fade_max, Chunk::size_x * World::size_x - Chunk::size_x / 2.0f );
-
-	int prog_fade_min = glGetUniformLocation( id_prog, "fade_min" );
-	glUniform1f( prog_fade_min, Chunk::size_x * World::size_x - Chunk::size_x * 1.5f );
-}
-
 void TextureMgr::update( ) {
-	use_prog( );
+	glBindBuffer( GL_UNIFORM_BUFFER, id_ubo_mvp );
+	auto & matrices = client.display_mgr.camera.mvp_matrices;
+	matrices.time_game = client.time_mgr.get_time( TimeStrings::GAME );
+	glBufferSubData( GL_UNIFORM_BUFFER, 0, sizeof( MVPMatrices ), &matrices );
 
-	GLuint prog_camera = glGetUniformLocation( id_prog, "pos_camera" );
-	GLuint prog_mat_view = glGetUniformLocation( id_prog, "mat_view" );
-	GLuint prog_mat_perspective = glGetUniformLocation( id_prog, "mat_perspective" );
-	GLuint prog_time = glGetUniformLocation( id_prog, "time" );
+	glBindBuffer( GL_UNIFORM_BUFFER, id_ubo_lights );
+	auto & light_data = client.chunk_mgr.get_light_data( );
 
-	glUniform3f( prog_camera, client.display_mgr.camera.pos_camera.x, client.display_mgr.camera.pos_camera.y, client.display_mgr.camera.pos_camera.z );
-	glUniformMatrix4fv( prog_mat_view, 1, GL_FALSE, glm::value_ptr( client.display_mgr.camera.mat_view ) );
-	glUniformMatrix4fv( prog_mat_perspective, 1, GL_FALSE, glm::value_ptr( client.display_mgr.camera.mat_perspective ) );
-	glUniform1f( prog_time, client.time_mgr.get_time( TimeStrings::GAME ) );
+	glBufferSubData( GL_UNIFORM_BUFFER, 0, sizeof( LightData ), &light_data );
+	/*
+	int index = 0;
+	glBufferSubData( GL_UNIFORM_BUFFER, index, sizeof( LightData::SunData ), &light_data.sun_data );
+	index += sizeof( LightData::SunData );
+	glBufferSubData( GL_UNIFORM_BUFFER, index, sizeof( GLint ) + light_data.num_emitter * sizeof( glm::vec4 ), &light_data.num_emitter );
+	index += sizeof( GLint ) + light_data.max_emitters * sizeof( glm::vec4 );
+	glBufferSubData( GL_UNIFORM_BUFFER, index, light_data.num_emitter * sizeof( glm::vec4 ), &light_data.list_color );
+	index += light_data.max_emitters * sizeof( glm::vec4 );
+	glBufferSubData( GL_UNIFORM_BUFFER, index, light_data.num_emitter * sizeof( GLfloat ), &light_data.list_radius );
+	*/
 }
 
 void TextureMgr::read_file( std::string const & path_file, std::string & data ) {
@@ -533,7 +459,6 @@ void TextureMgr::load_vert_shader( std::string const & path_file, GLuint & id_ve
 	int length;
 
 	// Compile vertex shader
-	std::cout << "Compiling vertex shader." << std::endl;
 	id_vert = glCreateShader( GL_VERTEX_SHADER );
 	glShaderSource( id_vert, 1, &ptr_data_vert, NULL );
 	glCompileShader( id_vert );
@@ -558,7 +483,6 @@ void TextureMgr::load_frag_shader( std::string const & path_file, GLuint & id_fr
 	int length;
 
 	// Compile fragment shader
-	std::cout << "Compiling fragment shader." << std::endl;
 	id_frag = glCreateShader( GL_FRAGMENT_SHADER );
 	glShaderSource( id_frag, 1, &ptr_data_frag, NULL );
 	glCompileShader( id_frag );
@@ -582,7 +506,6 @@ void TextureMgr::load_shader( std::string const & path_vert, std::string const &
 	load_vert_shader( path_vert, id_vert );
 	load_frag_shader( path_frag, id_frag );
 
-	std::cout << "Linking program" << std::endl;
 	id_prog = glCreateProgram( );
 	glAttachShader( id_prog, id_vert );
 	glAttachShader( id_prog, id_frag );
@@ -597,8 +520,8 @@ void TextureMgr::load_shader( std::string const & path_vert, std::string const &
 		std::cout << &error_prog[ 0 ] << std::endl;
 	}
 
-	//glDeleteShader( id_vert );
-	//glDeleteShader( id_frag );
+	glDeleteShader( id_vert );
+	glDeleteShader( id_frag );
 }
 
 int TextureMgr::get_num_blocks( ) {
@@ -608,36 +531,48 @@ int TextureMgr::get_num_blocks( ) {
 int TextureMgr::get_num_block_textures( int const id_block ) {
 	return uvs_terrain[ id_block ].size( );
 }
-
+ 
 void TextureMgr::bind_skybox( ) {
-	if( id_bound != id_skybox ) { 
-		id_bound = id_skybox;
-		glBindTexture( GL_TEXTURE_2D, id_bound );
+	if( id_texture != id_skybox ) { 
+		id_texture = id_skybox;
+		glActiveTexture( GL_TEXTURE0 );
+		glBindTexture( GL_TEXTURE_2D, id_texture );
 	}
 }
 
 void TextureMgr::bind_terrain( ) {
-	if( id_bound != id_terrain ) {
-		id_bound = id_terrain;
-		glBindTexture( GL_TEXTURE_2D, id_bound );
+	if( id_texture != id_terrain ) {
+		id_texture = id_terrain;
+		glActiveTexture( GL_TEXTURE0 );
+		glBindTexture( GL_TEXTURE_2D_ARRAY, id_texture );
 	}
 }
 
 void TextureMgr::bind_fonts( ) { 
-	if( id_bound != id_fonts ) { 
-		id_bound = id_fonts;
-		glBindTexture( GL_TEXTURE_2D, id_bound );
+	if( id_texture != id_fonts ) { 
+		id_texture = id_fonts;
+		glActiveTexture( GL_TEXTURE0 );
+		glBindTexture( GL_TEXTURE_2D, id_texture );
 	}
 }
 
 void TextureMgr::bind_materials( ) {
-	if( id_bound != id_materials ) {
-		id_bound = id_materials;
-		glBindTexture( GL_TEXTURE_2D, id_bound );
+	if( id_texture != id_materials ) {
+		id_texture = id_materials;
+		glActiveTexture( GL_TEXTURE0 );
+		glBindTexture( GL_TEXTURE_2D, id_texture );
 	}
-}
+}     
 
-face_uvs & TextureMgr::get_uvs_block( int const id_block, int const id_texture ) {
+FaceUvs & TextureMgr::get_uvs_block( int const id_block, int const id_texture ) {
+	/*float id_tex = id_block + id_texture + 1;
+
+	return { 
+		0.0f, 0.0f, id_tex,
+		1.0f, 0.0f, id_tex,
+		1.0f, 1.0f, id_tex,
+		0.0f, 1.0f, id_tex
+	};*/
 	return uvs_terrain[ id_block ][ id_texture ];
 }
 

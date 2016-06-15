@@ -24,6 +24,9 @@ struct ECState {
 	glm::vec3 rot_veloc;
 	glm::vec3 rot_accel;
 
+	glm::mat4 mat_model;
+	glm::mat3 mat_norm;
+
 	int id_block;
 
 	bool is_gravity = false;
@@ -46,9 +49,6 @@ struct EntityLoader {
 class Entity {
 public:
 	Handle< ECState > h_state;
-
-	GLuint id_vbo;
-	GLuint id_vao;
 
 	int id = 0;
 	int time_live = 0;

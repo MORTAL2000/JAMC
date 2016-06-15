@@ -185,24 +185,36 @@ bool Directional::is_within_range( glm::ivec3 const & point, int const range, gl
 
 std::string Directional::print_vec( glm::ivec2 vec ) {
 	std::ostringstream output;
-	output << vec.x << " " << vec.y;
+	output << vec.x << ", " << vec.y;
 	return output.str( );
 }
 
 std::string Directional::print_vec( glm::vec2 vec ) {
 	std::ostringstream output;
-	output << vec.x << " " << vec.y;
+	output << vec.x << ", " << vec.y;
 	return output.str( );
 }
 
 std::string Directional::print_vec( glm::ivec3 vec ) {
 	std::ostringstream output;
-	output << vec.x << " " << vec.y << " " << vec.z;
+	output << vec.x << ", " << vec.y << ", " << vec.z;
 	return output.str( );
 }
 
 std::string Directional::print_vec( glm::vec3 vec ) {
 	std::ostringstream output;
-	output << vec.x << " " << vec.y << " " << vec.z;
+	output << vec.x << ", " << vec.y << ", " << vec.z;
+	return output.str( );
+}
+
+std::string Directional::print_vec( glm::ivec4 vec ) {
+	std::ostringstream output;
+	output << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w;
+	return output.str( );
+}
+
+std::string Directional::print_vec( glm::vec4 vec ) {
+	std::ostringstream output;
+	output << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w;
 	return output.str( );
 }

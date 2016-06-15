@@ -144,6 +144,9 @@ FuncPage PageFuncs::alloc_static = [ ] ( Page & page ) {
 	page.vec_dim.x = 650;
 	page.vec_dim.y = 9 * data_static.size_text + comp_title.vec_dim.y + 10;
 
+	//std::cout << "Window y: " << page.client->display_mgr.get_window( ).y << std::endl;
+	//std::cout << "Statid dim y: " << page.vec_dim.y << std::endl;
+	//std::cout << "final y pos: " << page.client->display_mgr.get_window( ).y - page.vec_dim.y << std::endl;
 	page.vec_pos.y = page.client->display_mgr.get_window( ).y - page.vec_dim.y;
 
 	return true;

@@ -4,6 +4,8 @@
 
 #include <sstream>
 #include <iomanip>
+#include <Windows.h>
+#include <timeapi.h>
 
 Client::Client( ) :
 	Manager( *this ),
@@ -63,12 +65,6 @@ void Client::thread_main_loop( ) {
 			time_mgr.add_time( TimeStrings::GAME, TIME_FRAME_MILLI );
 		}
 
-		/*int time_main = ( 1000.0f / 144.0f ) -
-			time_mgr.get_record_curr( RecordStrings::UPDATE_PRE ) -
-			time_mgr.get_record_curr( RecordStrings::UPDATE );*/
-		// nieve time loop - change to actaul time left in frame
-		thread_mgr.loop_main( TIME_FRAME_MILLI / 3.0f );
-
 		time_mgr.end_record( RecordStrings::UPDATE );
 		time_mgr.push_record( RecordStrings::UPDATE );
 
@@ -80,23 +76,37 @@ void Client::thread_main_loop( ) {
 		time_mgr.end_record( RecordStrings::RENDER );
 		time_mgr.push_record( RecordStrings::RENDER );
 
+		float time_main = TIME_FRAME_MILLI -
+			time_mgr.get_record_curr( RecordStrings::UPDATE_PRE ) -
+			time_mgr.get_record_curr( RecordStrings::UPDATE ) -
+			time_mgr.get_record_curr( RecordStrings::RENDER ) -
+			0.25f;
+		//if( time_main < 0.5f ) time_main = 0.5f;
+		thread_mgr.loop_main( time_main );
+
 		float time_sleep = TIME_FRAME_MILLI -
 			time_mgr.get_record_curr( RecordStrings::UPDATE_PRE ) -
 			time_mgr.get_record_curr( RecordStrings::UPDATE ) -
+			time_mgr.get_record_curr( RecordStrings::TASK_MAIN ) -
 			time_mgr.get_record_curr( RecordStrings::RENDER );
 
-		time_mgr.begin_record( RecordStrings::SLEEP );
-		time_mgr.end_record( RecordStrings::SLEEP );
-
-		while( time_mgr.get_record_curr( RecordStrings::SLEEP ) < time_sleep ) { 
+		if( time_sleep > 0 ) {
+			time_mgr.begin_record( RecordStrings::SLEEP );
 			time_mgr.end_record( RecordStrings::SLEEP );
-		}
 
-		time_mgr.push_record( RecordStrings::SLEEP );
+			float time_curr_sleep;
+			while( ( time_curr_sleep = time_mgr.get_record_curr( RecordStrings::SLEEP ) ) < time_sleep ) {
+				time_mgr.end_record( RecordStrings::SLEEP );
+			}
+
+			time_mgr.push_record( RecordStrings::SLEEP );
+		}
 	}
 }
 
 void Client::init( ) {
+	//timeBeginPeriod( 1 );
+
 	resource_mgr.init( );
 	thread_mgr.init( );
 	display_mgr.init( );
@@ -123,10 +133,20 @@ void Client::update( ) {
 	gui_mgr.print_to_static( out.str( ) );
 
 	input_mgr.update( );
+
+	time_mgr.begin_record( RecordStrings::UPDATE_TIME );
 	time_mgr.update( );
+	time_mgr.end_record( RecordStrings::UPDATE_TIME );
+	time_mgr.push_record( RecordStrings::UPDATE_TIME );
+
 	display_mgr.update( );
 	texture_mgr.update( );
+
+	time_mgr.begin_record( RecordStrings::UPDATE_GUI );
 	gui_mgr.update( );
+	time_mgr.end_record( RecordStrings::UPDATE_GUI );
+	time_mgr.push_record( RecordStrings::UPDATE_GUI );
+
 	chunk_mgr.update( );
 	entity_mgr.update( );
 	thread_mgr.update( );
@@ -144,7 +164,7 @@ void Client::render( ) {
 
 	entity_mgr.render( );
 
-	client.texture_mgr.unuse_prog( );
+	client.texture_mgr.unbind_program( );
 
 	render_output( );
 	client.time_mgr.end_record( RecordStrings::RENDER_DRAW );
@@ -170,8 +190,7 @@ void Client::render_output( ) {
 
 	gui_mgr.render( );
 	time_mgr.render( );
-	display_mgr.draw_block_select( );
-	//client.display_mgr.draw_console( );
+	display_mgr.block_selector.render( );
 
 	glEnable( GL_LIGHTING );
 

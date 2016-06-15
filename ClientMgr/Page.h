@@ -5,6 +5,7 @@
 #include "ResourceMgr.h"
 #include "PageFuncs.h"
 #include "PageComp.h"
+#include "VBO.h"
 
 #include <vector>
 #include <typeindex>
@@ -14,7 +15,9 @@
 class Page {
 public:
 	Client * client;
-	GLuint id_vbo;
+
+	VBO vbo;
+	glm::mat4 mat_model;
 
 	glm::ivec2 vec_pos;
 	glm::ivec2 vec_dim;
@@ -23,9 +26,12 @@ public:
 
 	Color4 color;
 
+	bool is_dirty;
 	bool is_hold;
 	bool is_edit;
 	bool is_visibile;
+
+	int cnt_update = 0;
 
 	std::vector< Handle< PageComp > > list_comps;
 	std::unordered_map< std::string, PageComp * > map_comps;

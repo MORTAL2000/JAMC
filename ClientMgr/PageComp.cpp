@@ -17,4 +17,4 @@ PageComp::~PageComp( ) { }
 void PageComp::position( ) { 
 	vec_pos = glm::ivec2( vec_anchor_pos * glm::vec2( parent->vec_dim ) ) + vec_offset_pos;
 	vec_dim = glm::ivec2( vec_anchor_dim * glm::vec2( parent->vec_dim ) ) + vec_offset_dim - vec_pos;
-}
+}  

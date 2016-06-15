@@ -4,6 +4,7 @@
 
 #include "Manager.h"
 #include "Chunk.h"
+#include "VBO.h"
 
 #include <chrono>
 #include <unordered_map>
@@ -35,6 +36,8 @@ struct RecordStrings {
 		UPDATE_SEC,
 		UPDATE_QUEUE,
 		UPDATE_MAP,
+		UPDATE_TIME,
+		UPDATE_GUI,
 		RENDER,
 		RENDER_DRAW,
 		RENDER_EXLUSION,
@@ -81,11 +84,8 @@ private:
 	static const int padding = 5;
 	static glm::ivec2 dim_graph;
 
+	VBO vbo;
 	bool is_dirty;
-	GLuint id_vbo;
-	int index_graph = 0;
-	int index_text = 0;
-	std::vector< ChunkVert > mesh_buffer;
 	void mesh_graphs( );
 
 public:

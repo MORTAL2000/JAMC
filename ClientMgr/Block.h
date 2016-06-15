@@ -7,7 +7,7 @@
 #include <string>
 #include <array>
 
-typedef std::array< float, 2 > UV;
+typedef std::array< float, 3 > UV;
 typedef std::array< float, 3 > Vert;
 
 typedef std::array< UV, 4 > FaceUvs;
@@ -38,6 +38,7 @@ public:
 	int const id;
 	Color4 color;
 	std::array< FaceUvs, FaceDirection::FD_Size > uvs;
+	std::array< int, FaceDirection::FD_Size > orientation;
 	std::string const name;
 	bool is_trans;
 
@@ -46,6 +47,7 @@ public:
 
 public:
 	FaceUvs & get_uvs( FaceDirection const face );
+	int get_orientation( FaceDirection const face );
 
 	bool is_visible( Block const & block );
 };

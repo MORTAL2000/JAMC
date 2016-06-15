@@ -1,5 +1,7 @@
 #include "EntityMgr.h"
 #include "Client.h"
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtc/matrix_inverse.hpp"
 
 const char * ErrorEntityLookup::to_text[ ] = {
 	"No entity error!",
@@ -13,40 +15,65 @@ EntityMgr::EntityMgr( Client & client ) :
 
 EntityMgr::~EntityMgr( ) { }
 
-void EntityMgr::entity_vbo( Entity & entity ) { 
-	glGenVertexArrays( 1, &entity.id_vao );
-	glGenBuffers( 1, &entity.id_vbo );
+const ChunkFaceIndices indicies[ 6 ] { 
+	{ 0, 1, 2,		2, 3, 0 },
+	{ 4, 5, 6,		6, 7, 4 },
+	{ 8, 9, 10,		10, 11, 8 },
+	{ 12, 13, 14,	14, 15, 12 },
+	{ 16, 17, 18,	18, 19, 16 },
+	{ 20, 21, 22,	22, 23, 20 }
+};
 
-	glBindVertexArray( entity.id_vao );
-	glBindBuffer( GL_ARRAY_BUFFER, entity.id_vbo );
-
-	glEnableClientState( GL_VERTEX_ARRAY );
-	glEnableClientState( GL_COLOR_ARRAY );
-	glEnableClientState( GL_NORMAL_ARRAY );
-	glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-
-	glVertexPointer( 3, GL_FLOAT, sizeof( ChunkVert ), BUFFER_OFFSET( 0 ) );
-	glColorPointer( 4, GL_FLOAT, sizeof( ChunkVert ), BUFFER_OFFSET( 12 ) );
-	glNormalPointer( GL_FLOAT, sizeof( ChunkVert ), BUFFER_OFFSET( 28 ) );
-	glTexCoordPointer( 2, GL_FLOAT, sizeof( ChunkVert ), BUFFER_OFFSET( 40 ) );
-
-	//glBindBuffer( GL_ARRAY_BUFFER, 0 );
-	glBindVertexArray( 0 );
-}
-
-static int num_entity = 5000;
+static int num_entity = 10000;
+static std::vector< ChunkFaceVertices > list_faces;
 
 void EntityMgr::init( ) { 
 	client.resource_mgr.reg_pool< Entity >( num_entity );
 	client.resource_mgr.reg_pool< ECState >( num_entity );
 	client.resource_mgr.reg_pool< ECTnt >( num_entity );
 	client.resource_mgr.reg_pool< ECGravBlock >( num_entity );
+	client.resource_mgr.reg_pool< ECSpawnBlock >( num_entity );
+
 	list_entity.reserve( num_entity );
 	map_entity.reserve( num_entity );
 
-	client.resource_mgr.pool< Entity>( ).apply_func_all( [ & ] ( Entity & entity ) { 
-		entity_vbo( entity );
-	} );
+	vbo.init( );
+
+	for( int i = 0; i < FaceDirection::FD_Size; i++ ) {
+		put_face( 
+			list_faces, 
+			glm::ivec3( 0, 0, 0 ), 
+			Block::get_verts( ( FaceDirection ) i ), 
+			Color4( 1.0f, 1.0f, 1.0f, 1.0f ),
+			Directional::get_vec_dir_f( ( FaceDirection ) i ),
+			client.chunk_mgr.get_block_data( 0 ).get_uvs( ( FaceDirection ) i ) 
+		);
+	}
+
+	vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
+		"Entity",
+		client.texture_mgr.id_terrain,
+		std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 } 
+	) );
+
+	for( int i = 0; i < FaceDirection::FD_Size; ++i ) {
+		auto & verts = Block::get_verts( ( FaceDirection ) i );
+		auto color = Color4( 1.0f, 1.0f, 1.0f, 1.0f );
+		auto & norm = Directional::get_vec_dir_f( ( FaceDirection ) i );
+		auto & uvs = client.chunk_mgr.get_block_data( 0 ).get_uvs( ( FaceDirection ) i );
+
+		for( int j = 0; j < 4; ++j ) { 
+			vbo.push_data( VBO::Vertex { 
+				verts[ j ][ 0 ] - 0.5f, verts[ j ][ 1 ] - 0.5f, verts[ j ][ 2 ] - 0.5f,
+				color.r, color.g, color.b, color.a,
+				norm[ 0 ], norm[ 1 ], norm[ 2 ],
+				uvs[ j ][ 0 ], uvs[ j ][ 1 ], 0 
+			} );
+		}
+	}
+
+	vbo.finalize_set( );
+	vbo.buffer( );
 
 	alloc_base = [ ] ( Client & client, Entity & entity ) {
 		entity.time_live = client.time_mgr.get_time( TimeStrings::GAME );
@@ -81,6 +108,32 @@ void EntityMgr::init( ) {
 
 		return ErrorEntity::EE_Ok;
 	};
+
+	loader_add(
+		"Player",
+		[ ] ( Client & client, Entity & entity ) {
+			if( !entity.add_data< ECPlayer >( client ) ) { 
+				return ErrorEntity::EE_Failed;
+			}
+
+			auto & ec_state = entity.h_state.get( );
+			ec_state.is_gravity = true;
+
+			return ErrorEntity::EE_Ok;
+		},
+		[ ] ( Client & client, Entity & entity ) {
+
+			return ErrorEntity::EE_Ok;
+		},
+		[ ] ( Client & client, Entity & entity ) { 
+			
+			return ErrorEntity::EE_Ok;
+		},
+		[ ] ( Client & client, Entity & entity ) {
+
+			return ErrorEntity::EE_Ok;
+		}
+	);
 
 	loader_add( 
 		"Tnt",
@@ -189,15 +242,14 @@ void EntityMgr::init( ) {
 	loader_add( 
 		"Line Block",
 		[ ] ( Client & client, Entity & entity ) {
-			entity.id = client.display_mgr.block_select.id_block;
-			entity.color.set( 0.5f, 0.5f, 0.5f, 1.0f );
+			entity.id = client.display_mgr.block_selector.get_id_block( );
+			entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
 
 			auto & state = entity.h_state.get( );
 			state.pos = client.display_mgr.camera.pos_camera;
 			state.veloc = client.display_mgr.camera.vec_front * 50.0f;
-			state.is_gravity = false;
-
 			state.rot = client.display_mgr.camera.rot_camera;
+			state.is_gravity = false;
 
 			return ErrorEntity::EE_Ok;
 		},
@@ -234,33 +286,144 @@ void EntityMgr::init( ) {
 			return ErrorEntity::EE_Ok;
 		}
 	);
+
+	loader_add(
+		"Spin Block",
+		[ ] ( Client & client, Entity & entity ) {
+			entity.id = client.display_mgr.block_selector.get_id_block( );
+			entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
+
+			auto & state = entity.h_state.get( );
+			state.pos = client.display_mgr.camera.pos_camera;
+			state.rot_veloc.x = 25.0f;
+			state.is_gravity = false;
+
+			return ErrorEntity::EE_Ok;
+		},
+		[ ] ( Client & client, Entity & entity ) {
+
+			return ErrorEntity::EE_Ok;
+		},
+		[ ] ( Client & client, Entity & entity ) {
+			auto & ec_state = entity.h_state.get( );
+
+			if( client.time_mgr.get_time( TimeStrings::GAME ) - entity.time_live > 10000 ) {
+				entity.is_shutdown = true;
+			}
+
+			return ErrorEntity::EE_Ok;
+		},
+		[ ] ( Client & client, Entity & entity ) {
+
+			return ErrorEntity::EE_Ok;
+		}
+	);
+
+	loader_add( 
+		"Spawn Block",
+		[ ] ( Client & client, Entity & entity ) {
+			if( !entity.add_data< ECSpawnBlock >( client ) ) { 
+				return ErrorEntity::EE_Failed;
+			}
+
+			entity.id = client.display_mgr.block_selector.get_id_block( );
+			entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
+
+			auto & ec_state = entity.h_state.get( );
+			ec_state.pos = client.display_mgr.camera.pos_camera;
+			ec_state.veloc = client.display_mgr.camera.vec_front * 50.0f;
+			ec_state.rot = client.display_mgr.camera.rot_camera;
+			ec_state.is_gravity = false;
+
+			auto & ec_spawn = entity.get_data< ECSpawnBlock >( ).get( );
+			ec_spawn.time_life = 3000;
+			ec_spawn.time_last = client.time_mgr.get_time( TimeStrings::GAME );
+			ec_spawn.time_update = 100;
+			ec_spawn.num_spawn = 200;
+
+			return ErrorEntity::EE_Ok;
+		},
+		[ ] ( Client & client, Entity & entity ) {
+			entity.clear_data< ECSpawnBlock >( );
+
+			return ErrorEntity::EE_Ok;
+		},
+		[ ] ( Client & client, Entity & entity ) {
+			auto & ec_state = entity.h_state.get( );
+			auto & ec_spawn = entity.get_data< ECSpawnBlock >( ).get( );
+
+			if( client.time_mgr.get_time( TimeStrings::GAME ) - ec_spawn.time_last > ec_spawn.time_update ) {
+				client.thread_mgr.task_main( 10, [ &, pos = ec_state.pos, num_spawn = ec_spawn.num_spawn ]( ) {
+					for( int i = 0; i < num_spawn; i++ ) {
+						client.entity_mgr.entity_add( "Grav Block", [ pos = pos ] ( Client & client, Entity & entity ) {
+							entity.id = std::rand( ) % client.chunk_mgr.get_num_blocks( );
+							auto & ec_state = entity.h_state.get( );
+
+							ec_state.pos = pos;
+							ec_state.veloc =
+								glm::normalize(
+									Directional::get_fwd(
+										glm::vec3(
+											std::rand( ) % 360,
+											std::rand( ) % 360,
+											std::rand( ) % 360
+										)
+									)
+								)
+								* ( float ) ( std::rand( ) % 25 + 15 );
+							entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
+
+							return ErrorEntity::EE_Ok;
+						} );
+					}
+				} );
+
+				ec_spawn.time_last = client.time_mgr.get_time( TimeStrings::GAME );
+			}
+
+			if( client.time_mgr.get_time( TimeStrings::GAME ) - entity.time_live > ec_spawn.time_life ) {
+				entity.is_shutdown = true;
+			}
+
+			return ErrorEntity::EE_Ok;
+		},
+		[ ] ( Client & client, Entity & entity ) {
+
+			return ErrorEntity::EE_Ok;
+		}
+	);
 }
 
-static std::vector< ChunkFace > list_faces;
-
 void EntityMgr::update( ) { 
-	Entity * entity;
-	
+	//Entity * entity;
+
 	std::lock_guard< std::mutex > lock( mtx_entity );
+
+	client.resource_mgr.pool< Entity >().apply_func_live_threads( client.thread_mgr,
+		10, client.thread_mgr.cnt_thread_sync( ), [ & ] ( Entity & entity ) { 
+
+		auto & state = entity.h_state.get( );
+
+		entity_integrate( state );
+		entity_terrain_collide( state );
+		entity.loader->ef_update( client, entity );
+
+		state.mat_model = glm::mat4( 1.0f );
+		state.mat_model = glm::translate( state.mat_model, state.pos );
+		state.mat_model = glm::rotate( state.mat_model, glm::radians( -state.rot.z ), glm::vec3( 0, 0, 1 ) );
+		state.mat_model = glm::rotate( state.mat_model, glm::radians( -state.rot.y ), glm::vec3( 0, 1, 0 ) );
+		state.mat_model = glm::rotate( state.mat_model, glm::radians( -state.rot.x ), glm::vec3( 1, 0, 0 ) );
+		//state.mat_model = glm::translate( state.mat_model, glm::vec3( -0.5f, -0.5f, -0.5f ) );
+		state.mat_norm = glm::inverseTranspose( glm::mat3( state.mat_model ) );
+	} );
 
 	auto iter_entity = list_entity.begin( );
 	while( iter_entity != list_entity.end( ) ) {
-		entity = &iter_entity->get( );
-
-		if( entity->is_shutdown ) {
+		if( iter_entity->get( ).is_shutdown ) {
 			entity_remove( *iter_entity );
 			iter_entity = list_entity.erase( iter_entity );
 			continue;
 		}
-
-		auto & state = entity->h_state.get( );
-
-		entity_integrate( state );
-		entity_terrain_collide( state );
-		entity->loader->ef_update( client, *entity );
-
-		entity_mesh( *entity );
-
 		iter_entity++;
 	}
 
@@ -270,40 +433,25 @@ void EntityMgr::update( ) {
 	client.gui_mgr.print_to_static( out.str( ) );
 }
 
-void EntityMgr::render( ) { 
+void EntityMgr::render( ) {
 	Entity * entity;
-	glm::vec3 * pos;
-	glm::vec3 * rot;
+	client.texture_mgr.bind_program( "Entity" );
 
-	client.texture_mgr.unuse_prog( );
+	static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
+	static GLuint idx_mat_norm = glGetUniformLocation( client.texture_mgr.id_prog, "mat_norm" );
+	static GLuint idx_idx_layer = glGetUniformLocation( client.texture_mgr.id_prog, "idx_layer" );
+	static GLuint idx_frag_color = glGetUniformLocation( client.texture_mgr.id_prog, "entity_color" );
 
 	auto iter = list_entity.begin( );
 	while( iter != list_entity.end( ) ) {
 		entity = &iter->get( );
 
-		if( !entity->is_dirty ) {
-			pos = &entity->h_state.get( ).pos;
-			rot = &entity->h_state.get( ).rot;
+		glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_model ) );
+		glUniformMatrix3fv( idx_mat_norm, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_norm ) );
+		glUniform1f( idx_idx_layer, client.chunk_mgr.get_block_data( entity->id ).get_uvs( FaceDirection::FD_Front )[ 0 ][ 2 ] );
+		glUniform4fv( idx_frag_color, 1, ( const GLfloat * ) &entity->color );
 
-			glPushMatrix( );
-
-			glTranslatef( pos->x, pos->y, pos->z );
-			glTranslatef( 0.5f, 0.5f, 0.5f );
-
-			glRotatef( -rot->z, 0, 0, 1 );
-			glRotatef( -rot->y, 0, 1, 0 );
-			glRotatef( -rot->x, 1, 0, 0 );
-
-			glTranslatef( -0.5f, -0.5f, -0.5f );
-
-			glBindVertexArray( entity->id_vao );
-
-			glDrawArrays( GL_TRIANGLES, 0, 6 * 6 );
-
-			glBindVertexArray( 0 );
-
-			glPopMatrix( );
-		}
+		vbo.render( client );
 
 		iter++;
 	}
@@ -443,27 +591,5 @@ void EntityMgr::entity_stop( ECState & ec_state ) {
 }
 
 void EntityMgr::entity_mesh( Entity & entity ) { 
-	if( entity.is_dirty ) {
-		FaceVerts const * verts;
-		Color4 * color;
-		glm::vec3 const * normal;
-		FaceUvs const * uvs;
-		Block & block = client.chunk_mgr.get_block_data( entity.id );
 
-		list_faces.clear( );
-
-		for( int i = 0; i < FaceDirection::FD_Size; i++ ) {
-			verts = &Block::get_verts( ( FaceDirection ) i );
-			color = &entity.color;
-			normal = &Directional::get_vec_dir_f( ( FaceDirection ) i );
-			uvs = &block.get_uvs( ( FaceDirection ) i );
-
-			put_face( list_faces, glm::ivec3( 0, 0, 0 ), *verts, *color, *normal, *uvs );
-		}
-
-		glBindBuffer( GL_ARRAY_BUFFER, entity.id_vbo );
-		glBufferData( GL_ARRAY_BUFFER, list_faces.size( ) * sizeof( ChunkFace ), nullptr, GL_STATIC_DRAW );
-		glBufferData( GL_ARRAY_BUFFER, list_faces.size( ) * sizeof( ChunkFace ), list_faces.data( ), GL_STATIC_DRAW );
-		entity.is_dirty = false;
-	}
 }

@@ -1,27 +1,68 @@
 #pragma once
 
+#include "Globals.h"
+
 #include <vector>
 
-enum TypeGeom { 
-	TG_Points,
-	TG_Lines,
-	TG_Triangles
-};
-
-struct IndexSet { 
-	TypeGeom type;
-	int index;
-	int length;
-	int last_index;
-	int last_length;
-};
-
-template< class T >
 class VBO {
-private:
-	std::vector< T > buff_vertex;
-
 public:
+	enum TypeGeometry {
+		TG_Points,
+		TG_Lines,
+		TG_Triangles,
+		TG_Size
+	};
+
+	static GLuint const GeomNumIndsLookup[ VBO::TypeGeometry::TG_Size ];
+	static GLuint const GeomGLTypeLookup[ VBO::TypeGeometry::TG_Size ];
+
+	struct Vertex {
+		GLfloat pos[ 3 ];
+		GLfloat color[ 4 ];
+		GLfloat norm[ 3 ];
+		GLfloat uv[ 3 ];
+	};
+
+	class IndexSet {
+	private:
+	public:
+		TypeGeometry type;
+
+		std::string const str_prog;
+		GLuint id_tex;
+
+		GLuint num_eles;
+
+		GLuint idx_verts;
+		GLuint len_verts;
+
+		GLuint idx_inds;
+		GLuint len_inds;
+
+		std::vector< GLuint > list_inds;
+
+	private:
+	public:
+		IndexSet( TypeGeometry type, std::string const & str_prog,
+			GLuint id_tex, std::vector< GLuint > & list_inds ); 
+		~IndexSet( );
+
+	};
+
+private:
+	GLuint id_vao;
+	GLuint id_vbo    ;
+	GLuint id_ibo;
+	
+	GLuint size_vbo;
+	GLuint size_ibo;
+	GLuint last_size_vbo;
+	GLuint last_size_ibo;
+
+	GLuint index_end;
+	std::vector< Vertex > list_verts;
+	std::vector< GLuint > list_inds;
+	std::vector< IndexSet > list_sets;
 
 private:
 
@@ -29,7 +70,16 @@ public:
 	VBO( );
 	~VBO( );
 
+	void init( );
+	void push_set( IndexSet & set_idx );
+	void push_data( Vertex const & vert );
+	void push_data( std::vector< Vertex > & list_vert );
+	void finalize_set( );
+
+	void buffer( );
+	void render( Client & client );
+	void render_range( Client & client, GLuint index, GLuint length );
+
 	void clear( );
-	//void start( 
 };
 

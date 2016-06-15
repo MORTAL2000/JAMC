@@ -6,8 +6,14 @@
 #include <vector>
 #include "Block.h"
 #include <array>
+#include <unordered_map>
 
 typedef std::array< std::array< float, 2 >, 4 > face_uvs;
+
+struct ShaderLoader { 
+	std::string name;
+	GLuint id_prog = 0;
+};
 
 class TextureMgr :
 	public Manager {
@@ -18,21 +24,30 @@ private:
 	static int const size_terrain_texture;
 	static int const size_terrain_atlas;
 
-	GLuint id_terrain;
-	GLuint id_temp;
-	GLuint id_skybox;
-	GLuint id_fonts;
-	GLuint id_materials;
-	GLuint id_bound = -1;
+	std::string const path_shaders;
+	std::vector< ShaderLoader > list_shaders;
+	std::unordered_map< std::string, int > map_shaders;
 
-	std::vector< std::vector< face_uvs > > uvs_terrain;
+	GLuint id_copy;
+
+	GLuint id_ubo_mvp;
+	GLuint id_ubo_lights;
+
+	std::vector< std::vector< FaceUvs > > uvs_terrain;
 	std::vector< face_uvs > uvs_skybox;
 	face_uvs uvs_sun;
 	std::vector< face_uvs > uvs_fonts;
 	face_uvs uvs_materials;
 
-public:
-	GLuint id_prog;
+public:	
+	GLuint id_prog = 0;
+	GLuint id_active = 0;
+	GLuint id_texture = 0;
+
+	GLuint id_terrain;
+	GLuint id_skybox;
+	GLuint id_fonts;
+	GLuint id_materials;
 
 private:
 	void load_terrain( );
@@ -40,6 +55,12 @@ private:
 	void load_sun( );
 	void load_fonts( );
 	void load_materials( );
+
+	void read_file( std::string const & path_file, std::string & data );
+	void load_vert_shader( std::string const & path_file, GLuint & id_vert );
+	void load_frag_shader( std::string const & path_file, GLuint & id_frag );
+	void load_shader( std::string const & path_vert, 
+		std::string const & path_frag, GLuint & id_prog );
 
 public:
 	TextureMgr( Client & client );
@@ -51,10 +72,7 @@ public:
 	void end( ) { }
 	void sec( ) { }
 
-	void read_file( std::string const & path_file, std::string & data );
-	void load_vert_shader( std::string const & path_file, GLuint & id_vert );
-	void load_frag_shader( std::string const & path_file, GLuint & id_frag );
-	void load_shader( std::string const & path_vert, std::string const & path_frag, GLuint & id_prog );
+	void loader_add( std::string const & name );
 
 	int get_num_blocks( );
 	int get_num_block_textures( int const id_block );
@@ -64,10 +82,12 @@ public:
 	void bind_fonts( );
 	void bind_materials( );
 
-	void use_prog( ) { glUseProgram( id_prog ); }
-	void unuse_prog( ) { glUseProgram( 0 ); }
+	void bind_program( std::string const & name );
+	void unbind_program( );
 
-	face_uvs & get_uvs_block( int const id_block, int const id_texture );
+	void bind_texture( GLuint const id_active, GLuint const id_texture );
+
+	FaceUvs & get_uvs_block( int const id_block, int const id_texture );
 	face_uvs & get_uvs_skybox( FaceDirection dir_face );
 	face_uvs & get_uvs_sun( );
 	face_uvs & get_uvs_fonts( int const id_font );

@@ -5,7 +5,7 @@
 #include "Manager.h"
 #include "Entity.h"
 #include "Color4.h"
-//#include "Vect.h"
+#include "VBO.h"
 
 #include <mutex>
 
@@ -17,6 +17,10 @@ enum ErrorEntity {
 
 struct ErrorEntityLookup { 
 	static const char * to_text[ ]; 
+};
+
+struct ECPlayer { 
+
 };
 
 struct ECTnt {
@@ -31,6 +35,13 @@ struct ECGravBlock {
 	int time_life;
 };
 
+struct ECSpawnBlock { 
+	int time_last;
+	int time_update;
+	int time_life;
+	int num_spawn;
+};
+
 class EntityMgr : public Manager {
 private:
 	std::vector< EntityLoader > list_loader;
@@ -39,6 +50,8 @@ private:
 	std::mutex mtx_entity;
 	std::vector< Handle< Entity > > list_entity;
 	std::unordered_map< std::string, Entity & > map_entity;
+
+	VBO vbo;
 
 public:
 	EFAlloc alloc_base;
@@ -51,7 +64,6 @@ private:
 
 	void entity_stop( ECState & ec_state );
 
-	void entity_vbo( Entity & entity );
 	void entity_mesh( Entity & entity );
 
 public:

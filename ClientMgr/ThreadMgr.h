@@ -30,6 +30,8 @@ private:
 	int unsigned cnt_total;
 	int unsigned cnt_main_total, cnt_io_total, cnt_async_total, cnt_sync_total;
 	std::vector< int unsigned > cnt_io, cnt_async, cnt_sync;
+	std::vector< int unsigned > cnt_prio_main, cnt_prio_async;
+	std::vector < int unsigned > cnt_prio_main_last, cnt_prio_async_last;
 
 	void loop_io( int const id_thread );
 	void loop_async( int const id_thread );
@@ -49,6 +51,9 @@ public:
 	void task_io( int priority, std::function< void() > func );
 	void task_async( int priority, std::function< void() > func );
 	void task_sync( int priority, std::function< void() > func );
+
+	void select_func_main( bool & is_func, int & priority, std::function< void( ) > & func );
+	void select_func_async( int & priority, std::function< void( ) > & func );
 
 	void loop_main( int const time_max );
 

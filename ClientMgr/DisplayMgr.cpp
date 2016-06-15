@@ -7,10 +7,11 @@
 #include <iostream>
 
 Camera::Camera( ) :
-	pos_camera( 0, Chunk::size_y / 2 + 5, 0 ),
+	pos_camera( 0, Chunk::size_y * 2 / 3, 0 ),
 	rot_camera( 0.0f, 180.0f, 0.0f ) { }
 
 DisplayMgr::DisplayMgr( Client & client ) :
+	block_selector( client ),
 	Manager( client ) { }
 
 DisplayMgr::~DisplayMgr( ) { }
@@ -20,8 +21,8 @@ void DisplayMgr::init( ) {
 
 	init_gl_window( 
 		glm::ivec2( 0, 0 ), 
-		glm::ivec2( 1880, 950 ), 
-		32, 
+		glm::ivec2( 1900, 1000 ), 
+		32,
 		false );
 
 	init_gl( );
@@ -36,24 +37,20 @@ void DisplayMgr::init( ) {
 	printTabbedLine( 1, ( char* ) glGetString( GL_VERSION ) );
 	printTabbedLine( 1, checkGlErrors( ) );
 
-	glGenBuffers( 1, &block_select.id_vbo );
-	block_select.id_block = 0;
-	block_select.is_dirty = true;
-
-	camera.mat_world = glm::mat4( 1.0f );
-	camera.mat_view = glm::mat4( 1.0f );
+	camera.mvp_matrices.mat_world = glm::mat4( 1.0f );
+	camera.mvp_matrices.mat_view = glm::mat4( 1.0f );
 
 	camera.mat_translation = glm::translate( glm::mat4( 1.0f ), -camera.pos_camera );
 	camera.mat_rotation = glm::mat4( 1.0f );
 	camera.mat_rotation = glm::rotate( glm::mat4( 1.0f ), glm::radians( 180.0f ), glm::vec3( 0, 1, 0 ) );
+
+	block_selector.init( );
 
 	printTabbedLine( 0, "...Init DisplayMgr" );
 	std::cout << std::endl;
 }
 
 float mouse_sensitivity = 0.1f;
-
-static int size_select = 100;
 
 void DisplayMgr::update( ) {
 	if( !client.input_mgr.is_cursor_vis( ) ) {
@@ -70,46 +67,14 @@ void DisplayMgr::update( ) {
 	}
 
 	camera.mat_translation = glm::translate( glm::mat4( 1.0f ), -camera.pos_camera );
-
-	camera.mat_view = camera.mat_rotation * camera.mat_translation;
+	camera.mvp_matrices.mat_view = camera.mat_rotation * camera.mat_translation;
+	camera.mvp_matrices.pos_camera = glm::vec4( camera.pos_camera, 1.0f );
 
 	camera.vec_front = Directional::get_fwd( camera.rot_camera );
 	camera.vec_left = Directional::get_left( camera.rot_camera );
 	camera.vec_up = Directional::get_up_aa( camera.rot_camera );
 
-	if( client.input_mgr.get_wheel_delta( ) != 0 ) {
-		block_select.id_block += client.input_mgr.get_wheel_delta( );
-		while( block_select.id_block >= client.chunk_mgr.get_num_blocks( ) ) block_select.id_block -= client.chunk_mgr.get_num_blocks( );
-		while( block_select.id_block < 0 ) block_select.id_block += client.chunk_mgr.get_num_blocks( );
-		block_select.is_dirty = true;
-	}
-
-	if( block_select.is_dirty ) {
-		glBindBuffer( GL_ARRAY_BUFFER, block_select.id_vbo );
-		block_select.mesh_buffer.clear( );
-
-		for( int i = 0; i < FD_Size; i++ ) { 
-			auto & block = client.chunk_mgr.get_block_data( block_select.id_block );
-			auto face = FaceDirection( i );
-
-			auto & verts = Block::get_verts( face );
-			auto & color = block.color;
-			auto & norm = Directional::get_vec_dir_f( face );
-			auto & uvs = block.get_uvs( face );
-			for( int m = 0; m < 4; m++ ) { 
-				block_select.mesh_buffer.push_back( {
-					{ verts[ m ][ 0 ] * size_select, verts[ m ][ 1 ] * size_select, verts[ m ][ 2 ] * size_select },
-					{ color.r, color.g, color.b, color.a },
-					{ norm.x, norm.y, norm.z },
-					{ uvs[ m ][ 0 ], uvs[ m ][ 1 ] },
-					{ 0, 0, 0, 0 }
-				} );
-			}
-		}
-
-		glBufferData( GL_ARRAY_BUFFER, block_select.mesh_buffer.size( ) * sizeof( ChunkVert ), block_select.mesh_buffer.data( ), GL_STATIC_DRAW );
-		block_select.is_dirty = false;
-	}
+	block_selector.update( );
 }
 
 HDC & DisplayMgr::get_HDC( ) { 
@@ -256,6 +221,13 @@ void DisplayMgr::init_gl_window( glm::ivec2 & pos_window, glm::ivec2 & dim_windo
 	if( !wglMakeCurrent( hDC, hRC ) ) { MessageBox( NULL, L"Can't Activate The GL Rendering Context.", L"ERROR", MB_OK | MB_ICONEXCLAMATION ); }						// Try To Activate The Rendering Context
 
 	ShowWindow( hWnd, SW_SHOW );					// Show The Window
+	ShowWindow( hWnd, SW_MAXIMIZE );
+
+	RECT rect_win;
+	GetClientRect( hWnd, &rect_win );
+	dim_window.x = rect_win.right - rect_win.left;
+	dim_window.y = rect_win.bottom - rect_win.top;
+
 	SetForegroundWindow( hWnd );					// Slightly Higher Priority
 	SetFocus( hWnd );								// Sets Keyboard Focus To The Window
 	resize_window( dim_window );					// Set Up Our Perspective GL Screen
@@ -287,7 +259,7 @@ void DisplayMgr::init_gl( ) {
 	//glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 	//( GL_CULL_FACE );
 	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
-	glClearDepth( 100.0f );
+	glClearDepth( 3000.0f );
 
 	//glEnable( GL_CULL_FACE );
 	//glCullFace( GL_BACK );
@@ -323,7 +295,7 @@ void DisplayMgr::resize_window( glm::ivec2 & dim_window ) {
 
 	this->dim_window = dim_window;
 	glViewport( 0, 0, dim_window.x, dim_window.y );
-
+	camera.mvp_matrices.mat_ortho = glm::ortho( 0.0f, ( float ) dim_window.x, 0.0f, ( float ) dim_window.y, 0.0f, 1000.0f );
 	set_proj( );
 }
 
@@ -607,30 +579,6 @@ void DisplayMgr::draw_record_graph( glm::ivec2 & pos_graph, glm::ivec2 & dim_gra
 	}
 }
 
-void DisplayMgr::draw_block_select( ) {
-	client.texture_mgr.bind_terrain( );
-
-	glPushMatrix( );
-
-	int rotate = client.time_mgr.get_time( TimeStrings::GAME ) / 8.0f;
-	while( rotate > 360 ) rotate -= 360;
-
-	glTranslatef( client.display_mgr.dim_window.x - ( size_select + 15 ), ( size_select / 2 + 30 ), -size_select * 2 );
-
-	glRotatef( 15, 1, 0, 0 );
-	glRotatef( rotate, 0, 1, 0 );
-	glTranslatef( -size_select / 2, -size_select / 2, -size_select / 2 );
-
-	glBindBuffer( GL_ARRAY_BUFFER, block_select.id_vbo );
-	glVertexPointer( 3, GL_FLOAT, sizeof( ChunkVert ), BUFFER_OFFSET( 0 ) );
-	glColorPointer( 4, GL_FLOAT, sizeof( ChunkVert ), BUFFER_OFFSET( 12 ) );
-	glNormalPointer( GL_FLOAT, sizeof( ChunkVert ), BUFFER_OFFSET( 28 ) );
-	glTexCoordPointer( 2, GL_FLOAT, sizeof( ChunkVert ), BUFFER_OFFSET( 40 ) );
-	glDrawArrays( GL_QUADS, 0, block_select.mesh_buffer.size( ) );
-
-	glPopMatrix( );
-}
-
 void DisplayMgr::draw_record_graph( glm::ivec2 & pos_graph, glm::ivec2 & dim_graph, std::string const & name_record, float time_ref ) {
 	draw_record_graph( pos_graph, dim_graph, name_record, time_ref, 0 );
 }
@@ -657,6 +605,7 @@ void DisplayMgr::set_ortho( ) {
 	glLoadIdentity( );
 
 	glOrtho( 0, dim_window.x, 0, dim_window.y, 0, 1000 );
+	camera.mvp_matrices.mat_ortho = glm::ortho( 0.0f, ( float ) dim_window.x, 0.0f, ( float  ) dim_window.y, 0.0f, 1000.0f );
 
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity( );
@@ -667,7 +616,7 @@ void DisplayMgr::set_proj( ) {
 	glLoadIdentity( );
 
 	gluPerspective( 35.0f, float( dim_window.x ) / dim_window.y, 0.2f, 3000.0f );
-	camera.mat_perspective = glm::perspective( glm::radians( 35.0f ), float( dim_window.x ) / dim_window.y, 0.2f, 3000.0f );
+	camera.mvp_matrices.mat_perspective = glm::perspective( glm::radians( 35.0f ), float( dim_window.x ) / dim_window.y, 0.2f, 3000.0f );
 
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity( );

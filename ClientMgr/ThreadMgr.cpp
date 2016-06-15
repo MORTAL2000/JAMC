@@ -11,8 +11,9 @@ int const ThreadMgr::size_func_init = 3000;
 ThreadMgr::ThreadMgr( Client & client ) :
 	Manager( client ),
 	is_shutdown( false ),
-	total_threads( std::thread::hardware_concurrency() ),
-	cnt_total( 0 ), cnt_io_total( 0 ), 
+	total_threads( std::thread::hardware_concurrency( ) ),
+	cnt_total( 0 ),
+	cnt_main_total( 0 ), cnt_io_total( 0 ), 
 	cnt_async_total( 0 ), cnt_sync_total( 0 ) {
 }
 
@@ -33,6 +34,7 @@ void ThreadMgr::init() {
 	else {
 		size_io = 1;
 		size_async = total_threads - 2;
+		size_sync = size_async;
 	}
 
 	out.str( "" );
@@ -52,8 +54,16 @@ void ThreadMgr::init() {
 	funcs_async.resize( size_prio_init );
 	funcs_sync.resize( size_prio_init );
 
+	cnt_prio_main.resize( size_prio_init );
+	cnt_prio_main.resize( size_prio_init );
+	cnt_prio_main_last.resize( size_prio_init );
+
 	cnt_io.resize( size_io );
+
 	cnt_async.resize( size_async );
+	cnt_prio_async.resize( size_prio_init );
+	cnt_prio_async_last.resize( size_prio_init );
+
 	cnt_sync.resize( size_sync );
 
 	// Bind process affinity
@@ -206,6 +216,7 @@ void ThreadMgr::sec() {
 void ThreadMgr::loop_main( int const time_max ) {
 	std::function < void( ) > func;
 	bool is_func = false;
+	int prio;
 
 	client.time_mgr.begin_record( RecordStrings::TASK_MAIN );
 	client.time_mgr.end_record( RecordStrings::TASK_MAIN );
@@ -216,19 +227,16 @@ void ThreadMgr::loop_main( int const time_max ) {
 		{
 			std::lock_guard< std::mutex > lock_main( mtx_main );
 
-			for( int i = size_prio_init - 1; i >= 0; --i ) {
-				if( !funcs_main[ i ].empty( ) ) {
-					func = std::move( funcs_main[ i ].front( ) );
-					funcs_main[ i ].pop( );
-					is_func = true;
-					break;
-				}
-			}
+			select_func_main( is_func, prio, func );
 		}
 
 		if( is_func ) {
 			{
 				std::unique_lock< std::mutex > lock( mtx_cnt );
+
+				cnt_prio_main[ prio ] += 1;
+				cnt_prio_main_last[ prio ] = cnt_main_total;
+
 				cnt_main_total += 1;
 			}
 
@@ -243,6 +251,30 @@ void ThreadMgr::loop_main( int const time_max ) {
 	}
 
 	client.time_mgr.push_record( RecordStrings::TASK_MAIN );
+}
+
+static int const max_iterm_main = 5;
+
+void ThreadMgr::select_func_main( bool & is_func, int & priority, std::function< void( ) > & func ) {
+	for( int i = 0; i < size_prio_init; i++ ) {
+		if( !funcs_main[ i ].empty( ) && cnt_main_total - cnt_prio_main_last[ i ] >= max_iterm_main ) {
+			priority = i;
+			func = std::move( funcs_main[ i ].front( ) );
+			funcs_main[ i ].pop( );
+			is_func = true;
+			return;
+		}
+	}
+
+	for( int i = size_prio_init - 1; i >= 0; --i ) {
+		if( !funcs_main[ i ].empty( ) ) {
+			priority = i;
+			func = std::move( funcs_main[ i ].front( ) );
+			funcs_main[ i ].pop( );
+			is_func = true;
+			return;
+		}
+	}
 }
 
 void ThreadMgr::task_main( int priority, std::function < void( ) > func ) {
@@ -304,6 +336,7 @@ void ThreadMgr::task_io( int priority, std::function < void() > func ) {
 }
 
 void ThreadMgr::loop_async( int const id_thread ) {
+	int prio;
 	std::function< void() > func;
 
 	while( !is_shutdown ) {
@@ -322,22 +355,42 @@ void ThreadMgr::loop_async( int const id_thread ) {
 
 			if( is_shutdown ) return;
 
-			for( int i = size_prio_init - 1; i >= 0; --i ) {
-				if( !funcs_async[ i ].empty() ) {
-					func = std::move( funcs_async[ i ].front( ) );
-					funcs_async[ i ].pop();
-					break;
-				}
-			}
+			select_func_async( prio, func );
 		}
 
 		{
 			std::unique_lock< std::mutex > lock( mtx_cnt );
-			cnt_async_total += 1;
+
+			cnt_prio_async[ prio ] += 1;
+			cnt_prio_async_last[ prio ] = cnt_async_total;
+
 			cnt_async[ id_thread ] += 1;
+			cnt_async_total += 1;
 		}
 
 		func();
+	}
+}
+
+static int max_interm_async = 5;
+
+void ThreadMgr::select_func_async( int & priority, std::function< void( ) > & func ) {
+	for( int i = 0; i < size_prio_init; i++ ) { 
+		if( !funcs_async[ i ].empty( ) && cnt_async_total - cnt_prio_async_last[ i ] >= max_interm_async ) { 
+			priority = i;
+			func = std::move( funcs_async[ i ].front( ) );
+			funcs_async[ i ].pop( );
+			return;
+		}
+	}
+
+	for( int i = size_prio_init - 1; i >= 0; --i ) {
+		if( !funcs_async[ i ].empty( ) ) {
+			priority = i;
+			func = std::move( funcs_async[ i ].front( ) );
+			funcs_async[ i ].pop( );
+			return;
+		}
 	}
 }
 

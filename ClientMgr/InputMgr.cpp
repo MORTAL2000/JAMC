@@ -160,7 +160,7 @@ void InputMgr::process_input( ) {
 				for( int i = 0; i < num_steps; i++ ) {
 					pos_gw += pos_step;
 					if( client.chunk_mgr.get_block( pos_gw + pos_step ) != -1 ) {
-						client.chunk_mgr.set_sphere( pos_gw, 100, client.display_mgr.block_select.id_block );
+						client.chunk_mgr.set_sphere( pos_gw, 100, client.display_mgr.block_selector.get_id_block( ) );
 						break;
 					}
 				}
@@ -179,7 +179,7 @@ void InputMgr::process_input( ) {
 				for( int i = 0; i < num_steps; i++ ) {
 					pos_gw += pos_step;
 					if( client.chunk_mgr.get_block( pos_gw + pos_step ) != -1 ) {
-						client.chunk_mgr.set_rect( pos_gw, glm::vec3( 1, 80, 1 ), client.display_mgr.block_select.id_block );
+						client.chunk_mgr.set_rect( pos_gw, glm::vec3( 1, 80, 1 ), client.display_mgr.block_selector.get_id_block( ) );
 						break;
 					}
 				}
@@ -201,6 +201,48 @@ void InputMgr::process_input( ) {
 		else if( is_key( 'F' ) ) {
 			client.entity_mgr.entity_add(
 				"Line Block",
+				client.entity_mgr.custom_base
+			);
+
+			time_last_cmd = time;
+		}
+		else if( is_key( 'Z' ) ) {
+			static int select = 0;
+
+			if( select % 3 == 0 ) { 
+				client.entity_mgr.entity_add(
+					"Spin Block",
+					[ & ] ( Client & client, Entity & entity ) { 
+						entity.h_state.get( ).rot_veloc = { 180.0f, 0.0f, 0.0f };
+						return ErrorEntity::EE_Ok;
+					}
+				);
+			}
+			else if( select % 3 == 1 ) {
+				client.entity_mgr.entity_add(
+					"Spin Block",
+					[ & ] ( Client & client, Entity & entity ) {
+					entity.h_state.get( ).rot_veloc = { 0.0f, 180.0f, 0.0f };
+					return ErrorEntity::EE_Ok;
+				}
+				);
+			}
+			else if( select % 3 == 2 ) {
+				client.entity_mgr.entity_add(
+					"Spin Block",
+					[ & ] ( Client & client, Entity & entity ) {
+					entity.h_state.get( ).rot_veloc = { 0.0f, 0.0f, 180.0f };
+					return ErrorEntity::EE_Ok;
+				}
+				);
+			}
+
+			select++;
+			time_last_cmd = time;
+		}
+		else if( is_key( 'X' ) ) {
+			client.entity_mgr.entity_add(
+				"Spawn Block",
 				client.entity_mgr.custom_base
 			);
 
@@ -230,11 +272,13 @@ void InputMgr::process_input( ) {
 		}
 		else if( is_key( 'H' ) ) {
 			Emitter e;
-			e.pos = client.display_mgr.camera.pos_camera;
-			e.color = glm::vec3(
+			auto & camera = client.display_mgr.camera.pos_camera;
+			e.pos = glm::vec4( camera.x, camera.y, camera.z, 0.0f );
+			e.color = glm::vec4(
 				std::rand( ) % 255 / 255.0f,
 				std::rand( ) % 255 / 255.0f,
-				std::rand( ) % 255 / 255.0f
+				std::rand( ) % 255 / 255.0f,
+				0.0f
 			);
 
 			e.radius = std::rand( ) % 20 + 20;
@@ -256,7 +300,7 @@ void InputMgr::process_input( ) {
 				for( int i = 0; i < num_steps; i++ ) {
 					pos_gw += pos_step;
 					if( client.chunk_mgr.get_block( pos_gw + pos_step ) != -1 ) {
-						client.chunk_mgr.set_block( pos_gw, client.display_mgr.block_select.id_block );
+						client.chunk_mgr.set_block( pos_gw, client.display_mgr.block_selector.get_id_block( ) );
 						break;
 					}
 				}

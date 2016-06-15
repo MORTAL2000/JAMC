@@ -47,26 +47,26 @@ FaceUvs & Block::get_uvs( FaceDirection const face ) {
 	return uvs[ face ];
 }
 
+int Block::get_orientation( FaceDirection const face ) { 
+	return orientation[ face ];
+}
+
 bool Block::is_visible( Block const & block ) { 
-	if( !is_trans ) { 
-		if( !block.is_trans ) {
-			return false;
-		}
-		else { 
-			return true;
-		}
+	//if( !is_trans ) { 
+	//	if( !block.is_trans ) {
+	//		return false;
+	//	}
+
+	//	return true;
+	//}
+
+	if( !block.is_trans ) {
+		return false;
 	}
-	else { 
-		if( !block.is_trans ) {
-			return false;
-		}
-		else { 
-			if( id == block.id ) {
-				return false;
-			}
-			else { 
-				return true;
-			}
-		}
+
+	if( id == block.id ) {
+		return false;
 	}
+
+	return true;
 }

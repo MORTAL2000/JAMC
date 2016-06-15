@@ -52,7 +52,7 @@ extern int get_refresh( );
 #define PI 3.14159265f
 #define BUFFER_OFFSET(i) ((void*)(i))
 
-static const float UPDATE_RATE = get_refresh();
+static const float UPDATE_RATE = 60; // get_refresh( );
 static const float TIME_MILLISEC = 1000.0f;
 static const float DELTA_CORRECT = 1.0f / UPDATE_RATE;
 static const float TIME_FRAME_MILLI = TIME_MILLISEC / UPDATE_RATE;

@@ -170,7 +170,7 @@ public:
 			} );
 		}
 
-		thread_mgr.task_sync( priority, [ &]() {
+		thread_mgr.task_sync( priority, [ & ]() {
 			apply_func_range( first + int( step * ( num_threads - 1 ) ) + 1, last, func );
 
 			std::lock_guard< std::mutex > lock( mutex_back );
@@ -196,6 +196,7 @@ public:
 
 			return true;
 		}
+
 		return false;
 	}
 
