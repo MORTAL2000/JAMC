@@ -78,7 +78,7 @@ void EntityMgr::init( ) {
 	alloc_base = [ ] ( Client & client, Entity & entity ) {
 		entity.time_live = client.time_mgr.get_time( TimeStrings::GAME );
 		entity.is_shutdown = false;
-		entity.color.set( 0, 0, 0, 0 );
+		entity.color.set( 1.0f, 1.0f, 1.0f, 1.0f );
 		entity.is_dirty = true;
 
 		if( !client.resource_mgr.allocate( entity.h_state ) ) { 
@@ -90,11 +90,14 @@ void EntityMgr::init( ) {
 		ec_state.veloc = glm::vec3( 0, 0, 0 );
 		ec_state.accel = glm::vec3( 0, 0, 0 );
 		ec_state.is_coll = false;
+		fill_array( ec_state.is_coll_face, false );
 		ec_state.id_block = -1;
 
 		ec_state.rot = glm::vec3( 0, 0, 0 );
 		ec_state.rot_veloc = glm::vec3( 0, 0, 0 );
 		ec_state.rot_accel = glm::vec3( 0, 0, 0 );
+
+		ec_state.dim = glm::vec3( 1.0f, 1.0f, 1.0f );
 
 		return ErrorEntity::EE_Ok;
 	};
@@ -109,24 +112,59 @@ void EntityMgr::init( ) {
 		return ErrorEntity::EE_Ok;
 	};
 
-	loader_add(
-		"Player",
+	loader_add( "Player",
 		[ ] ( Client & client, Entity & entity ) {
 			if( !entity.add_data< ECPlayer >( client ) ) { 
 				return ErrorEntity::EE_Failed;
 			}
 
+			entity.id = 0;
+
 			auto & ec_state = entity.h_state.get( );
 			ec_state.is_gravity = true;
+			ec_state.dim = { 1.0f, 2.6f, 1.0f };
+
+			ec_state.pos = { 0.0f, Chunk::size_y / 2.0f + 5.0f, 0.0f };
+
+			//ec_state.rot.y = 180;
+
+			auto & ec_player = entity.get_data< ECPlayer >( ).get( );
+			ec_player.veloc_vmax = 9.81f * 4.0f;
+			ec_player.veloc_hmax = 32.0f;
+
+			ec_player.veloc_walk = 6.0f;
+			ec_player.veloc_run = 12.0f;
+			ec_player.accel_walk = 1.0f;
+			ec_player.accel_run = 1.0f;
 
 			return ErrorEntity::EE_Ok;
 		},
 		[ ] ( Client & client, Entity & entity ) {
 
+			entity.clear_data< ECPlayer >( );
+
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) { 
-			
+		[ ] ( Client & client, Entity & entity ) {
+			auto & ec_state = entity.h_state.get( );
+			auto & ec_player = entity.get_data< ECPlayer >( ).get( );
+
+			if( client.input_mgr.is_key( VK_UP ) ) {
+				ec_state.accel += Directional::get_fwd( ec_state.rot ) * ec_player.accel_walk;
+			}
+			else if( client.input_mgr.is_key( VK_DOWN ) ) {
+				ec_state.accel -= Directional::get_fwd( ec_state.rot ) * ec_player.accel_walk;
+			}
+
+			if( client.input_mgr.is_key( VK_LEFT ) ) {
+				ec_state.accel += Directional::get_left( ec_state.rot ) * ec_player.accel_walk;
+			}
+			else if( client.input_mgr.is_key( VK_RIGHT ) ) {
+				ec_state.accel -= Directional::get_left( ec_state.rot ) * ec_player.accel_walk;
+			}
+
+			client.entity_mgr.entity_stop( ec_state );
+
 			return ErrorEntity::EE_Ok;
 		},
 		[ ] ( Client & client, Entity & entity ) {
@@ -135,8 +173,7 @@ void EntityMgr::init( ) {
 		}
 	);
 
-	loader_add( 
-		"Tnt",
+	loader_add( "Tnt",
 		[ ] ( Client & client, Entity & entity ) {
 			if( !entity.add_data< ECTnt >( client ) ) {
 				return ErrorEntity::EE_Failed;
@@ -178,10 +215,6 @@ void EntityMgr::init( ) {
 				entity.is_shutdown = true;
 			}
 
-			if( !ec_state.is_coll ) {
-				return ErrorEntity::EE_Ok;
-			}
-
 			client.entity_mgr.entity_stop( ec_state );
 
 			return ErrorEntity::EE_Ok;
@@ -191,8 +224,7 @@ void EntityMgr::init( ) {
 		}
 	);
 
-	loader_add(
-		"Grav Block",
+	loader_add( "Grav Block",
 		[ ] ( Client & client, Entity & entity ) {
 			if( !entity.add_data< ECGravBlock >( client ) ) {
 				return ErrorEntity::EE_Failed;
@@ -206,7 +238,7 @@ void EntityMgr::init( ) {
 				( rand( ) % 10000 - 5000 ) / 10.0f );
 
 			auto & ec_block = entity.get_data< ECGravBlock >( ).get( );
-			ec_block.time_life = 10000;
+			ec_block.time_life = 20000;
 
 			return ErrorEntity::EE_Ok;
 		},
@@ -218,17 +250,27 @@ void EntityMgr::init( ) {
 		[ ] ( Client & client, Entity & entity ) {
 			auto & ec_state = entity.h_state.get( );
 			auto & ec_block = entity.get_data< ECGravBlock >( ).get( );
+			float frict = 0.1f;
+			client.entity_mgr.entity_stop( ec_state );
 
 			if( ec_state.is_coll ) {
-				client.entity_mgr.entity_stop( ec_state );
-				//client.chunk_mgr.set_block( ec_state.pos, ec_block.id_block );
-				client.chunk_mgr.set_block( ec_state.pos, entity.id );
-				entity.is_shutdown = true;
+				ec_state.rot = { 0, 0, 0 };
+				ec_state.rot_veloc = { 0, 0, 0 };
+
+				if( ec_state.is_coll_face[ FaceDirection::FD_Down ] ) { 
+					ec_state.veloc -= glm::normalize( ec_state.veloc ) * frict;
+
+					if( ec_state.veloc.x <= frict ) ec_state.veloc.x = 0;
+					if( ec_state.veloc.z <= frict ) ec_state.veloc.z = 0;
+
+					if( ec_state.veloc.x == 0 && ec_state.veloc.z == 0 ) {
+						client.chunk_mgr.set_block( ec_state.pos, entity.id );
+						entity.is_shutdown = true;
+					}
+				}
 			}
-			else if( ec_state.id_block == -2 ) {
-				entity.is_shutdown = true;
-			}
-			else if( client.time_mgr.get_time( TimeStrings::GAME ) - entity.time_live > ec_block.time_life ) {
+
+			if( client.time_mgr.get_time( TimeStrings::GAME ) - entity.time_live > ec_block.time_life ) {
 				entity.is_shutdown = true;
 			}
 
@@ -239,8 +281,7 @@ void EntityMgr::init( ) {
 		}
 	);
 
-	loader_add( 
-		"Line Block",
+	loader_add( "Line Block",
 		[ ] ( Client & client, Entity & entity ) {
 			entity.id = client.display_mgr.block_selector.get_id_block( );
 			entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
@@ -287,8 +328,7 @@ void EntityMgr::init( ) {
 		}
 	);
 
-	loader_add(
-		"Spin Block",
+	loader_add( "Spin Block",
 		[ ] ( Client & client, Entity & entity ) {
 			entity.id = client.display_mgr.block_selector.get_id_block( );
 			entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
@@ -319,8 +359,7 @@ void EntityMgr::init( ) {
 		}
 	);
 
-	loader_add( 
-		"Spawn Block",
+	loader_add( "Spawn Block",
 		[ ] ( Client & client, Entity & entity ) {
 			if( !entity.add_data< ECSpawnBlock >( client ) ) { 
 				return ErrorEntity::EE_Failed;
@@ -392,6 +431,11 @@ void EntityMgr::init( ) {
 			return ErrorEntity::EE_Ok;
 		}
 	);
+
+	entity_add( "Player", [ ] ( Client & client, Entity & entity ) {
+
+		return ErrorEntity::EE_Ok;
+	} );
 }
 
 void EntityMgr::update( ) { 
@@ -404,16 +448,16 @@ void EntityMgr::update( ) {
 
 		auto & state = entity.h_state.get( );
 
+		entity.loader->ef_update( client, entity );
 		entity_integrate( state );
 		entity_terrain_collide( state );
-		entity.loader->ef_update( client, entity );
 
 		state.mat_model = glm::mat4( 1.0f );
 		state.mat_model = glm::translate( state.mat_model, state.pos );
 		state.mat_model = glm::rotate( state.mat_model, glm::radians( -state.rot.z ), glm::vec3( 0, 0, 1 ) );
 		state.mat_model = glm::rotate( state.mat_model, glm::radians( -state.rot.y ), glm::vec3( 0, 1, 0 ) );
 		state.mat_model = glm::rotate( state.mat_model, glm::radians( -state.rot.x ), glm::vec3( 1, 0, 0 ) );
-		//state.mat_model = glm::translate( state.mat_model, glm::vec3( -0.5f, -0.5f, -0.5f ) );
+		state.mat_model = glm::scale( state.mat_model, state.dim );
 		state.mat_norm = glm::inverseTranspose( glm::mat3( state.mat_model ) );
 	} );
 
@@ -562,32 +606,243 @@ void EntityMgr::entity_remove( Handle< Entity > & h_entity ) {
 
 static glm::vec3 vec_gravity( 0, -9.81, 0 );
 
-void EntityMgr::entity_integrate( ECState & ec_state ) { 
-	ec_state.accel = glm::vec3( 0, 0, 0 );
+void EntityMgr::entity_integrate( ECState & ec_state ) {
+	ec_state.pos_last = ec_state.pos;
+
 	if( ec_state.is_gravity ) ec_state.accel += vec_gravity;
 	ec_state.veloc += ec_state.accel * DELTA_CORRECT;
-	ec_state.pos += ( ec_state.veloc + ( ec_state.accel / 2.0f ) * DELTA_CORRECT ) * DELTA_CORRECT;
+	ec_state.pos_delta = ( ec_state.veloc + ( ec_state.accel / 2.0f ) * DELTA_CORRECT ) * DELTA_CORRECT;
+	ec_state.pos += ec_state.pos_delta;
 
-	ec_state.rot_accel = glm::vec3( 0, 0, 0 );
 	ec_state.rot_veloc += ec_state.rot_accel * DELTA_CORRECT;
 	ec_state.rot += ( ec_state.rot_veloc + ( ec_state.rot_accel / 2.0f ) * DELTA_CORRECT ) * DELTA_CORRECT;
+
+	ec_state.rot_accel = glm::vec3( 0, 0, 0 );
+	ec_state.accel = glm::vec3( 0, 0, 0 );
 }
 
-void EntityMgr::entity_terrain_collide( ECState & ec_state ) { 
-	ec_state.id_block = client.chunk_mgr.get_block( ec_state.pos );
+void EntityMgr::entity_terrain_collide( ECState & ec_state ) {
+	ec_state.is_coll = false;
+	fill_array( ec_state.is_coll_face, false );
 
-	if( ec_state.id_block == -1 ||
-		ec_state.id_block == -2 ) {
-		ec_state.is_coll = false;
-		return;
+	if( ec_state.pos_delta.z < 0 ) entity_terrain_collide_f( ec_state );
+	else if( ec_state.pos_delta.z > 0 ) entity_terrain_collide_b( ec_state );
+
+	if( ec_state.pos_delta.x < 0 ) entity_terrain_collide_l( ec_state );
+	else if( ec_state.pos_delta.x > 0 ) entity_terrain_collide_r( ec_state );
+
+	if( ec_state.pos_delta.y > 0 ) entity_terrain_collide_u( ec_state );
+	else if( ec_state.pos_delta.y < 0 ) entity_terrain_collide_d( ec_state );
+}
+
+void EntityMgr::entity_terrain_collide_f( ECState & ec_state ) {
+	glm::vec3 pos_coll_s;
+	int num_x; int num_y;
+	float step_x; float step_y;
+	int id_block;
+
+	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
+	pos_coll_s.z += ec_state.pos_delta.z;
+
+	num_x = std::ceil( ec_state.dim.x );
+	num_y = std::ceil( ec_state.dim.y );
+
+	step_x = ec_state.dim.x / num_x;
+	step_y = ec_state.dim.y / num_y;
+
+	for( int i = 0; i <= num_x; ++i ) {
+		for( int j = 0; j <= num_y; ++j ) {
+			id_block = client.chunk_mgr.get_block(
+				pos_coll_s + glm::vec3( step_x * i, step_y * j, 0 ) );
+			ec_state.is_coll_face[ FaceDirection::FD_Front ] =
+				id_block != -1 && id_block != -2;
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Front ] ) {
+				ec_state.is_coll = true;
+				return;
+			}
+		}
 	}
+}
 
-	ec_state.is_coll = true;
+void EntityMgr::entity_terrain_collide_b( ECState & ec_state ) {
+	glm::vec3 pos_coll_s;
+	int num_x; int num_y;
+	float step_x; float step_y;
+	int id_block;
+
+	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
+	pos_coll_s.z += ec_state.dim.z;
+	pos_coll_s.z += ec_state.pos_delta.z;
+
+	num_x = std::ceil( ec_state.dim.x );
+	num_y = std::ceil( ec_state.dim.y );
+
+	step_x = ec_state.dim.x / num_x;
+	step_y = ec_state.dim.y / num_y;
+
+	for( int i = 0; i <= num_x; ++i ) {
+		for( int j = 0; j <= num_y; ++j ) {
+			id_block = client.chunk_mgr.get_block(
+				pos_coll_s + glm::vec3( step_x * i, step_y * j, 0 ) );
+			ec_state.is_coll_face[ FaceDirection::FD_Back ] =
+				id_block != -1 && id_block != -2;
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Back ] ) {
+				ec_state.is_coll = true;
+				return;
+			}
+		}
+	}
+}
+
+void EntityMgr::entity_terrain_collide_l( ECState & ec_state ) {
+	glm::vec3 pos_coll_s;
+	int num_z; int num_y;
+	float step_z; float step_y;
+	int id_block;
+
+	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
+	pos_coll_s.x += ec_state.pos_delta.x;
+
+	num_z = std::ceil( ec_state.dim.z );
+	num_y = std::ceil( ec_state.dim.y );
+
+	step_z = ec_state.dim.z / num_z;
+	step_y = ec_state.dim.y / num_y;
+
+	for( int i = 0; i <= num_z; ++i ) {
+		for( int j = 0; j <= num_y; ++j ) {
+			id_block = client.chunk_mgr.get_block(
+				pos_coll_s + glm::vec3( 0, step_y * j, step_z * i ) );
+			ec_state.is_coll_face[ FaceDirection::FD_Left ] =
+				id_block != -1 && id_block != -2;
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Left ] ) {
+				ec_state.is_coll = true;
+				return;
+			}
+		}
+	}
+}
+
+void EntityMgr::entity_terrain_collide_r( ECState & ec_state ) {
+	glm::vec3 pos_coll_s;
+	int num_z; int num_y;
+	float step_z; float step_y;
+	int id_block;
+
+	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
+	pos_coll_s.x += ec_state.dim.x;
+	pos_coll_s.x += ec_state.pos_delta.x;
+
+	num_z = std::ceil( ec_state.dim.z );
+	num_y = std::ceil( ec_state.dim.y );
+
+	step_z = ec_state.dim.z / num_z;
+	step_y = ec_state.dim.y / num_y;
+
+	for( int i = 0; i <= num_z; ++i ) {
+		for( int j = 0; j <= num_y; ++j ) {
+			id_block = client.chunk_mgr.get_block(
+				pos_coll_s + glm::vec3( 0, step_y * j, step_z * i ) );
+			ec_state.is_coll_face[ FaceDirection::FD_Right ] =
+				id_block != -1 && id_block != -2;
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Right ] ) {
+				ec_state.is_coll = true;
+				return;
+			}
+		}
+	}
+}
+
+void EntityMgr::entity_terrain_collide_u( ECState & ec_state ) {
+	glm::vec3 pos_coll_s;
+	int num_x; int num_z;
+	float step_x; float step_z;
+	int id_block;
+
+	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
+	pos_coll_s.y += ec_state.dim.y;
+	pos_coll_s.y += ec_state.pos_delta.y;
+
+	num_x = std::ceil( ec_state.dim.x );
+	num_z = std::ceil( ec_state.dim.z );
+
+	step_x = ec_state.dim.x / num_x;
+	step_z = ec_state.dim.z / num_z;
+
+	for( int i = 0; i <= num_x; ++i ) {
+		for( int j = 0; j <= num_z; ++j ) {
+			id_block = client.chunk_mgr.get_block(
+				pos_coll_s + glm::vec3( step_x * i, 0, step_z * j ) );
+			ec_state.is_coll_face[ FaceDirection::FD_Up ] =
+				id_block != -1 && id_block != -2;
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Up ] ) {
+				ec_state.is_coll = true;
+				return;
+			}
+		}
+	}
+}
+
+void EntityMgr::entity_terrain_collide_d( ECState & ec_state ) {
+	glm::vec3 pos_coll_s;
+	int num_x; int num_z;
+	float step_x; float step_z;
+	int id_block;
+
+	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
+	pos_coll_s.y += ec_state.pos_delta.y;
+
+	num_x = std::ceil( ec_state.dim.x );
+	num_z = std::ceil( ec_state.dim.z );
+
+	step_x = ec_state.dim.x / num_x;
+	step_z = ec_state.dim.z / num_z;
+
+	for( int i = 0; i <= num_x; ++i ) {
+		for( int j = 0; j <= num_z; ++j ) {
+			id_block = client.chunk_mgr.get_block( 
+				pos_coll_s + glm::vec3( step_x * i, 0, step_z * j ) );
+			ec_state.is_coll_face[ FaceDirection::FD_Down ] =
+				id_block != -1 && id_block != -2;
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Down ] ) {
+				ec_state.is_coll = true;
+				return;
+			}
+		}
+	}
 }
 
 void EntityMgr::entity_stop( ECState & ec_state ) {
-	ec_state.pos -= ( ec_state.veloc + ( ec_state.accel / 2.0f ) * DELTA_CORRECT ) * DELTA_CORRECT;
-	ec_state.veloc = glm::vec3( 0, 0, 0 );
+	if( !ec_state.is_coll ) {
+		return;
+	}
+
+	if( ec_state.is_coll_face[ FaceDirection::FD_Front ] ||
+		ec_state.is_coll_face[ FaceDirection::FD_Back ] ) {
+
+		ec_state.pos.z -= ec_state.pos_delta.z;
+		ec_state.veloc.z = 0;
+	}
+
+	if( ec_state.is_coll_face[ FaceDirection::FD_Up ] ||
+		ec_state.is_coll_face[ FaceDirection::FD_Down ] ) {
+
+		ec_state.pos.y -= ec_state.pos_delta.y;
+		ec_state.veloc.y = 0;
+	}
+
+	if( ec_state.is_coll_face[ FaceDirection::FD_Left ] ||
+		ec_state.is_coll_face[ FaceDirection::FD_Right ] ) {
+
+		ec_state.pos.x -= ec_state.pos_delta.x;
+		ec_state.veloc.x = 0;
+	}
 }
 
 void EntityMgr::entity_mesh( Entity & entity ) { 

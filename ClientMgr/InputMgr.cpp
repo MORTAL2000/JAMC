@@ -96,17 +96,17 @@ void InputMgr::process_input( ) {
 	if( is_key( VK_SHIFT ) ) move_speed = 15.0f;
 	if( is_key( VK_CONTROL ) ) move_speed = 100.0f;
 
-	if( is_key( 'W' ) || is_key( VK_UP ) ) {
+	if( is_key( 'W' ) ) {
 		camera.pos_camera += camera.vec_front * move_speed * DELTA_CORRECT;
 	}
-	else if( is_key( 'S' ) || is_key( VK_DOWN ) ) {
+	else if( is_key( 'S' ) ) {
 		camera.pos_camera -= camera.vec_front * move_speed * DELTA_CORRECT;
 	}
 
-	if( is_key( 'A' ) || is_key( VK_LEFT ) ) {
+	if( is_key( 'A' ) ) {
 		camera.pos_camera += camera.vec_left * move_speed * DELTA_CORRECT;
 	}
-	else if( is_key( 'D' ) || is_key( VK_RIGHT ) ) {
+	else if( is_key( 'D' ) ) {
 		camera.pos_camera -= camera.vec_left * move_speed * DELTA_CORRECT;
 	}
 

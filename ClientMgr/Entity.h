@@ -17,6 +17,8 @@ typedef std::function< int( Client &, Entity & ) > EFMesh;
 
 struct ECState {
 	glm::vec3 pos;
+	glm::vec3 pos_last;
+	glm::vec3 pos_delta;
 	glm::vec3 veloc;
 	glm::vec3 accel;
 
@@ -24,13 +26,17 @@ struct ECState {
 	glm::vec3 rot_veloc;
 	glm::vec3 rot_accel;
 
+	glm::vec3 dim;
+
 	glm::mat4 mat_model;
 	glm::mat3 mat_norm;
 
 	int id_block;
 
 	bool is_gravity = false;
+	//bool is_resting = true;
 	bool is_coll;
+	bool is_coll_face[ 6 ];
 
 	//char padding[ 2 ];
 };

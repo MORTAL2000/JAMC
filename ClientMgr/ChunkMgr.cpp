@@ -2512,14 +2512,19 @@ void ChunkMgr::explode_sphere_recur( glm::vec3 const & pos_gw, int const size, i
 							entity.id = id_curr;
 							entity.color = client.chunk_mgr.get_block_data( id_curr ).color;
 
-							auto & state = entity.h_state.get( );
-							state.pos = glm::floor( pos_gw ) + glm::vec3( pos_check );
+							auto & ec_state = entity.h_state.get( );
+							ec_state.pos = glm::floor( pos_gw ) + glm::vec3( pos_check ) + glm::vec3( 0.5f, 0.5f, 0.5f );
+							//ec_state.dim = glm::vec3( 0.5f, 0.5f, 0.5f );
 
 							return ErrorEntity::EE_Ok;
 						}
 					);
 				}
 				else if( id_curr != -1 && id_curr != -2 ) {
+					if( rand( ) % 1000 <= 666 ) { 
+						continue;
+					}
+
 					client.entity_mgr.entity_add(
 						"Grav Block",
 						[ id_curr, pos_gw, pos_check ] ( Client & client, Entity & entity ) {
@@ -2527,12 +2532,11 @@ void ChunkMgr::explode_sphere_recur( glm::vec3 const & pos_gw, int const size, i
 							entity.color = client.chunk_mgr.get_block_data( id_curr ).color;
 
 							auto & ec_state = entity.h_state.get( );
-							ec_state.pos = glm::floor( pos_gw ) + glm::vec3( pos_check );
+							ec_state.pos = glm::floor( pos_gw ) + glm::vec3( pos_check ) + glm::vec3( 0.5f, 0.5f, 0.5f );
 							ec_state.veloc = glm::vec3( rand( ) % 200 - 100, rand( ) % 200 - 100, rand( ) % 200 - 100 );
 							ec_state.veloc = glm::normalize( ec_state.veloc );
 							ec_state.veloc *= 10.0f + ( rand( ) % 25 );
-							//auto & ec_block = entity.get_data< ECGravBlock >( ).get( );
-							//ec_block.id_block = id_curr;
+							//ec_state.dim = glm::vec3( 0.5f, 0.5f, 0.5f );
 
 							return ErrorEntity::EE_Ok;
 						}

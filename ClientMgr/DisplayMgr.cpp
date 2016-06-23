@@ -75,6 +75,10 @@ void DisplayMgr::update( ) {
 	camera.vec_up = Directional::get_up_aa( camera.rot_camera );
 
 	block_selector.update( );
+
+	out.str( "" );
+	out << "Camera pos: " << Directional::print_vec( camera.pos_camera );
+	client.gui_mgr.print_to_static( out.str( ) );
 }
 
 HDC & DisplayMgr::get_HDC( ) { 

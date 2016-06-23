@@ -20,7 +20,17 @@ struct ErrorEntityLookup {
 };
 
 struct ECPlayer { 
+	float veloc_vmax;
+	float veloc_hmax;
+	float veloc_walk;
+	float veloc_run;
+	float accel_walk;
+	float accel_run;
 
+	//glm::vec3 accel_input;
+	//glm::vec3 veloc_input;
+
+	bool is_standing;
 };
 
 struct ECTnt {
@@ -60,7 +70,14 @@ public:
 
 private:
 	void entity_integrate( ECState & ec_state );
+
 	void entity_terrain_collide( ECState & ec_state );
+	void entity_terrain_collide_f( ECState & ec_state );
+	void entity_terrain_collide_b( ECState & ec_state );
+	void entity_terrain_collide_l( ECState & ec_state );
+	void entity_terrain_collide_r( ECState & ec_state );
+	void entity_terrain_collide_u( ECState & ec_state );
+	void entity_terrain_collide_d( ECState & ec_state );
 
 	void entity_stop( ECState & ec_state );
 
