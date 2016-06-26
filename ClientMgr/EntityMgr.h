@@ -9,49 +9,6 @@
 
 #include <mutex>
 
-enum ErrorEntity {
-	EE_Ok,
-	EE_Failed,
-	EE_Size
-};
-
-struct ErrorEntityLookup { 
-	static const char * to_text[ ]; 
-};
-
-struct ECPlayer { 
-	float veloc_vmax;
-	float veloc_hmax;
-	float veloc_walk;
-	float veloc_run;
-	float accel_walk;
-	float accel_run;
-
-	//glm::vec3 accel_input;
-	//glm::vec3 veloc_input;
-
-	bool is_standing;
-};
-
-struct ECTnt {
-	int time_last;
-	int time_update;
-	int time_life;
-	int size_explosion;
-};
-
-struct ECGravBlock { 
-	//int id_block;
-	int time_life;
-};
-
-struct ECSpawnBlock { 
-	int time_last;
-	int time_update;
-	int time_life;
-	int num_spawn;
-};
-
 class EntityMgr : public Manager {
 private:
 	std::vector< EntityLoader > list_loader;
@@ -68,7 +25,11 @@ public:
 	EFCustom custom_base;
 	EFRelease release_base;
 
+	Entity * entity_player;
+
 private:
+	void init_mesh( );
+
 	void entity_integrate( ECState & ec_state );
 
 	void entity_terrain_collide( ECState & ec_state );
@@ -78,8 +39,6 @@ private:
 	void entity_terrain_collide_r( ECState & ec_state );
 	void entity_terrain_collide_u( ECState & ec_state );
 	void entity_terrain_collide_d( ECState & ec_state );
-
-	void entity_stop( ECState & ec_state );
 
 	void entity_mesh( Entity & entity );
 
@@ -93,11 +52,14 @@ public:
 	void end( );
 	void sec( );
 
+	void loader_add( EntityLoader * entity_loader );
 	void loader_add( std::string const & str_name, EFAlloc ef_alloc, 
 		EFRelease ef_release, EFUpdate ef_update, EFMesh ef_mesh );
 
 	void entity_add( std::string const & str_name, EFCustom ef_custom );
 
 	void entity_remove( Handle< Entity > & h_entity );
+
+	void entity_stop( ECState & ec_state );
 };
 

@@ -1,6 +1,7 @@
 #include "InputMgr.h"
 
 #include "Client.h"
+#include "Tnt.h"
 
 #include <iostream>
 

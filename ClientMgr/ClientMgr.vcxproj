@@ -171,8 +171,10 @@
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="EntityMgr.cpp" />
     <ClCompile Include="Globals.cpp" />
+    <ClCompile Include="GravBlock.cpp" />
     <ClCompile Include="GuiMgr.cpp" />
     <ClCompile Include="InputMgr.cpp" />
+    <ClCompile Include="LineBlock.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Manager.cpp" />
     <ClCompile Include="Page.cpp" />
@@ -183,9 +185,12 @@
     <ClCompile Include="ResourceMgr.cpp" />
     <ClCompile Include="ResPool.cpp" />
     <ClCompile Include="simplexnoise.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="SpawnBlock.cpp" />
     <ClCompile Include="TextureMgr.cpp" />
     <ClCompile Include="ThreadMgr.cpp" />
     <ClCompile Include="TimeMgr.cpp" />
+    <ClCompile Include="Tnt.cpp" />
     <ClCompile Include="VBO.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -203,20 +208,25 @@
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntityMgr.h" />
     <ClInclude Include="Globals.h" />
+    <ClInclude Include="GravBlock.h" />
     <ClInclude Include="GuiMgr.h" />
     <ClInclude Include="InputMgr.h" />
+    <ClInclude Include="LineBlock.h" />
     <ClInclude Include="Manager.h" />
     <ClInclude Include="Page.h" />
     <ClInclude Include="PageComp.h" />
     <ClInclude Include="PageCompData.h" />
     <ClInclude Include="PageCompFuncs.h" />
     <ClInclude Include="PageFuncs.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="ResourceMgr.h" />
     <ClInclude Include="ResPool.h" />
     <ClInclude Include="simplexnoise.h" />
+    <ClInclude Include="SpawnBlock.h" />
     <ClInclude Include="TextureMgr.h" />
     <ClInclude Include="ThreadMgr.h" />
     <ClInclude Include="TimeMgr.h" />
+    <ClInclude Include="Tnt.h" />
     <ClInclude Include="VBO.h" />
   </ItemGroup>
   <ItemGroup>

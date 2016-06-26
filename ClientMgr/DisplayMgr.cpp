@@ -50,10 +50,8 @@ void DisplayMgr::init( ) {
 	std::cout << std::endl;
 }
 
-float mouse_sensitivity = 0.1f;
-
 void DisplayMgr::update( ) {
-	if( !client.input_mgr.is_cursor_vis( ) ) {
+	/*if( !client.input_mgr.is_cursor_vis( ) ) {
 		camera.rot_camera.x -= client.input_mgr.get_mouse_delta( ).y * mouse_sensitivity;
 		camera.rot_camera.y += client.input_mgr.get_mouse_delta( ).x * mouse_sensitivity;
 
@@ -61,12 +59,18 @@ void DisplayMgr::update( ) {
 		while( camera.rot_camera.x < 0 ) camera.rot_camera.x += 360;
 		if( camera.rot_camera.x > 180 && camera.rot_camera.x < 270 ) camera.rot_camera.x = 270;
 		if( camera.rot_camera.x < 180 && camera.rot_camera.x > 90 ) camera.rot_camera.x = 90;
+	}*/
+	auto & p_ec_state = client.entity_mgr.entity_player->h_state.get( );
 
-		camera.mat_rotation = glm::rotate( glm::mat4( 1.0f ), glm::radians( camera.rot_camera.x ), glm::vec3( 1, 0, 0 ) );
-		camera.mat_rotation = glm::rotate( camera.mat_rotation, glm::radians( camera.rot_camera.y ), glm::vec3( 0, 1, 0 ) );
-	}
+	camera.pos_camera = p_ec_state.pos;
+	camera.pos_camera.y += p_ec_state.dim.y / 2.0f;
+	camera.rot_camera = p_ec_state.rot;
+
+	camera.mat_rotation = glm::rotate( glm::mat4( 1.0f ), glm::radians( camera.rot_camera.x ), glm::vec3( 1, 0, 0 ) );
+	camera.mat_rotation = glm::rotate( camera.mat_rotation, glm::radians( camera.rot_camera.y ), glm::vec3( 0, 1, 0 ) );
 
 	camera.mat_translation = glm::translate( glm::mat4( 1.0f ), -camera.pos_camera );
+
 	camera.mvp_matrices.mat_view = camera.mat_rotation * camera.mat_translation;
 	camera.mvp_matrices.pos_camera = glm::vec4( camera.pos_camera, 1.0f );
 
@@ -253,7 +257,7 @@ void DisplayMgr::init_gl( ) {
 	}
 	else {
 		wglSwapIntervalEXT = ( PFNWGLSWAPINTERVALPROC ) wglGetProcAddress( "wglSwapIntervalEXT" );
-		if( wglSwapIntervalEXT ) wglSwapIntervalEXT( 0 );
+		if( wglSwapIntervalEXT ) wglSwapIntervalEXT( 1 );
 	}
 
 	printTabbedLine( 2, "Init Glew..." );
@@ -619,8 +623,8 @@ void DisplayMgr::set_proj( ) {
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity( );
 
-	gluPerspective( 35.0f, float( dim_window.x ) / dim_window.y, 0.2f, 3000.0f );
-	camera.mvp_matrices.mat_perspective = glm::perspective( glm::radians( 35.0f ), float( dim_window.x ) / dim_window.y, 0.2f, 3000.0f );
+	gluPerspective( fov / 2.0f, float( dim_window.x ) / dim_window.y, 0.2f, 3000.0f );
+	camera.mvp_matrices.mat_perspective = glm::perspective( glm::radians( fov / 2.0f ), float( dim_window.x ) / dim_window.y, 0.2f, 3000.0f );
 
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity( );

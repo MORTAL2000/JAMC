@@ -33,7 +33,7 @@ void ThreadMgr::init() {
 	}
 	else {
 		size_io = 1;
-		size_async = total_threads - 2;
+		size_async = total_threads - 4;
 		size_sync = size_async;
 	}
 

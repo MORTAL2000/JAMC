@@ -15,6 +15,34 @@ typedef std::function< int( Client &, Entity & ) > EFUpdate;
 typedef std::function< int( Client &, Entity & ) > EFRelease;
 typedef std::function< int( Client &, Entity & ) > EFMesh;
 
+enum ErrorEntity {
+	EE_Ok,
+	EE_Failed,
+	EE_Size
+};
+
+struct ErrorEntityLookup {
+	static const char * to_text[ ];
+};
+
+class EntityLoader {
+public:
+	std::string const name;
+
+	EFAlloc ef_alloc;
+	EFRelease ef_release;
+	EFUpdate ef_update;
+	EFMesh ef_mesh;
+
+public:
+	EntityLoader(
+		std::string const & name,
+		EFAlloc ef_alloc,
+		EFRelease ef_release,
+		EFUpdate ef_update,
+		EFMesh ef_mesh );
+};
+
 struct ECState {
 	glm::vec3 pos;
 	glm::vec3 pos_last;
@@ -34,22 +62,8 @@ struct ECState {
 	int id_block;
 
 	bool is_gravity = false;
-	//bool is_resting = true;
 	bool is_coll;
 	bool is_coll_face[ 6 ];
-
-	//char padding[ 2 ];
-};
-
-struct EntityLoader { 
-	std::string name;
-
-	EFAlloc ef_alloc;
-	EFRelease ef_release;
-
-	EFUpdate ef_update;
-
-	EFMesh ef_mesh;
 };
 
 class Entity {
@@ -63,6 +77,7 @@ public:
 
 	std::unordered_map< std::type_index, std::vector< void * > > map_data;
 
+	bool is_visible;
 	bool is_shutdown;
 	bool is_dirty;
 

@@ -84,6 +84,9 @@ void Client::thread_main_loop( ) {
 		//if( time_main < 0.5f ) time_main = 0.5f;
 		thread_mgr.loop_main( time_main );
 
+		display_mgr.swap_buffers( );
+
+		/*
 		float time_sleep = TIME_FRAME_MILLI -
 			time_mgr.get_record_curr( RecordStrings::UPDATE_PRE ) -
 			time_mgr.get_record_curr( RecordStrings::UPDATE ) -
@@ -100,7 +103,7 @@ void Client::thread_main_loop( ) {
 			}
 
 			time_mgr.push_record( RecordStrings::SLEEP );
-		}
+		}*/
 	}
 }
 
@@ -170,12 +173,12 @@ void Client::render( ) {
 	client.time_mgr.end_record( RecordStrings::RENDER_DRAW );
 	client.time_mgr.push_record( RecordStrings::RENDER_DRAW );
 
-	client.time_mgr.begin_record( RecordStrings::RENDER_SWAP );
+	/*client.time_mgr.begin_record( RecordStrings::RENDER_SWAP );
 
 	display_mgr.swap_buffers( );
 
 	client.time_mgr.end_record( RecordStrings::RENDER_SWAP );
-	client.time_mgr.push_record( RecordStrings::RENDER_SWAP );
+	client.time_mgr.push_record( RecordStrings::RENDER_SWAP );*/
 }
 
 void Client::render_output( ) {

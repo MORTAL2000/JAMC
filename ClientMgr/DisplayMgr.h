@@ -59,6 +59,7 @@ private:
 
 public:
 	int freq_display;
+	float fov = 90;
 
 	Camera camera;
 	BlockSelector block_selector;

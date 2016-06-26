@@ -13,8 +13,6 @@
 
 #include "simplexnoise.h"
 
-//#define DEBUG_OUTPUT
-
 glm::ivec3 const World::size_vect( World::size_x, World::size_y, World::size_z );
 
 ChunkMgr::ChunkMgr( Client & client ) :
@@ -31,6 +29,7 @@ void ChunkMgr::init( ) {
 	printTabbedLine( 1, "Init Pools..." );
 
 	client.resource_mgr.reg_pool< Chunk >( World::num_chunks );
+
 	map_chunks.reserve( World::num_chunks );
 	map_dirty.reserve( World::num_chunks );
 	map_noise.reserve( ( World::size_x * 2 + 1 ) * ( World::size_z * 2 + 1 ) + 32 );
@@ -305,43 +304,43 @@ void ChunkMgr::render_exlude( ) {
 			chunk.pos_gw,
 			client.display_mgr.camera.pos_camera,
 			client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-			70.0f ) ||
+			client.display_mgr.fov ) ||
 			Directional::is_point_in_cone(
 				chunk.pos_gw + glm::ivec3( Chunk::vec_size.x, 0, 0 ),
 				client.display_mgr.camera.pos_camera,
 				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				70.0f ) ||
+				client.display_mgr.fov ) ||
 			Directional::is_point_in_cone(
 				chunk.pos_gw + glm::ivec3( Chunk::vec_size.x, Chunk::vec_size.y, 0 ),
 				client.display_mgr.camera.pos_camera,
 				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				70.0f ) ||
+				client.display_mgr.fov ) ||
 			Directional::is_point_in_cone(
 				chunk.pos_gw + glm::ivec3( 0, Chunk::vec_size.y, 0 ),
 				client.display_mgr.camera.pos_camera,
 				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				70.0f ) ||
+				client.display_mgr.fov ) ||
 
 			Directional::is_point_in_cone(
 				chunk.pos_gw + glm::ivec3( 0, 0, Chunk::vec_size.z ),
 				client.display_mgr.camera.pos_camera,
 				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				70.0f ) ||
+				client.display_mgr.fov ) ||
 			Directional::is_point_in_cone(
 				chunk.pos_gw + glm::ivec3( Chunk::vec_size.x, 0, Chunk::vec_size.z ),
 				client.display_mgr.camera.pos_camera,
 				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				70.0f ) ||
+				client.display_mgr.fov ) ||
 			Directional::is_point_in_cone(
 				chunk.pos_gw + glm::ivec3( Chunk::vec_size.x, Chunk::vec_size.y, Chunk::vec_size.z ),
 				client.display_mgr.camera.pos_camera,
 				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				70.0f ) ||
+				client.display_mgr.fov ) ||
 			Directional::is_point_in_cone(
 				chunk.pos_gw + glm::ivec3( 0, Chunk::vec_size.y, Chunk::vec_size.z ),
 				client.display_mgr.camera.pos_camera,
 				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				70.0f ) ||
+				client.display_mgr.fov ) ||
 			glm::distance( glm::vec3( chunk.pos_lw ), glm::vec3( pos_center_chunk_lw ) ) <= 3.0
 			) {
 			list_render.push_back( &chunk );

@@ -443,9 +443,9 @@ void GuiMgr::process_input( ) {
 		token = str_command.substr( pos_start, pos_end - pos_start );
 
 		if( token == "resetpos" ) {
-			auto & pos_camera = client.display_mgr.camera.pos_camera;
-			pos_camera = glm::vec3( 0, Chunk::size_y / 2, 0 );
-			out << "Command: Resetting position to " << Directional::print_vec( pos_camera );
+			auto & pos = client.entity_mgr.entity_player->h_state.get( ).pos;
+			pos = glm::vec3( 0, Chunk::size_y / 2 + 5.0f, 0 );
+			out << "Command: Resetting position to " << Directional::print_vec( pos );
 			print_to_console( out.str( ) );
 		}
 		else if( token == "printprio" ) {
@@ -457,7 +457,7 @@ void GuiMgr::process_input( ) {
 			if( iter_map != map.end( ) && iter_map->second.size() == 1 ) { 
 				range = iter_map->second[ 0 ];
 				iter_map = map.find( list_delim[ 1 ] );
-				if( iter_map != map.end( ) && iter_map->second.size( ) == 1 ) { 
+				if( iter_map != map.end( ) && iter_map->second.size( ) == 1 ) {  
 					client.chunk_mgr.print_prio( range, iter_map->second[ 0 ] );
 				}
 				else { 
@@ -687,6 +687,23 @@ void GuiMgr::process_input( ) {
 			if( ( iter_map = map.find( list_delim[ 1 ] ) ) != map.end( ) && iter_map->second.size() == 1 ) {
 				client.chunk_mgr.set_sun_pause( ( bool ) iter_map->second[ 0 ] );
 			}
+		}
+		else if( token == "setfov" ) {
+			pos_start = str_command.find( "f:", 0 );
+			if( pos_start == std::string::npos ) {
+				return;
+			}
+
+			pos_start += 2;
+			float fov = atof( str_command.substr( pos_start ).c_str( ) );
+
+			auto & out = client.display_mgr.out;
+			out.str( "" );
+			out << "Setting fov to: \'" << fov << "\'";
+			print_to_console( out.str( ) );
+
+			client.display_mgr.fov = fov;
+			client.display_mgr.set_proj( );
 		}
 		else if( token == "bias_l" ) {
 			pos_start = str_command.find( "f:", 0 );
