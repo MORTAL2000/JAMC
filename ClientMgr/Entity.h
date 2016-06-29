@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Globals.h"
-#include "Color4.h"
 #include "ResourceMgr.h"
 #include "glm\glm.hpp"
 
@@ -15,6 +14,15 @@ typedef std::function< int( Client &, Entity & ) > EFUpdate;
 typedef std::function< int( Client &, Entity & ) > EFRelease;
 typedef std::function< int( Client &, Entity & ) > EFMesh;
 
+struct test { 
+	int a;
+	int b;
+};
+
+class test2 : public test { 
+	test2( ) : test { 1, 2 } { }
+};
+
 enum ErrorEntity {
 	EE_Ok,
 	EE_Failed,
@@ -25,22 +33,13 @@ struct ErrorEntityLookup {
 	static const char * to_text[ ];
 };
 
-class EntityLoader {
-public:
+struct EntityLoader {
 	std::string const name;
 
 	EFAlloc ef_alloc;
 	EFRelease ef_release;
 	EFUpdate ef_update;
 	EFMesh ef_mesh;
-
-public:
-	EntityLoader(
-		std::string const & name,
-		EFAlloc ef_alloc,
-		EFRelease ef_release,
-		EFUpdate ef_update,
-		EFMesh ef_mesh );
 };
 
 struct ECState {
@@ -73,7 +72,7 @@ public:
 	int id = 0;
 	int time_live = 0;
 	EntityLoader * loader;
-	Color4 color;
+	glm::vec4 color;
 
 	std::unordered_map< std::type_index, std::vector< void * > > map_data;
 

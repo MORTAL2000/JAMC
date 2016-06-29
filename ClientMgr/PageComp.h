@@ -3,7 +3,6 @@
 #include "Globals.h"
 
 #include "glm/glm.hpp"
-#include "Color4.h"
 #include "PageCompFuncs.h"
 
 class PageComp {
@@ -20,7 +19,7 @@ public:
 	glm::ivec2 vec_pos;
 	glm::ivec2 vec_dim;
 
-	Color4 color;
+	glm::vec4 color;
 
 	std::string str_name;
 

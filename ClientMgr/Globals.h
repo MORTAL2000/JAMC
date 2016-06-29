@@ -4,6 +4,7 @@
 #pragma comment( lib, "glew/lib/Release/x64/glew32" )
 #pragma comment( lib, "glut/x64/glut32" )
 #pragma comment( lib, "soil/lib/SOIL" )
+#pragma comment( lib, "tinyxml2" )
 
 // General Includes
 #include <stdlib.h>
@@ -37,7 +38,6 @@ class Block;
 class Chunk;
 struct ChunkNoise;
 struct ChunkFile;
-class Color4;
 
 class Entity;
 

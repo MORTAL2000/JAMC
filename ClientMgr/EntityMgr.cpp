@@ -14,20 +14,27 @@ const char * ErrorEntityLookup::to_text[ ] = {
 	"EE_Size"
 };
 
+glm::vec3 verts_entity[ FaceDirection::FD_Size ][ 4 ] = {
+	{ { -0.5, -0.5, 0.5 }, { 0.5, -0.5, 0.5 }, { 0.5, 0.5, 0.5 }, { -0.5, 0.5, 0.5 } },
+	{ { -0.5, -0.5, -0.5 }, { 0.5, -0.5, -0.5 }, { 0.5, 0.5, -0.5 }, { -0.5, 0.5, -0.5 } },
+	{ { 0.5, -0.5, -0.5 }, { 0.5, -0.5, 0.5 }, { 0.5, 0.5, 0.5 }, { 0.5, 0.5, -0.5 } },
+	{ { -0.5, -0.5, -0.5 }, { -0.5, -0.5, 0.5 }, { -0.5, 0.5, 0.5 }, { -0.5, 0.5, -0.5 } },
+	{ { -0.5, 0.5, -0.5 }, { 0.5, 0.5, -0.5 }, { 0.5, 0.5, 0.5 }, { -0.5, 0.5, 0.5 } },
+	{ { -0.5, -0.5, -0.5 }, { 0.5, -0.5, -0.5 }, { 0.5, -0.5, 0.5 }, { -0.5, -0.5, 0.5 } }
+};
+
+glm::vec2 uvs_entity[ 4 ] = { 
+	{ 0, 0 },
+	{ 1, 0 },
+	{ 1, 1 },
+	{ 0, 1 }
+};
+
 EntityMgr::EntityMgr( Client & client ) :
 	Manager( client ) { }
 
 
 EntityMgr::~EntityMgr( ) { }
-
-const ChunkFaceIndices indicies[ 6 ] { 
-	{ 0, 1, 2,		2, 3, 0 },
-	{ 4, 5, 6,		6, 7, 4 },
-	{ 8, 9, 10,		10, 11, 8 },
-	{ 12, 13, 14,	14, 15, 12 },
-	{ 16, 17, 18,	18, 19, 16 },
-	{ 20, 21, 22,	22, 23, 20 }
-};
 
 static int num_entity = 10000;
 static std::vector< ChunkFaceVertices > list_faces;
@@ -48,7 +55,7 @@ void EntityMgr::init( ) {
 		entity.time_live = client.time_mgr.get_time( TimeStrings::GAME );
 		entity.is_shutdown = false;
 		entity.is_visible = true;
-		entity.color.set( 1.0f, 1.0f, 1.0f, 1.0f );
+		entity.color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		entity.is_dirty = true;
 
 		if( !client.resource_mgr.allocate( entity.h_state ) ) { 
@@ -157,7 +164,7 @@ void EntityMgr::render( ) {
 
 		glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_model ) );
 		glUniformMatrix3fv( idx_mat_norm, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_norm ) );
-		glUniform1f( idx_idx_layer, client.chunk_mgr.get_block_data( entity->id ).get_uvs( FaceDirection::FD_Front )[ 0 ][ 2 ] );
+		glUniform1f( idx_idx_layer, client.chunk_mgr.get_block_data( entity->id ).faces[ 0 ].id_subtex );
 		glUniform4fv( idx_frag_color, 1, ( const GLfloat * ) &entity->color );
 
 		vbo.render( client );
@@ -177,35 +184,22 @@ void EntityMgr::sec( ) {
 void EntityMgr::init_mesh( ) { 
 	vbo.init( );
 
-	for( int i = 0; i < FaceDirection::FD_Size; i++ ) {
-		put_face(
-			list_faces,
-			glm::ivec3( 0, 0, 0 ),
-			Block::get_verts( ( FaceDirection ) i ),
-			Color4( 1.0f, 1.0f, 1.0f, 1.0f ),
-			Directional::get_vec_dir_f( ( FaceDirection ) i ),
-			client.chunk_mgr.get_block_data( 0 ).get_uvs( ( FaceDirection ) i )
-		);
-	}
-
 	vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
 		"Entity",
-		client.texture_mgr.id_terrain,
+		client.texture_mgr.get_texture_id( "Blocks" ),
 		std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
 	) );
 
 	for( int i = 0; i < FaceDirection::FD_Size; ++i ) {
-		auto & verts = Block::get_verts( ( FaceDirection ) i );
-		auto color = Color4( 1.0f, 1.0f, 1.0f, 1.0f );
+		auto color = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
 		auto & norm = Directional::get_vec_dir_f( ( FaceDirection ) i );
-		auto & uvs = client.chunk_mgr.get_block_data( 0 ).get_uvs( ( FaceDirection ) i );
 
 		for( int j = 0; j < 4; ++j ) {
 			vbo.push_data( VBO::Vertex {
-				verts[ j ][ 0 ] - 0.5f, verts[ j ][ 1 ] - 0.5f, verts[ j ][ 2 ] - 0.5f,
+				verts_entity[ i ][ j ].x, verts_entity[ i ][ j ].y, verts_entity[ i ][ j ].z,
 				color.r, color.g, color.b, color.a,
 				norm[ 0 ], norm[ 1 ], norm[ 2 ],
-				uvs[ j ][ 0 ], uvs[ j ][ 1 ], 0
+				uvs_entity[ j ].x, uvs_entity[ j ].y, 0
 			} );
 		}
 	}
@@ -225,15 +219,13 @@ void EntityMgr::loader_add( EntityLoader * entity_loader ) {
 		return;
 	}
 
-	list_loader.emplace_back(
-		EntityLoader(
-			entity_loader->name,
-			entity_loader->ef_alloc,
-			entity_loader->ef_release,
-			entity_loader->ef_update,
-			entity_loader->ef_mesh
-		)
-	);
+	list_loader.emplace_back( EntityLoader {
+		entity_loader->name,
+		entity_loader->ef_alloc,
+		entity_loader->ef_release,
+		entity_loader->ef_update,
+		entity_loader->ef_mesh
+	} );
 
 	map_loader.emplace(
 		std::pair< std::string, int > {
@@ -259,15 +251,13 @@ void EntityMgr::loader_add( std::string const & str_name, EFAlloc ef_alloc,
 		return;
 	}
 
-	list_loader.emplace_back( 
-		EntityLoader( 
-			str_name,
-			ef_alloc,
-			ef_release,
-			ef_update,
-			ef_mesh
-		) 
-	);
+	list_loader.emplace_back( EntityLoader {
+		str_name,
+		ef_alloc,
+		ef_release,
+		ef_update,
+		ef_mesh
+	} );
 
 	map_loader.emplace( 
 		std::pair< std::string, int > {

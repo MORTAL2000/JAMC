@@ -1,54 +1,67 @@
 #pragma once
 #include "Globals.h"
 
-#include "Color4.h"
 #include "Directional.h"
 
 #include <string>
 #include <array>
+#include <vector>
 
-typedef std::array< float, 3 > UV;
-typedef std::array< float, 3 > Vert;
+typedef std::array< glm::vec3, 4 > FaceVerts;
+typedef std::array< glm::vec2, 4 > FaceUvs;
+typedef std::array< glm::vec3, 4 > FaceNorms;
 
-typedef std::array< UV, 4 > FaceUvs;
-typedef std::array< Vert, 4 > FaceVerts;
-
-class Block {
-private:
-	static std::array< FaceVerts const *, FaceDirection::FD_Size > verts;
-	static std::array< glm::vec3 const *, FaceDirection::FD_Size > verts_center;
-
-private:
-	static FaceVerts const
-		verts_front, verts_back, 
-		verts_left, verts_right, 
-		verts_up, verts_down,
-		verts_null;
-
-	static glm::vec3 const
-		vert_front_center, vert_back_center, 
-		vert_left_center, vert_right_center,
-		vert_up_center, vert_down_center;
-
+class Face { 
 public:
-	static FaceVerts const & get_verts( FaceDirection const face );
-	static glm::vec3 const & get_center( FaceDirection const face );
+	glm::vec3 offset;
+	glm::vec3 dim;
+	glm::vec3 rot;
+	glm::vec4 color;
 
-public:
-	int const id;
-	Color4 color;
-	std::array< FaceUvs, FaceDirection::FD_Size > uvs;
-	std::array< int, FaceDirection::FD_Size > orientation;
-	std::string const name;
-	bool is_trans;
+	GLuint occlude;
 
-	Block( int const id, std::string const & name );
-	~Block( );
+	std::string subtex;
+	GLuint id_subtex;
 
-public:
-	FaceUvs & get_uvs( FaceDirection const face );
-	int get_orientation( FaceDirection const face );
+	FaceVerts verts;
+	FaceUvs uvs;
+	FaceNorms norms;
 
-	bool is_visible( Block const & block );
+	Face( ) :
+		offset( 0.0f, 0.0f, 0.0f ),
+		dim( 1.0f, 1.0f, 1.0f ),
+		rot( 0.0f, 0.0f, 0.0f ),
+		color( 1.0f, 1.0f, 1.0f, 1.0f ),
+		occlude( FaceDirection::FD_Size ),
+		subtex( "Default/Top" ),
+		id_subtex( 0 ) { }
 };
 
+class Block {
+public:
+	int id;
+	glm::vec4 color;
+	std::string name;
+
+	std::vector< Face > faces;
+
+	std::array< std::vector< Face * >, FaceDirection::FD_Size > occlude_lookup;
+	std::vector< Face * > include_lookup;
+
+	std::string texture;
+	GLuint id_texture;
+
+	bool is_trans;
+
+	Block( ) :
+		id( 0 ),
+		name( "Default" ),
+		faces( ),
+		texture( "Blocks" ),
+		id_texture( 0 ),
+		is_trans( false ) { }
+
+	~Block( );
+
+	bool is_visible( Block const & other );
+};

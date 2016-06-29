@@ -33,7 +33,7 @@ Tnt::Tnt( ) :
 
 			if( time_now - ec_tnt.time_last >= ec_tnt.time_update ) {
 				float c_val = glm::sin( ( ( time_now % 1000 ) / 1000.0f ) * 360 * 2 * PI / 180 ) * 0.5f + 0.5f;
-				entity.color = Color4( c_val, c_val, c_val, 1.0f );
+				entity.color = glm::vec4( c_val, c_val, c_val, 1.0f );
 				entity.is_dirty = true;
 				ec_tnt.time_last += ec_tnt.time_update;
 			}

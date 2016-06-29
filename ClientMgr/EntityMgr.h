@@ -4,7 +4,6 @@
 
 #include "Manager.h"
 #include "Entity.h"
-#include "Color4.h"
 #include "VBO.h"
 
 #include <mutex>

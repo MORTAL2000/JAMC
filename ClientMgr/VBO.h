@@ -51,7 +51,7 @@ public:
 
 private:
 	GLuint id_vao;
-	GLuint id_vbo    ;
+	GLuint id_vbo;
 	GLuint id_ibo;
 	
 	GLuint size_vbo;

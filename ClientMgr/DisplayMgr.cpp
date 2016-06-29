@@ -2,7 +2,6 @@
 #include "Client.h"
 
 #include "ChunkMgr.h"
-#include "Color4.h"
 
 #include <iostream>
 
@@ -307,7 +306,7 @@ void DisplayMgr::resize_window( glm::ivec2 & dim_window ) {
 	set_proj( );
 }
 
-void DisplayMgr::draw_string( glm::ivec2 const & pos, std::string const & string, Color4 & color, int const size ) {
+void DisplayMgr::draw_string( glm::ivec2 const & pos, std::string const & string, glm::vec4 & color, int const size ) {
 	glPushMatrix( );
 
 	glLineWidth( size / 10.0f );
@@ -325,7 +324,7 @@ void DisplayMgr::draw_string( glm::ivec2 const & pos, std::string const & string
 }
 
 /*
-void DisplayMgr::draw_string( Vect3< int > const & pos, std::string & string, Color4 & color, int const size ) {
+void DisplayMgr::draw_string( Vect3< int > const & pos, std::string & string, glm::vec4 & color, int const size ) {
 	glPushMatrix();
 	glLineWidth( size / 10.0f );
 	glTranslatef( pos.x, pos.y, pos.z );
@@ -378,40 +377,7 @@ void DisplayMgr::draw_key( int const size ) {
 	glPopMatrix( );
 }
 
-void DisplayMgr::draw_quad( glm::ivec2 & pos_quad, glm::ivec2 & dim_quad, Color4 const & color, face_uvs & uvs ) { 
-	glPushMatrix( );
-	glBegin( GL_QUADS );
-	glColor4f( color.r, color.g, color.b, color.a );
-	glTexCoord2f( uvs[ 0 ][ 0 ], uvs[ 0 ][ 1 ] );
-	glVertex2f( pos_quad.x, pos_quad.y );
-	glTexCoord2f( uvs[ 1 ][ 0 ], uvs[ 1 ][ 1 ] );
-	glVertex2f( pos_quad.x + dim_quad.x, pos_quad.y );
-	glTexCoord2f( uvs[ 2 ][ 0 ], uvs[ 2 ][ 1 ] );
-	glVertex2f( pos_quad.x + dim_quad.x, pos_quad.y + dim_quad.y );
-	glTexCoord2f( uvs[ 3 ][ 0 ], uvs[ 3 ][ 1 ] );
-	glVertex2f( pos_quad.x, pos_quad.y + dim_quad.y );
-	glEnd( );
-	glPopMatrix( );
-}
-
-void DisplayMgr::draw_block( Color4 & color, int const id_block ) {
-	glBegin( GL_QUADS );
-	glColor4f( color.r, color.g, color.b, color.a );
-	auto & block = client.chunk_mgr.get_block_data( id_block );
-	for( int i = 0; i < FD_Size; i++ ) { 
-		auto block_face = ( FaceDirection ) i;
-		auto & block_face_uvs = block.get_uvs( block_face );
-		auto & block_norm = Directional::get_vec_dir_f( block_face );
-		auto & block_face_verts = Block::get_verts( block_face );
-		for( int j = 0; j < 4; j++ ) { 
-			glNormal3f( block_norm.x, block_norm.y, block_norm.z );
-			glTexCoord2f( block_face_uvs[ j ][ 0 ], block_face_uvs[ j ][ 1 ] );
-			glVertex3f( block_face_verts[ j ][ 0 ], block_face_verts[ j ][ 1 ], block_face_verts[ j ][ 2 ] );
-		}
-	}
-	glEnd( );
-}
-
+/*
 void DisplayMgr::draw_skybox( glm::vec3 & pos_skybox, float const size ) {
 	client.texture_mgr.bind_skybox( );
 
@@ -479,55 +445,7 @@ void DisplayMgr::draw_sun( glm::vec3 & pos_sun, float const size ) {
 	glEnable( GL_LIGHTING );
 
 	glPopMatrix( );
-}
-
-void DisplayMgr::draw_chunk( Chunk & chunk ) {
-	glPushMatrix( );
-
-	glTranslatef( 
-		chunk.pos_gw.x, 
-		chunk.pos_gw.y,
-		chunk.pos_gw.z );
-
-	glBegin( GL_QUADS );
-	for( int i = 0; i < Chunk::size_x; i++ ) {
-		for( int j = 0; j < Chunk::size_y; j++ ) {
-			for( int k = 0; k < Chunk::size_z; k++ ) {
-				int id_block = chunk.id_blocks[ i ][ j ][ k ];
-
-				if( id_block != -1 ) {
-					auto & block = client.chunk_mgr.get_block_data( id_block );
-
-					glColor4f( 
-						block.color.r, 
-						block.color.g,
-						block.color.b,
-						block.color.a );
-
-					for( int l = 0; l < FD_Size; l++ ) {
-						auto block_face = ( FaceDirection ) l;
-						auto & block_face_uvs = block.get_uvs( block_face );
-						auto & block_face_verts = Block::get_verts( block_face );
-
-						for( int m = 0; m < 4; m++ ) {
-							glTexCoord2f( 
-								block_face_uvs[ m ][ 0 ], 
-								block_face_uvs[ m ][ 1 ] );
-
-							glVertex3f(
-								i + block_face_verts[ m ][ 0 ], 
-								j + block_face_verts[ m ][ 1 ], 
-								k + block_face_verts[ m ][ 2 ] );
-						}
-					}
-				}
-			}
-		}
-	}
-	glEnd( );
-
-	glPopMatrix( );
-}
+}*/
 
 static int const size_graph_text = 12;
 
@@ -583,7 +501,7 @@ void DisplayMgr::draw_record_graph( glm::ivec2 & pos_graph, glm::ivec2 & dim_gra
 
 		glPopMatrix( );
 
-		draw_string( pos_string, name_record, Color4( 0.0f, 0.0f, 1.0f, 0.5f ), size_graph_text );
+		draw_string( pos_string, name_record, glm::vec4( 0.0f, 0.0f, 1.0f, 0.5f ), size_graph_text );
 	}
 }
 

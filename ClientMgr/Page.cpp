@@ -11,6 +11,12 @@ Page::Page( ) :
 	is_visibile( true ) {
 }
 
+const glm::vec3 verts_page[ 4 ] = { 
+	{ 0, 0, 0 },
+	{ 1, 0, 0 },
+	{ 1, 1, 0 },
+	{ 0, 1, 0 } 
+};
 
 Page::~Page( ) { }
 
@@ -119,12 +125,13 @@ void Page::update( ) {
 			std::vector< GLuint > { 0, 1, 2, 2, 3, 0 }
 		) );
 
-		auto & verts = Block::get_verts( FaceDirection::FD_Front );
 		auto & norm = Directional::get_vec_dir_f( FaceDirection::FD_Front );
 
 		for( int i = 0; i < 4; ++i ) {
 			vbo.push_data( VBO::Vertex {
-				verts[ i ][ 0 ] * vec_dim.x, verts[ i ][ 1 ] * vec_dim.y, 0,
+				verts_page[ i ].x * vec_dim.x,
+				verts_page[ i ].y * vec_dim.y,
+				verts_page[ i ].z,
 				color.r, color.g, color.b, color.a,
 				norm.x, norm.y, norm.z,
 				0, 0, 0
@@ -139,9 +146,9 @@ void Page::update( ) {
 
 			for( int j = 0; j < 4; ++j ) {
 				vbo.push_data( VBO::Vertex {
-					comp.vec_pos.x + verts[ j ][ 0 ] * comp.vec_dim.x, 
-					comp.vec_pos.y + verts[ j ][ 1 ] * comp.vec_dim.y,
-					0,
+					comp.vec_pos.x + verts_page[ j ].x * comp.vec_dim.x,
+					comp.vec_pos.y + verts_page[ j ].y * comp.vec_dim.y,
+					verts_page[ j ].z,
 					comp.color.r, comp.color.g, comp.color.b, comp.color.a,
 					norm.x, norm.y, norm.z,
 					0, 0, 0
@@ -171,9 +178,9 @@ void Page::update( ) {
 
 				for( int j = 0; j < 4; ++j ) { 
 					vbo.push_data( VBO::Vertex { 
-						vec_pos_char.x + verts[ j ][ 0 ] * vec_size_text.x, 
-						vec_pos_char.y + verts[ j ][ 1 ] * vec_size_text.y,
-						0,
+						vec_pos_char.x + verts_page[ j ].x * vec_size_text.x,
+						vec_pos_char.y + verts_page[ j ].y * vec_size_text.y,
+						verts_page[ j ].z,
 						0.0f, 0.0f, 0.0f, 1.0f,
 						norm.x, norm.y, norm.z,
 						uvs[ j ][ 0 ], uvs[ j ][ 1 ], 0

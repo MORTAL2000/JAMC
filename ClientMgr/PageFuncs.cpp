@@ -7,7 +7,7 @@
 FuncPage PageFuncs::cust_null = [ ] ( Page & page ) { return true; };
 
 FuncPage PageFuncs::alloc_base = [ ] ( Page & page ) {
-	page.color.set( 0.3f, 0.3f, 0.3f, 0.9f );
+	page.color = { 0.3f, 0.3f, 0.3f, 0.9f };
 	page.vec_pos = glm::ivec2( 0, 0 );
 	page.vec_dim = glm::ivec2( 400, 200 );
 

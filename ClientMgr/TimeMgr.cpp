@@ -3,6 +3,13 @@
 #include "Client.h"
 #include "glm/gtc/type_ptr.hpp"
 
+const glm::vec3 verts_graph[ 4 ] = {
+	{ 0, 0, 0 },
+	{ 1, 0, 0 },
+	{ 1, 1, 0 },
+	{ 0, 1, 0 }
+};
+
 // Time Strings
 const std::string	
 TimeStrings::GAME = "Game",
@@ -108,9 +115,8 @@ void TimeMgr::mesh_graphs( ) {
 		float max_record = 0;
 		glm::ivec2 dim_char = { 8, 12 };
 
-		auto & verts = Block::get_verts( FaceDirection::FD_Front );
 		auto & norm = Directional::get_vec_dir_f( FaceDirection::FD_Front );
-		auto color = Color4( 0.5f, 0.5f, 0.5f, 0.7f );
+		auto color = glm::vec4( 0.5f, 0.5f, 0.5f, 0.7f );
 
 		vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
 			"Basic", client.texture_mgr.id_materials,
@@ -121,8 +127,8 @@ void TimeMgr::mesh_graphs( ) {
 		for( int i = 0; i < list_render.size( ); ++i ) { 
 			for( int j = 0; j < 4; ++j ) { 
 				vbo.push_data( VBO::Vertex {
-					{ verts[ j ][ 0 ] * dim_graph.x, 
-					( -( i + 1 ) * ( dim_graph.y + padding ) ) + verts[ j ][ 1 ] * dim_graph.y, 0 },
+					{ verts_graph[ j ].x * dim_graph.x, 
+					( -( i + 1 ) * ( dim_graph.y + padding ) ) + verts_graph[ j ].y * dim_graph.y, 0 },
 					{ color.r, color.g, color.b, color.a },
 					{ norm.x, norm.y, norm.z },
 					{ 0, 0, 0 }
@@ -130,7 +136,7 @@ void TimeMgr::mesh_graphs( ) {
 			}
 		}
 
-		color = Color4( 1.0f, 0.0f, 0.0f, 1.0f );
+		color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
 
 		vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Lines,
 			"Basic", client.texture_mgr.id_materials,
@@ -192,7 +198,7 @@ void TimeMgr::mesh_graphs( ) {
 			} );
 		}
 
-		color = Color4( 0.0f, 0.0f, 1.0f, 1.0f );
+		color = glm::vec4( 0.0f, 0.0f, 1.0f, 1.0f );
 
 		vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
 			"Basic", client.texture_mgr.id_fonts,
@@ -208,8 +214,8 @@ void TimeMgr::mesh_graphs( ) {
 
 				for( int k = 0; k < 4; k++ ) {
 					vbo.push_data( {
-						{ padding + j * dim_char.x + verts[ k ][ 0 ] * dim_char.x,
-						( -( i + 1 ) * ( dim_graph.y + padding ) ) + padding + verts[ k ][ 1 ] * dim_char.y, 0 },
+						{ padding + j * dim_char.x + verts_graph[ k ].x * dim_char.x,
+						( -( i + 1 ) * ( dim_graph.y + padding ) ) + padding + verts_graph[ k ].y * dim_char.y, 0 },
 						{ color.r, color.g, color.b, color.a },
 						{ norm.x, norm.y, norm.z },
 						{ uvs[ k ][ 0 ], uvs[ k ][ 1 ], 0 }

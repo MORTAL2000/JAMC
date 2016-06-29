@@ -4,6 +4,7 @@
 
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtc/matrix_inverse.hpp"
+#include "tinyxml2-master\tinyxml2.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -274,21 +275,23 @@ void ChunkMgr::update( ) {
 }
 
 void ChunkMgr::render( ) {
-	client.texture_mgr.bind_terrain( );
-	render_skybox( );
+	static GLuint id_blocks = client.texture_mgr.get_texture_id( "Blocks" );
+	client.texture_mgr.bind_texture( 0, id_blocks );
+
+	//render_skybox( );
 	render_exlude( );
 	render_sort( );
-	render_pass_shadow( );
+	//render_pass_shadow( );
 	render_pass_norm( );
 	render_debug( );
 }
 
 void ChunkMgr::render_skybox( ) { 
-	client.texture_mgr.unbind_program( );
-	client.texture_mgr.bind_skybox( );
+	//client.texture_mgr.unbind_program( );
+	//client.texture_mgr.bind_skybox( );
 
-	client.display_mgr.draw_skybox( client.display_mgr.camera.pos_camera + glm::vec3( 0, -200, 0 ), 2500 );
-	client.display_mgr.draw_sun( glm::vec3( light_data.sun_data.pos_sun ), 50 );
+	//client.display_mgr.draw_skybox( client.display_mgr.camera.pos_camera + glm::vec3( 0, -200, 0 ), 2500 );
+	//client.display_mgr.draw_sun( glm::vec3( light_data.sun_data.pos_sun ), 50 );
 }
 
 void ChunkMgr::render_exlude( ) {
@@ -370,6 +373,8 @@ static glm::mat4 mat_view_light;
 static glm::mat4 mat_proj_light;
 
 void ChunkMgr::render_pass_shadow( ) {
+	static GLuint id_blocks = client.texture_mgr.get_texture_id( "Blocks" );
+
 	if( is_shadow_debug ) {
 		client.texture_mgr.unbind_program( );
 		client.display_mgr.set_ortho( );
@@ -399,7 +404,7 @@ void ChunkMgr::render_pass_shadow( ) {
 	}
 
 	if( is_shadows ) {
-		client.texture_mgr.bind_terrain( );
+		client.texture_mgr.bind_texture( 0, id_blocks );
 		client.texture_mgr.bind_program( "ShadowMap" );
 		static GLuint idx_mat_light = glGetUniformLocation( client.texture_mgr.id_prog, "mat_light" );
 		static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
@@ -449,7 +454,8 @@ void ChunkMgr::render_pass_shadow( ) {
 }
 
 void ChunkMgr::render_pass_norm( ) {
-	client.texture_mgr.bind_terrain( );
+	static GLuint id_blocks = client.texture_mgr.get_texture_id( "Blocks" );
+	client.texture_mgr.bind_texture( 0, id_blocks );
 	client.texture_mgr.bind_program( "Terrain" );
 	static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
 	static GLuint idx_mat_norm = glGetUniformLocation( client.texture_mgr.id_prog, "mat_norm" );
@@ -1193,10 +1199,10 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 		SetState state;
 		state.iter = map_chunks.end( );
 		auto & block_pumpkin = get_block_data( std::string( "Pumpkin" ) );
-		auto & block_gleaves = get_block_data( std::string( "Leaves" ) );
-		auto & block_dgleaves = get_block_data( std::string( "Pine Leaves" ) );
-		auto & block_rleaves = get_block_data( std::string( "Red Leaves" ) );
-		auto & block_bleaves = get_block_data( std::string( "Brown Leaves" ) );
+		auto & block_gleaves = get_block_data( std::string( "Leaves Light Green" ) );
+		auto & block_dgleaves = get_block_data( std::string( "Leaves Green" ) );
+		auto & block_rleaves = get_block_data( std::string( "Leaves Red" ) );
+		auto & block_bleaves = get_block_data( std::string( "Leaves Brown" ) );
 
 		for( int i = 0; i < Chunk::size_x; i++ ) {
 			for( int j = 0; j < Chunk::size_z; j++ ) {
@@ -1285,8 +1291,8 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 		client.thread_mgr.task_async( priority, [ & ] ( ) {
 			chunk_state( chunk, ChunkState::CS_SMesh, false );
-
-			static FaceDirection list_face_z[ ] = { FD_Up, FD_Down, FD_Left, FD_Right };
+			
+			/*static FaceDirection list_face_z[ ] = { FD_Up, FD_Down, FD_Left, FD_Right };
 			static FaceDirection list_face_x[ ] = { FD_Front, FD_Back };
 			static glm::vec3 list_scale_verts[ ] = {
 				{ 1, 0, 0 }, { 1, 0, 0 },	// Front / Back
@@ -1608,6 +1614,151 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 				chunk.idx_trans = 0;
 				std::unique_lock< std::recursive_mutex > lock( mtx_render );
 				map_render.erase( chunk.hash_lw );
+			}*/
+			
+			FaceDirection dir;
+			glm::ivec3 pos_lc;
+			glm::ivec3 pos_adj;
+			glm::ivec3 pos_gw;
+			int id_curr;
+			int id_adj;
+			Block * block_curr;
+			Block * block_adj;
+
+			chunk.ptr_buffer->list_indices.clear( );
+			chunk.ptr_buffer->list_vertices_solid.clear( );
+			chunk.ptr_buffer->list_vertices_trans.clear( );
+			chunk.ptr_buffer->list_sort.clear( );
+			chunk.ptr_buffer->size_solid = 0;
+			chunk.ptr_buffer->size_trans = 0;
+
+			for( pos_lc.x = 1; pos_lc.x < Chunk::size_x - 1; ++pos_lc.x ) {
+				for( pos_lc.y = 1; pos_lc.y < Chunk::size_y - 1; ++pos_lc.y ) {
+					for( pos_lc.z = 1; pos_lc.z < Chunk::size_z - 1; ++pos_lc.z ) {
+						id_curr = chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ];
+						if( id_curr == -1 ) { 
+							continue;
+						}
+
+						block_curr = &get_block_data( id_curr );
+
+						for( auto ptr_face : block_curr->include_lookup ) { 
+							if( block_curr->is_trans ) {
+								put_face(
+									chunk.ptr_buffer->list_vertices_trans,
+									pos_lc,
+									ptr_face->verts,
+									block_curr->color * ptr_face->color,
+									ptr_face->norms,
+									ptr_face->uvs );
+
+								chunk.ptr_buffer->list_sort.emplace_back(
+									std::pair< float, int > {
+										glm::distance( 
+											glm::vec3( chunk.pos_gw + pos_lc ) + 
+											glm::vec3( 0.5f, 0.5f, 0.5f ) + 
+											ptr_face->offset, client.display_mgr.camera.pos_camera 
+										),
+										chunk.ptr_buffer->list_vertices_trans.size( ) - 1
+									}
+								);
+							}
+							else { 
+								put_face(
+									chunk.ptr_buffer->list_vertices_solid,
+									pos_lc,
+									ptr_face->verts,
+									block_curr->color * ptr_face->color,
+									ptr_face->norms,
+									ptr_face->uvs );
+							}
+						}
+
+						for( int i = 0; i < FaceDirection::FD_Size; ++i ) { 
+							dir = ( FaceDirection ) i;
+							pos_adj = pos_lc + Directional::get_vec_dir_i( dir );
+							id_adj = chunk.id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+							block_adj = &get_block_data( id_adj );
+
+							if( block_curr->is_visible( *block_adj ) ) { 
+								for( auto ptr_face : block_curr->occlude_lookup[ dir ] ) { 
+									if( block_curr->is_trans ) {
+										put_face(
+											chunk.ptr_buffer->list_vertices_trans,
+											pos_lc,
+											ptr_face->verts,
+											block_curr->color * ptr_face->color,
+											ptr_face->norms,
+											ptr_face->uvs );
+
+										chunk.ptr_buffer->list_sort.emplace_back(
+											std::pair< float, int > {
+												glm::distance(
+													glm::vec3( chunk.pos_gw + pos_lc ) +
+													glm::vec3( 0.5f, 0.5f, 0.5f ) +
+													ptr_face->offset, client.display_mgr.camera.pos_camera
+												),
+													chunk.ptr_buffer->list_vertices_trans.size( ) - 1
+											}
+										);
+									}
+									else {
+										put_face(
+											chunk.ptr_buffer->list_vertices_solid,
+											pos_lc,
+											ptr_face->verts,
+											block_curr->color * ptr_face->color,
+											ptr_face->norms,
+											ptr_face->uvs );
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			for( int unsigned i = 0; i < chunk.ptr_buffer->list_vertices_solid.size( ); i++ ) {
+				chunk.ptr_buffer->list_indices.emplace_back(
+					ChunkFaceIndices {
+					i * 4 + 0, i * 4 + 1, i * 4 + 2,
+					i * 4 + 2, i * 4 + 3, i * 4 + 0
+				}
+				);
+			}
+
+			chunk.ptr_buffer->size_solid = chunk.ptr_buffer->list_vertices_solid.size( );
+
+			std::sort( chunk.ptr_buffer->list_sort.begin( ), chunk.ptr_buffer->list_sort.end( ),
+				[ ] ( std::pair< float, int > const & lho, std::pair< float, int > const & rho ) {
+				return lho.first > rho.first;
+			} );
+
+			for( auto & pair_sort : chunk.ptr_buffer->list_sort ) {
+				chunk.ptr_buffer->list_vertices_solid.emplace_back( chunk.ptr_buffer->list_vertices_trans[ pair_sort.second ] );
+			}
+
+			for( int unsigned i = chunk.ptr_buffer->size_solid; i < chunk.ptr_buffer->list_vertices_solid.size( ); i++ ) {
+				chunk.ptr_buffer->list_indices.emplace_back(
+					ChunkFaceIndices {
+					i * 4 + 0, i * 4 + 1, i * 4 + 2,
+					i * 4 + 2, i * 4 + 3, i * 4 + 0
+				}
+				);
+			}
+
+			chunk.ptr_buffer->size_trans = chunk.ptr_buffer->list_vertices_solid.size( );
+
+			if( chunk.ptr_buffer->size_trans > 0 ) {
+				chunk_state( chunk, ChunkState::CS_Buffer, true );
+			}
+			else {
+				auto iter = map_render.end( );
+				put_buffer( chunk.ptr_buffer );
+				chunk.idx_solid = 0;
+				chunk.idx_trans = 0;
+				std::unique_lock< std::recursive_mutex > lock( mtx_render );
+				map_render.erase( chunk.hash_lw );
 			}
 
 			chunk.is_working = false;
@@ -1849,202 +2000,253 @@ void ChunkMgr::chunk_remove( Chunk & chunk ) {
 void ChunkMgr::load_block_data( ) {
 	using namespace std::tr2::sys;
 	std::ostringstream out;
+	path path_base( "./Blocks" );
+	tinyxml2::XMLDocument doc;
+	tinyxml2::XMLElement const * ele_block;
+	tinyxml2::XMLElement const * ele_face;
+	tinyxml2::XMLElement const * ele_data;
+	tinyxml2::XMLElement const * ele_var;
 
 	printTabbedLine( 1, "Loading blocks..." );
 
-	client.gui_mgr.print_to_console( std::string( "Loading block data:" ) );
+	for( directory_iterator iter_blocks( path_base ); iter_blocks != directory_iterator( ); ++iter_blocks ) { 
+		if( iter_blocks->path( ).extension( ).string( ) != ".xml" ) { 
+			continue;
+		}
 
-	path path_blocks( "./Blocks" );
-	int index = 0;
-	int succ = 0;
+		Block block;
 
-	if( !exists( path_blocks ) ) {
-		create_directory( path_blocks );
-	}
+		doc.LoadFile( iter_blocks->path( ).string( ).c_str( ) );
+		if( doc.Error( ) ) { 
+			std::cout << "ERROR! Error reading: " << iter_blocks->path( ).string( ) << std::endl;
+			doc.PrintError( );
+			continue;
+		}
+		ele_block = doc.FirstChildElement( "Block" );
 
-	for( directory_iterator dir_iter( path_blocks ); dir_iter != directory_iterator( ); dir_iter++ ) {
-		if( is_directory( dir_iter->status( ) ) ) {
-			std::string name_block = dir_iter->path( ).filename( ).string( );
-			std::string path_desc = dir_iter->path( ).string( ) + "\\" + name_block + ".desc";
-			std::ifstream in_file( path_desc );
-			int id = list_block_data.size();
+		ele_data = ele_block->FirstChildElement( "Name" );
+		if( ele_data != nullptr ) {
+			block.name = ele_data->GetText( );
+		}
 
-			if( in_file.is_open( ) ) {
-				std::string line; line.resize( 128 );
-				std::string token;
-				int pos_start, pos_end;
+		ele_data = ele_block->FirstChildElement( "Texture" );
+		if( ele_data != nullptr ) {
+			block.texture = ele_data->GetText( );
+			block.id_texture = client.texture_mgr.get_texture_id( block.texture );
+		}
 
-				Block block( id, name_block );
+		ele_data = ele_block->FirstChildElement( "Transparent" );
+		if( ele_data != nullptr ) {
+			ele_data->QueryBoolText( &block.is_trans );
+		}
 
-				for( int i = 0; i < FD_Size; i++ ) {
-					block.uvs[ i ] = client.texture_mgr.get_uvs_block( id, 0 );
-					block.orientation[ i ] = 0;
-				}
-
-				while( std::getline( in_file, line ) ) {
-					pos_start = 0; pos_end = 0;
-					pos_end = line.find( ":" );
-
-					if( pos_end != std::string::npos ) {
-						token = line.substr( pos_start, pos_end - pos_start );
-
-						if( token == "Color" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.color.r = atof( token.data( ) );
-
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.color.g = atof( token.data( ) );
-
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.color.b = atof( token.data( ) );
-
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.color.a = atof( token.data( ) );
-						}
-						else if( token == "Texture Front" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.uvs[ FD_Front ] = client.texture_mgr.get_uvs_block( id, atoi( token.data( ) ) );
-						}
-						else if( token == "Texture Back" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.uvs[ FD_Back ] = client.texture_mgr.get_uvs_block( id, atoi( token.data( ) ) );
-						}
-						else if( token == "Texture Left" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.uvs[ FD_Left ] = client.texture_mgr.get_uvs_block( id, atoi( token.data( ) ) );
-						}
-						else if( token == "Texture Right" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.uvs[ FD_Right ] = client.texture_mgr.get_uvs_block( id, atoi( token.data( ) ) );
-						}
-						else if( token == "Texture Up" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.uvs[ FD_Up ] = client.texture_mgr.get_uvs_block( id, atoi( token.data( ) ) );
-						}
-						else if( token == "Texture Down" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.uvs[ FD_Down ] = client.texture_mgr.get_uvs_block( id, atoi( token.data( ) ) );
-						}
-						else if( token == "Orientation Front" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.orientation[ FD_Front ] = atoi( token.data( ) );
-						}
-						else if( token == "Orientation Back" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.orientation[ FD_Back ] = atoi( token.data( ) );
-						}
-						else if( token == "Orientation Left" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.orientation[ FD_Left ] = atoi( token.data( ) );
-						}
-						else if( token == "Orientation Right" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.orientation[ FD_Right ] = atoi( token.data( ) );
-						}
-						else if( token == "Orientation Up" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.orientation[ FD_Up ] = atoi( token.data( ) );
-						}
-						else if( token == "Orientation Down" ) {
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							block.orientation[ FD_Down ] = atoi( token.data( ) );
-						}
-						else if( token == "Visibility" ) { 
-							pos_start = line.find( " ", pos_end );
-							pos_end = line.find( ",", pos_start );
-							pos_start += 1;
-							token = line.substr( pos_start, pos_end - pos_start );
-							if( token == "Transparent" ) { 
-								block.is_trans = true;
-							}
-						}
-					}
-				}
-
-				list_block_data.push_back( block );
-				map_block_data.insert( std::make_pair( name_block, id ) );
-
-				out.str( "" );
-				out << "SUCCESS: " << path_desc;
-				client.gui_mgr.print_to_console( out.str( ) );
-				printTabbedLine( 1, out.str( ) );
-
-				succ++;
-
-				in_file.close( );
+		ele_data = ele_block->FirstChildElement( "Color" );
+		if( ele_data != nullptr ) {
+			ele_var = ele_data->FirstChildElement( "R" );
+			if( ele_var != nullptr ) {
+				ele_var->QueryFloatText( &block.color.r );
 			}
-			else {
-				Block block( id, name_block );
 
-				for( int i = 0; i < FD_Size; i++ ) {
-					block.uvs[ i ] = client.texture_mgr.get_uvs_block( id, 0 );
-				}
+			ele_var = ele_data->FirstChildElement( "G" );
+			if( ele_var != nullptr ) {
+				ele_var->QueryFloatText( &block.color.g );
+			}
 
-				list_block_data.push_back( block );
+			ele_var = ele_data->FirstChildElement( "B" );
+			if( ele_var != nullptr ) {
+				ele_var->QueryFloatText( &block.color.b );
+			}
 
-				out.str( "" );
-				out << "ERROR: " << path_desc;
-				client.gui_mgr.print_to_console( out.str( ) );
-				printTabbedLine( 1, out.str( ) );
+			ele_var = ele_data->FirstChildElement( "A" );
+			if( ele_var != nullptr ) {
+				ele_var->QueryFloatText( &block.color.a );
 			}
 		}
-		index++;
+
+		ele_face = ele_block->FirstChildElement( "Face" );
+		while( ele_face != nullptr ) { 
+			Face face;
+
+			ele_data = ele_face->FirstChildElement( "Offset" );
+			if( ele_data != nullptr ) { 
+				ele_var = ele_data->FirstChildElement( "X" );
+				if( ele_var != nullptr ) { 
+					ele_var->QueryFloatText( &face.offset.x );
+				}
+
+				ele_var = ele_data->FirstChildElement( "Y" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.offset.y );
+				}
+
+				ele_var = ele_data->FirstChildElement( "Z" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.offset.z );
+				}
+			}
+
+			ele_data = ele_face->FirstChildElement( "Dimension" );
+			if( ele_data != nullptr ) {
+				ele_var = ele_data->FirstChildElement( "X" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.dim.x );
+				}
+
+				ele_var = ele_data->FirstChildElement( "Y" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.dim.y );
+				}
+
+				ele_var = ele_data->FirstChildElement( "Z" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.dim.z );
+				}
+			}
+
+			ele_data = ele_face->FirstChildElement( "Rotation" );
+			if( ele_data != nullptr ) {
+				ele_var = ele_data->FirstChildElement( "X" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.rot.x );
+				}
+
+				ele_var = ele_data->FirstChildElement( "Y" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.rot.y );
+				}
+
+				ele_var = ele_data->FirstChildElement( "Z" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.rot.z );
+				}
+			}
+
+			ele_data = ele_face->FirstChildElement( "Color" );
+			if( ele_data != nullptr ) {
+				ele_var = ele_data->FirstChildElement( "R" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.color.r );
+				}
+
+				ele_var = ele_data->FirstChildElement( "G" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.color.g );
+				}
+
+				ele_var = ele_data->FirstChildElement( "B" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.color.b );
+				}
+
+				ele_var = ele_data->FirstChildElement( "A" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.color.a );
+				}
+			}
+
+			ele_data = ele_face->FirstChildElement( "Occlude" );
+			if( ele_data != nullptr ) {
+				std::string text( ele_data->GetText( ) );
+
+				if( text == "Front" ) {
+					face.occlude = FaceDirection::FD_Front;
+				}
+				else if( text == "Back" ) {
+					face.occlude = FaceDirection::FD_Back;
+				}
+				else if( text == "Left" ) {
+					face.occlude = FaceDirection::FD_Left;
+				}
+				else if( text == "Right" ) {
+					face.occlude = FaceDirection::FD_Right;
+				}
+				else if( text == "Up" ) {
+					face.occlude = FaceDirection::FD_Up;
+				}
+				else if( text == "Down" ) {
+					face.occlude = FaceDirection::FD_Down;
+				}
+				else {
+					face.occlude = FaceDirection::FD_Size;
+				}
+			}
+
+			ele_data = ele_face->FirstChildElement( "SubTexture" );
+			if( ele_data != nullptr ) {
+				face.subtex = ele_data->GetText( );
+				face.id_subtex = client.texture_mgr.get_texture_layer( block.texture, face.subtex );
+			}
+
+			ele_data = ele_face->FirstChildElement( "UV" );
+			int cnt = 0;
+			while( ele_data != nullptr && cnt < 4 ) { 
+				ele_var = ele_data->FirstChildElement( "X" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.uvs[ cnt ].x );
+				}
+
+				ele_var = ele_data->FirstChildElement( "Y" );
+				if( ele_var != nullptr ) {
+					ele_var->QueryFloatText( &face.uvs[ cnt ].y );
+				}
+
+				cnt++;
+				ele_data = ele_data->NextSiblingElement( "UV" );
+			}
+
+			block.faces.emplace_back( face );
+
+			ele_face = ele_face->NextSiblingElement( "Face" );
+		}
+
+		for( auto & face : block.faces ) { 
+			if( face.occlude != FaceDirection::FD_Size ) { 
+				block.occlude_lookup[ face.occlude ].emplace_back( &face );
+			}
+			else { 
+				block.include_lookup.emplace_back( &face );
+			}
+
+			glm::vec3 dim_h = face.dim / 2.0f;
+			glm::vec3 pos_c = { 0.5f, 0.5f, 0.5f };
+			glm::mat4 rotate_z = glm::rotate( glm::mat4( 1.0f ), glm::radians( face.rot.z ), glm::vec3( 0, 0, 1 ) );
+			glm::mat4 rotate_y = glm::rotate( glm::mat4( 1.0f ), glm::radians( face.rot.y ), glm::vec3( 0, 1, 0 ) );
+			glm::mat4 rotate_x = glm::rotate( glm::mat4( 1.0f ), glm::radians( face.rot.x ), glm::vec3( 1, 0, 0 ) );
+
+			face.verts[ 0 ] = { dim_h.x, -dim_h.y, 0 };
+			face.verts[ 1 ] = { -dim_h.x, -dim_h.y, 0 };
+			face.verts[ 2 ] = { -dim_h.x, dim_h.y, 0 };
+			face.verts[ 3 ] = { dim_h.x, dim_h.y, 0 };
+
+			face.norms[ 0 ] = { 0, -1, 0 };
+			face.norms[ 1 ] = { 0, -1, 0 };
+			face.norms[ 2 ] = { 0, -1, 0 };
+			face.norms[ 3 ] = { 0, -1, 0 };
+
+			for( auto & vert : face.verts ) { 
+				vert = glm::vec3( rotate_z * glm::vec4( vert, 0 ) );
+				vert = glm::vec3( rotate_x * glm::vec4( vert, 0 ) );
+				vert = glm::vec3( rotate_y * glm::vec4( vert, 0 ) );
+				vert = vert + pos_c + face.offset;
+			}
+
+			for( auto & norm : face.norms ) { 
+				norm = glm::vec3( rotate_z * glm::vec4( norm, 0 ) );
+				norm = glm::vec3( rotate_x * glm::vec4( norm, 0 ) );
+				norm = glm::vec3( rotate_y * glm::vec4( norm, 0 ) );
+				norm = glm::normalize( norm );
+			}
+		}
+
+		block.id = list_block_data.size( );
+		list_block_data.emplace_back( block );
+		map_block_data.insert( { block.name, list_block_data.size( ) - 1 } );
 	}
-
-	out.str( "" );
-	out << "Loaded: " << succ << " Total: " << index;
-	client.gui_mgr.print_to_console( out.str( ) );
-
+	
 	printTabbedLine( 1, out.str( ) );
 }
+
+
 
 void ChunkMgr::toggle_chunk_debug( ) { 
 	is_chunk_debug = !is_chunk_debug;
@@ -2321,7 +2523,7 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		int const height_min = 6, height_max = 10;
 		int const radius_min = 3, radius_max = 6;
 
-		auto & block_leaves = get_block_data( std::string( "Leaves" ) );
+		auto & block_leaves = get_block_data( std::string( "Leaves Light Green" ) );
 		auto & block_log = get_block_data( std::string( "Log" ) );
 		int tree_height;
 		int tree_radius;
@@ -2353,7 +2555,7 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		int const height_min = 10, height_max = 16;
 		int const radius_min = 5, radius_max = 9;
 
-		auto & block_leaves = get_block_data( std::string( "Pine Leaves" ) );
+		auto & block_leaves = get_block_data( std::string( "Leaves Green" ) );
 		auto & block_log = get_block_data( std::string( "Birch Log" ) );
 
 		float scale_radius;
@@ -2390,7 +2592,7 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		int const height_min = 12, height_max = 18;
 		int const radius_min = 4, radius_max = 8;
 
-		auto & block_leaves = get_block_data( std::string( "Red Leaves" ) );
+		auto & block_leaves = get_block_data( std::string( "Leaves Red" ) );
 		auto & block_log = get_block_data( std::string( "Birch Log" ) );
 
 		int tree_height;
@@ -2444,7 +2646,7 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		int const height_min = 10, height_max = 16;
 		int const radius_min = 5, radius_max = 9;
 
-		auto & block_leaves = get_block_data( std::string( "Brown Leaves" ) );
+		auto & block_leaves = get_block_data( std::string( "Leaves Brown" ) );
 		auto & block_log = get_block_data( std::string( "Birch Log" ) );
 
 		float scale_radius;
@@ -2485,7 +2687,7 @@ void ChunkMgr::explode_sphere( glm::vec3 const & pos_gw, int const size ) {
 }
 
 void ChunkMgr::explode_sphere_recur( glm::vec3 const & pos_gw, int const size, int depth ) { 
-	glm::ivec3 pos_check;
+	/*glm::ivec3 pos_check;
 	glm::vec3 vec_fwd;
 	int id_curr = 0;
 	auto & block_water = get_block_data( std::string( "Water" ) );
@@ -2545,7 +2747,7 @@ void ChunkMgr::explode_sphere_recur( glm::vec3 const & pos_gw, int const size, i
 		}
 	}
 
-	set_sphere( pos_gw, size, -1 );
+	set_sphere( pos_gw, size, -1 );*/
 }
 
 Block & ChunkMgr::get_block_data( int const id ) {
@@ -2660,7 +2862,7 @@ void ChunkMgr::clear_emitters( ) {
 
 void put_face( 
 	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos, 
-	FaceVerts const & verts, Color4 const & color, 
+	FaceVerts const & verts, glm::vec4 const & color, 
 	glm::vec3 const & normal, FaceUvs const & uvs ) {
 
 	buffer_verts.emplace_back( 
@@ -2688,10 +2890,40 @@ void put_face(
 	);
 }
 
+void put_face(
+	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
+	FaceVerts const & verts, glm::vec4 const & color,
+	FaceNorms const & normal, FaceUvs const & uvs ) { 
+
+	buffer_verts.emplace_back(
+		ChunkFaceVertices { {
+			{ { pos.x + verts[ 0 ][ 0 ], pos.y + verts[ 0 ][ 1 ], pos.z + verts[ 0 ][ 2 ] },
+			{ color.r, color.g, color.b, color.a },
+			{ normal[ 0 ].x, normal[ 0 ].y, normal[ 0 ].z },
+			{ uvs[ 0 ][ 0 ], uvs[ 0 ][ 1 ], uvs[ 0 ][ 2 ] } },
+
+			{ { pos.x + verts[ 1 ][ 0 ], pos.y + verts[ 1 ][ 1 ], pos.z + verts[ 1 ][ 2 ] },
+			{ color.r, color.g, color.b, color.a },
+			{ normal[ 1 ].x, normal[ 1 ].y, normal[ 1 ].z },
+			{ uvs[ 1 ][ 0 ], uvs[ 1 ][ 1 ], uvs[ 1 ][ 2 ] } },
+
+			{ { pos.x + verts[ 2 ][ 0 ], pos.y + verts[ 2 ][ 1 ], pos.z + verts[ 2 ][ 2 ] },
+			{ color.r, color.g, color.b, color.a },
+			{ normal[ 2 ].x, normal[ 2 ].y, normal[ 2 ].z },
+			{ uvs[ 2 ][ 0 ], uvs[ 2 ][ 1 ], uvs[ 2 ][ 2 ] } },
+
+			{ { pos.x + verts[ 3 ][ 0 ], pos.y + verts[ 3 ][ 1 ], pos.z + verts[ 3 ][ 2 ] },
+			{ color.r, color.g, color.b, color.a },
+			{ normal[ 3 ].x, normal[ 3 ].y, normal[ 3 ].z },
+			{ uvs[ 3 ][ 0 ], uvs[ 3 ][ 1 ], uvs[ 3 ][ 2 ] } }
+			} }
+	);
+}
+
 void put_face( 
 	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
 	FaceVerts const & verts, glm::ivec3 const & scale_verts,
-	Color4 const & color, glm::vec3 const & normal, 
+	glm::vec4 const & color, glm::vec3 const & normal, 
 	FaceUvs const & uvs, glm::ivec2 const & scale_uvs ) {
 
 	buffer_verts.emplace_back(

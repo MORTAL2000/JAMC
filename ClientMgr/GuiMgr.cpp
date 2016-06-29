@@ -216,7 +216,7 @@ void GuiMgr::toggle_input( ) {
 		auto & data_command = page.get_data< PCDCommand >( std::string( "Console" ) );
 		auto & data_text = page.get_data< PCDTextField >( std::string( "Command" ) );
 
-		comp_command.color.set( 0.0f, 0.0f, 0.0f, 0.2f );
+		comp_command.color = { 0.0f, 0.0f, 0.0f, 0.2f };
 		is_input = false;
 
 		if( !data_command.str_command.size( ) ) { 
@@ -236,7 +236,7 @@ void GuiMgr::toggle_input( ) {
 		auto & comp_command = page.get_comp( std::string( "Command" ) );
 		auto & data_command = page.get_data< PCDCommand >( std::string( "Console" ) );
 
-		comp_command.color.set( 0.0f, 0.0f, 0.0f, 0.3f );
+		comp_command.color = { 0.0f, 0.0f, 0.0f, 0.3f };
 
 		data_command.str_command = "";
 		data_command.index_history = data_command.index;

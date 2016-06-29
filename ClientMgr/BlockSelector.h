@@ -9,6 +9,7 @@ private:
 	static int const size_min = 40;
 	static int const num_hist = 6;
 	Client & client;
+	int id_temp;
 	int id_block;
 	VBO vbo;
 

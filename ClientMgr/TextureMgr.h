@@ -15,6 +15,22 @@ struct ShaderLoader {
 	GLuint id_prog = 0;
 };
 
+struct MultiTex { 
+	GLuint size;
+	GLuint id_tex;
+	GLuint num_mipmap;
+	glm::ivec2 dim;
+	std::string name;
+	std::unordered_map< std::string, int > map_tex_lookup;
+
+	MultiTex( ) :
+		size( 0 ),
+		id_tex( 0 ),
+		name( "" ),
+		dim( 0, 0 ),
+		map_tex_lookup( ) { }
+};
+
 class TextureMgr :
 	public Manager {
 
@@ -33,24 +49,25 @@ private:
 	GLuint id_ubo_mvp;
 	GLuint id_ubo_lights;
 
-	std::vector< std::vector< FaceUvs > > uvs_terrain;
 	std::vector< face_uvs > uvs_skybox;
 	face_uvs uvs_sun;
 	std::vector< face_uvs > uvs_fonts;
 	face_uvs uvs_materials;
+
+	std::vector< MultiTex > list_multitex;
+	std::unordered_map< std::string, MultiTex * > map_multitex;
 
 public:	
 	GLuint id_prog = 0;
 	GLuint id_active = 0;
 	GLuint id_texture = 0;
 
-	GLuint id_terrain;
 	GLuint id_skybox;
 	GLuint id_fonts;
 	GLuint id_materials;
 
 private:
-	void load_terrain( );
+	void load_textures( );
 	void load_skybox( );
 	void load_sun( );
 	void load_fonts( );
@@ -74,20 +91,18 @@ public:
 
 	void loader_add( std::string const & name );
 
-	int get_num_blocks( );
-	int get_num_block_textures( int const id_block );
-
 	void bind_skybox( );
-	void bind_terrain( );
 	void bind_fonts( );
 	void bind_materials( );
 
 	void bind_program( std::string const & name );
 	void unbind_program( );
 
+	GLuint get_texture_id( std::string const & name_tex );
+	GLuint get_texture_layer( std::string const & name_tex, std::string const & name_subtex );
+
 	void bind_texture( GLuint const id_active, GLuint const id_texture );
 
-	FaceUvs & get_uvs_block( int const id_block, int const id_texture );
 	face_uvs & get_uvs_skybox( FaceDirection dir_face );
 	face_uvs & get_uvs_sun( );
 	face_uvs & get_uvs_fonts( int const id_font );

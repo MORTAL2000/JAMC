@@ -24,7 +24,7 @@ public:
 
 	std::string str_name;
 
-	Color4 color;
+	glm::vec4 color;
 
 	bool is_dirty;
 	bool is_hold;

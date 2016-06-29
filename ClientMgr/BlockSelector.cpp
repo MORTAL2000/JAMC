@@ -3,9 +3,7 @@
 #include "glm/gtc/type_ptr.hpp"
 
 BlockSelector::BlockSelector( Client & client ) :
-	client( client ){
-
-}
+	client( client ) {}
 
 BlockSelector::~BlockSelector( ) { 
 	
@@ -127,93 +125,84 @@ void BlockSelector::mesh( ) {
 		return;
 	}
 
-	FaceVerts const * verts;
-	Color4 * color;
-	glm::vec3 const * normal;
-	FaceUvs const * uvs;
 	Block * block;
-	FaceDirection dir;
-
-	vbo.clear( );
+	glm::vec3 const * vert;
+	glm::vec4 color;
+	glm::vec3 const * norm;
+	glm::vec2 const * uv;
 
 	block = &client.chunk_mgr.get_block_data( id_block );
 
+	vbo.clear( );
+
 	vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
-		"Selector", client.texture_mgr.id_terrain,
+		"Selector", client.texture_mgr.get_texture_id( "Blocks" ),
 		std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
 	) );
 
-	for( int i = 0; i < FaceDirection::FD_Size; ++i ) {
-		dir = ( FaceDirection ) i;
-		verts = &Block::get_verts( dir );
-		color = &block->color;
-		normal = &Directional::get_vec_dir_f( dir );
-		uvs = &block->get_uvs( dir );
-
+	for( auto & face : block->faces ) { 
 		for( int j = 0; j < 4; ++j ) {
-			vbo.push_data( VBO::Vertex {
-				( *verts )[ j ][ 0 ],
-				( *verts )[ j ][ 1 ],
-				( *verts )[ j ][ 2 ],
+			vert = &face.verts[ j ];
+			color = block->color * face.color;
+			norm = &face.norms[ j ];
+			uv = &face.uvs[ j ];
 
-				color->r, color->g, color->b, color->a,
-				normal->x, normal->y, normal->z,
-				( *uvs )[ j ][ 0 ], ( *uvs )[ j ][ 1 ], ( *uvs )[ j ][ 2 ]
+			vbo.push_data( VBO::Vertex {
+				vert->x, vert->y, vert->z,
+				color.r, color.g, color.b, color.a,
+				norm->x, norm->y, norm->z,
+				uv->x, uv->y, ( GLfloat ) face.id_subtex
 			} );
 		}
 	}
 
 	for( int k = num_hist; k >= 1; --k ) {
-		block = &client.chunk_mgr.get_block_data( ( id_block + k ) % client.chunk_mgr.get_num_blocks( ) );
+		id_temp = id_block + k;
+		while( id_temp >= client.chunk_mgr.get_num_blocks( ) ) id_temp -= client.chunk_mgr.get_num_blocks( );
+		block = &client.chunk_mgr.get_block_data( id_temp );
 
 		vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
-			"Selector", client.texture_mgr.id_terrain,
+			"Selector", client.texture_mgr.get_texture_id( "Blocks" ),
 			std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
 		) );
 
-		for( int i = 0; i < FaceDirection::FD_Size; ++i ) {
-			dir = ( FaceDirection ) i;
-			verts = &Block::get_verts( dir );
-			color = &block->color;
-			normal = &Directional::get_vec_dir_f( dir );
-			uvs = &block->get_uvs( dir );
-
+		for( auto & face : block->faces ) {
 			for( int j = 0; j < 4; ++j ) {
-				vbo.push_data( VBO::Vertex {
-					( *verts )[ j ][ 0 ],
-					( *verts )[ j ][ 1 ],
-					( *verts )[ j ][ 2 ],
+				vert = &face.verts[ j ];
+				color = block->color * face.color;
+				norm = &face.norms[ j ];
+				uv = &face.uvs[ j ];
 
-					color->r, color->g, color->b, color->a,
-					normal->x, normal->y, normal->z,
-					( *uvs )[ j ][ 0 ], ( *uvs )[ j ][ 1 ], ( *uvs )[ j ][ 2 ]
+				vbo.push_data( VBO::Vertex {
+					vert->x, vert->y, vert->z,
+					color.r, color.g, color.b, color.a,
+					norm->x, norm->y, norm->z,
+					uv->x, uv->y, ( GLfloat ) face.id_subtex
 				} );
 			}
 		}
 
-		block = &client.chunk_mgr.get_block_data( ( id_block - k + client.chunk_mgr.get_num_blocks( ) ) % client.chunk_mgr.get_num_blocks( ) );
+		id_temp = id_block - k;
+		while( id_temp < 0 ) id_temp += client.chunk_mgr.get_num_blocks( );
+		block = &client.chunk_mgr.get_block_data( id_temp );
 
 		vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
-			"Selector", client.texture_mgr.id_terrain,
+			"Selector", client.texture_mgr.get_texture_id( "Blocks" ),
 			std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
 		) );
 
-		for( int i = 0; i < FaceDirection::FD_Size; ++i ) {
-			dir = ( FaceDirection ) i;
-			verts = &Block::get_verts( dir );
-			color = &block->color;
-			normal = &Directional::get_vec_dir_f( dir );
-			uvs = &block->get_uvs( dir );
-
+		for( auto & face : block->faces ) {
 			for( int j = 0; j < 4; ++j ) {
-				vbo.push_data( VBO::Vertex {
-					( *verts )[ j ][ 0 ],
-					( *verts )[ j ][ 1 ],
-					( *verts )[ j ][ 2 ],
+				vert = &face.verts[ j ];
+				color = block->color * face.color;
+				norm = &face.norms[ j ];
+				uv = &face.uvs[ j ];
 
-					color->r, color->g, color->b, color->a,
-					normal->x, normal->y, normal->z,
-					( *uvs )[ j ][ 0 ], ( *uvs )[ j ][ 1 ], ( *uvs )[ j ][ 2 ]
+				vbo.push_data( VBO::Vertex {
+					vert->x, vert->y, vert->z,
+					color.r, color.g, color.b, color.a,
+					norm->x, norm->y, norm->z,
+					uv->x, uv->y, ( GLfloat ) face.id_subtex
 				} );
 			}
 		}

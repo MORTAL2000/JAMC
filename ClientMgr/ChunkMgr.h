@@ -275,11 +275,16 @@ public:
 
 extern void put_face( 
 	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
-	FaceVerts const & verts, Color4 const & color, 
+	FaceVerts const & verts, glm::vec4 const & color, 
 	glm::vec3 const & normal, FaceUvs const & uvs );
 
 extern void put_face(
 	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
+	FaceVerts const & verts, glm::vec4 const & color,
+	FaceNorms const & normal, FaceUvs const & uvs );
+
+extern void put_face(
+	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
 	FaceVerts const & verts, glm::ivec3 const & scale_verts,
-	Color4 const & color, glm::vec3 const & normal,
+	glm::vec4 const & color, glm::vec3 const & normal,
 	FaceUvs const & uvs, glm::ivec2 const & scale_uvs );

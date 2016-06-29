@@ -84,13 +84,10 @@ public:
 
 	void draw_string( 
 		glm::ivec2 const & pos_quad, std::string const & string, 
-		Color4 & color, int const size );
+		glm::vec4 & color, int const size );
 	void draw_key( int const size );
-	void draw_quad( glm::ivec2 & pos_quad, glm::ivec2 & dim_quad, Color4 const & color, face_uvs & uvs );
-	void draw_block( Color4 &, int const id_block );
-	void draw_skybox( glm::vec3 & pos_skybox, float const size );
-	void draw_sun( glm::vec3 & pos_sun, float const size );
-	void draw_chunk( Chunk & chunk );
+	//void draw_skybox( glm::vec3 & pos_skybox, float const size );
+	//void draw_sun( glm::vec3 & pos_sun, float const size );
 	void draw_record_graph( 
 		glm::ivec2 & pos_graph, glm::ivec2 & dim_graph, 
 		std::string const & name_record, float time_ref );

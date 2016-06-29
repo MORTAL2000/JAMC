@@ -31,7 +31,7 @@ FuncComp PageCompFuncs::alloc_close = [ ] ( PageComp & comp ) {
 
 	comp.func_on_down = on_down_close;
 
-	comp.color.set( 0.7f, 0.2f, 0.2f, 0.7f );
+	comp.color = { 0.7f, 0.2f, 0.2f, 0.7f };
 	comp.vec_dim = glm::ivec2( 24-10, 24-10 );
 
 	comp.vec_anchor_pos = glm::vec2( 1.0f, 1.0f );
@@ -61,7 +61,7 @@ FuncComp PageCompFuncs::alloc_edit = [ ] ( PageComp & comp ) {
 	auto & data_edit = comp.parent->get_data< PCDEditable >( std::string( "Edit" ) );
 	data_edit.is_editable = true;
 
-	comp.color.set( 0.2f, 0.7f, 0.2f, 0.7f );
+	comp.color = { 0.2f, 0.7f, 0.2f, 0.7f };
 	comp.vec_dim = glm::ivec2( 14, 14 );
 
 	comp.vec_anchor_pos = glm::vec2( 1.0f, 1.0f );
@@ -132,7 +132,7 @@ FuncComp PageCompFuncs::alloc_resize_top_left = [ ] ( PageComp & comp ) {
 	comp.func_on_hold = on_hold_resize_top_left;
 	comp.func_on_up = on_up_resize;
 
-	comp.color.set( 1.0f, 1.0f, 1.0f, 0.3f );
+	comp.color = { 1.0f, 1.0f, 1.0f, 0.3f };
 	comp.vec_dim = glm::ivec2( 5, 5 );
 
 	comp.vec_anchor_pos = glm::vec2( 0.0f, 1.0f );
@@ -153,7 +153,7 @@ FuncComp PageCompFuncs::alloc_resize_bot_left = [ ] ( PageComp & comp ) {
 	comp.func_on_hold = on_hold_resize_bot_left;
 	comp.func_on_up = on_up_resize;
 
-	comp.color.set( 1.0f, 1.0f, 1.0f, 0.3f );
+	comp.color = { 1.0f, 1.0f, 1.0f, 0.3f };
 	comp.vec_dim = glm::ivec2( 5, 5 );
 
 	comp.vec_anchor_pos = glm::vec2( 0.0f, 0.0f );
@@ -174,7 +174,7 @@ FuncComp PageCompFuncs::alloc_resize_top_right = [ ] ( PageComp & comp ) {
 	comp.func_on_hold = on_hold_resize_top_right;
 	comp.func_on_up = on_up_resize;
 
-	comp.color.set( 1.0f, 1.0f, 1.0f, 0.3f );
+	comp.color = { 1.0f, 1.0f, 1.0f, 0.3f };
 	comp.vec_dim = glm::ivec2( 5, 5 );
 
 	comp.vec_anchor_pos = glm::vec2( 1.0f, 1.0f );
@@ -195,7 +195,7 @@ FuncComp PageCompFuncs::alloc_resize_bot_right = [ ] ( PageComp & comp ) {
 	comp.func_on_hold = on_hold_resize_bot_right;
 	comp.func_on_up = on_up_resize;
 
-	comp.color.set( 1.0f, 1.0f, 1.0f, 0.3f );
+	comp.color = { 1.0f, 1.0f, 1.0f, 0.3f };
 	comp.vec_dim = glm::ivec2( 5, 5 );
 
 	comp.vec_anchor_pos = glm::vec2( 1.0f, 0.0f );
@@ -216,7 +216,7 @@ FuncComp PageCompFuncs::alloc_resize_left = [ ] ( PageComp & comp ) {
 	comp.func_on_hold = on_hold_resize_left;
 	comp.func_on_up = on_up_resize;
 
-	comp.color.set( 1.0f, 1.0f, 1.0f, 0.3f );
+	comp.color = { 1.0f, 1.0f, 1.0f, 0.3f };
 	comp.vec_dim = glm::ivec2( 5, 10 );
 
 	comp.vec_anchor_pos = glm::vec2( 0.0f, 0.5f );
@@ -237,7 +237,7 @@ FuncComp PageCompFuncs::alloc_resize_right = [ ] ( PageComp & comp ) {
 	comp.func_on_hold = on_hold_resize_right;
 	comp.func_on_up = on_up_resize;
 
-	comp.color.set( 1.0f, 1.0f, 1.0f, 0.3f );
+	comp.color = { 1.0f, 1.0f, 1.0f, 0.3f };
 	comp.vec_dim = glm::ivec2( 5, 10 );
 
 	comp.vec_anchor_pos = glm::vec2( 1.0f, 0.5f );
@@ -258,7 +258,7 @@ FuncComp PageCompFuncs::alloc_resize_top = [ ] ( PageComp & comp ) {
 	comp.func_on_hold = on_hold_resize_top;
 	comp.func_on_up = on_up_resize;
 
-	comp.color.set( 1.0f, 1.0f, 1.0f, 0.3f );
+	comp.color = { 1.0f, 1.0f, 1.0f, 0.3f };
 	comp.vec_dim = glm::ivec2( 10, 5 );
 
 	comp.vec_anchor_pos = glm::vec2( 0.5f, 1.0f );
@@ -279,7 +279,7 @@ FuncComp PageCompFuncs::alloc_resize_bot = [ ] ( PageComp & comp ) {
 	comp.func_on_hold = on_hold_resize_bot;
 	comp.func_on_up = on_up_resize;
 
-	comp.color.set( 1.0f, 1.0f, 1.0f, 0.3f );
+	comp.color = { 1.0f, 1.0f, 1.0f, 0.3f };
 	comp.vec_dim = glm::ivec2( 10, 5 );
 
 	comp.vec_anchor_pos = glm::vec2( 0.5f, 0.0f );
@@ -444,7 +444,7 @@ FuncComp PageCompFuncs::alloc_titlebar = [ ] ( PageComp & comp ) {
 	comp.func_on_hold = on_hold_titlebar;
 	comp.func_on_up = on_up_titlebar;
 
-	comp.color.set( 0.0f, 0.0f, 0.3f, 0.7f );
+	comp.color = { 0.0f, 0.0f, 0.3f, 0.7f };
 	comp.vec_dim = glm::ivec2( 400, 24 );
 
 	comp.vec_anchor_pos = glm::vec2( 0.0f, 1.0f );
@@ -579,7 +579,7 @@ FuncComp PageCompFuncs::alloc_command = [ ] ( PageComp & comp ) {
 	data_text.ptr_str = &data_command.str_command;
 	data_text.ptr_vec_pos = &data_command.vect_pos;
 
-	comp.color.set( 0.0f, 0.0f, 0.0f, 0.2f );
+	comp.color = { 0.0f, 0.0f, 0.0f, 0.2f };
 
 	comp.vec_dim = glm::ivec2( 0, data_command.size_text + 6 );
 

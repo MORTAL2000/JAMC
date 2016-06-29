@@ -29,6 +29,7 @@ struct ChunkBuffer {
 	std::vector< ChunkFaceIndices > list_indices;
 	std::vector< ChunkFaceVertices > list_vertices_solid;
 	std::vector< ChunkFaceVertices > list_vertices_trans;
+	std::vector< ChunkFaceVertices > list_enviornment;
 	std::vector< std::pair< float, int > > list_sort;
 };
 

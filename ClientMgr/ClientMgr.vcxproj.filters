@@ -102,9 +102,6 @@
     <ClCompile Include="Manager.cpp">
       <Filter>Source Files\Managers</Filter>
     </ClCompile>
-    <ClCompile Include="Color4.cpp">
-      <Filter>Source Files\Objects</Filter>
-    </ClCompile>
     <ClCompile Include="simplexnoise.cpp">
       <Filter>Source Files\Objects</Filter>
     </ClCompile>
@@ -202,9 +199,6 @@
   <ItemGroup>
     <ClInclude Include="Globals.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Color4.h">
-      <Filter>Header Files\Objects</Filter>
     </ClInclude>
     <ClInclude Include="simplexnoise.h">
       <Filter>Header Files\Objects</Filter>
@@ -334,5 +328,10 @@
     <None Include="Shaders\Basic.vert">
       <Filter>Resource Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Blocks\Default.xml">
+      <Filter>Resource Files</Filter>
+    </Xml>
   </ItemGroup>
 </Project>

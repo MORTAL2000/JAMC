@@ -3,6 +3,7 @@
 #include "Client.h"
 
 #include "glm/gtc/type_ptr.hpp"
+#include "tinyxml2-master/tinyxml2.h"
 
 #include <iostream>
 #include <filesystem>
@@ -33,7 +34,9 @@ void TextureMgr::init( ) {
 
 	std::cout << std::endl;
 	printTabbedLine( 1, "Creating Textures..." );
-	load_terrain( );
+
+	load_textures( );
+
 	load_skybox( );
 	load_sun( );
 	load_fonts( );
@@ -67,7 +70,6 @@ void TextureMgr::init( ) {
 	}
 
 	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D_ARRAY, id_terrain );
 
 	for( auto & shader : { "Basic", "Terrain", "Selector", "Entity" } ) { 
 		bind_program( shader );
@@ -112,6 +114,27 @@ void TextureMgr::unbind_program( ) {
 	glUseProgram( 0 );
 }
 
+GLuint TextureMgr::get_texture_id( std::string const & name_tex ) {
+	auto iter = map_multitex.find( name_tex );
+	if( iter == map_multitex.end( ) ) return 0;
+	return iter->second->id_tex;
+}
+
+GLuint TextureMgr::get_texture_layer( std::string const & name_tex, std::string const & name_subtex ) {
+	auto iter_multitex = map_multitex.find( name_tex );
+	if( iter_multitex == map_multitex.end( ) ) {
+		std::cout << "Cant find multitex!" << std::endl;
+		return 0;
+	}
+
+	auto iter_subtex = iter_multitex->second->map_tex_lookup.find( name_subtex );
+	if( iter_subtex == iter_multitex->second->map_tex_lookup.end( ) ) {
+		std::cout << "Cant find subtex of multitex " << iter_multitex->second->name << std::endl;
+		return 0;
+	}
+	return iter_subtex->second;
+}
+
 void TextureMgr::bind_texture( GLuint const id_active, GLuint const id_texture ) {
 	if( this->id_active != id_active ) {
 		this->id_active = id_active;
@@ -124,71 +147,149 @@ void TextureMgr::bind_texture( GLuint const id_active, GLuint const id_texture )
 	}
 }
 
-void TextureMgr::load_terrain( ) {
+void TextureMgr::load_textures( ) { 
 	using namespace std::tr2::sys;
-	auto & out = client.display_mgr.out;
-	path path_blocks( "./Blocks" );
-	int layer = 0;
+	path path_base( "./Textures" );
+	path path_multitex;
+	tinyxml2::XMLDocument doc;
+	tinyxml2::XMLElement const * elem;
+	GLuint num_tex = 0;
 
-	glGenTextures( 1, &id_copy );
-	glBindTexture( GL_TEXTURE_2D, id_copy );
-	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, size_terrain_texture, size_terrain_texture, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr );
+	// Load xml file
+	doc.LoadFile( "./Textures/MultiTexDesc.xml" );
 
-	glGenTextures( 1, &id_terrain );
+	std::cout << std::endl;
+	std::cout << checkGlErrors( ) << std::endl;
+	std::cout << "Loading MultiTexs..." << std::endl;
 
-	glBindTexture( GL_TEXTURE_2D_ARRAY, id_terrain );
-	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-	glTexStorage3D( GL_TEXTURE_2D_ARRAY, 6, GL_RGBA8, size_terrain_texture, size_terrain_texture, 1024 );
+	// Any errors?
+	if( doc.Error( ) ) { 
+		std::cout << "ERROR: Error while loading MultiTex descriptor!!" << std::endl;
+		doc.PrintError( );
+		return;
+	}
 
-	for( directory_iterator dir_iter_blocks( path_blocks ); dir_iter_blocks != directory_iterator( ); dir_iter_blocks++ ) {
-		if( !is_directory( dir_iter_blocks->status( ) ) ) {
-			continue;
-		}
+	// Lets find out how many multitex elements we have in our xml file!
+	elem = doc.FirstChildElement( "MultiTex" );
+	while( elem ) {
+		MultiTex entry;
+		entry.name = elem->GetText( );
+		entry.dim.x = elem->FindAttribute( "x" )->IntValue( );
+		entry.dim.y = elem->FindAttribute( "y" )->IntValue( );
+		entry.num_mipmap = elem->FindAttribute( "mipmap" )->IntValue( );
+		if( entry.num_mipmap <= 0 ) entry.num_mipmap = 1;
+		if( entry.num_mipmap > 10 ) entry.num_mipmap = 10;
 
-		uvs_terrain.push_back( std::vector< FaceUvs >( ) );
+		list_multitex.emplace_back( entry );
 
-		// Lets iterate all the png files in each block directory
-		for( directory_iterator dir_iter_texture( dir_iter_blocks->path( ) ); dir_iter_texture != directory_iterator( ); dir_iter_texture++ ) {
-			if( is_regular_file( dir_iter_texture->path( ) ) && dir_iter_texture->path( ).extension( ).string( ) != ".png" ) {
+		elem = elem->NextSiblingElement( "MultiTex" );
+	}
+
+	// Reserve bucket space in the lookup map
+	map_multitex.reserve( list_multitex.size( ) );
+
+	// Lets load the subtextures for each folder into the multitex!
+	for( int i = 0; i < list_multitex.size( ); ++i ) {
+		auto & entry = list_multitex[ i ];
+
+		// Grab our new path!
+		path_multitex = path_base;
+		path_multitex.append( "/" + entry.name );
+
+		// Count how many sub textures there are!
+		num_tex = 0;
+		for( directory_iterator iter_multitex( path_multitex ); iter_multitex != directory_iterator( ); ++iter_multitex ) {
+			if( !is_directory( iter_multitex->status( ) ) ) {
 				continue;
 			}
 
-			id_copy = SOIL_load_OGL_texture(
-				dir_iter_texture->path( ).string( ).c_str( ),
-				SOIL_LOAD_RGBA,
-				id_copy,
-				SOIL_FLAG_POWER_OF_TWO | SOIL_FLAG_INVERT_Y );
-
-			glCopyImageSubData(
-				id_copy, GL_TEXTURE_2D, 0,
-				0, 0, 0,
-				id_terrain, GL_TEXTURE_2D_ARRAY, 0,
-				0, 0, layer,
-				size_terrain_texture, size_terrain_texture, 1 );
-
-			auto & uvs_current = uvs_terrain.back( );
-			uvs_current.push_back(
-				FaceUvs { {
-					{ 0.0f, 0.0f, ( float ) layer },
-					{ 1.0f, 0.0f, ( float ) layer },
-					{ 1.0f, 1.0f, ( float ) layer },
-					{ 0.0f, 1.0f, ( float ) layer }
-				} }
-			);
-
-			printTabbedLine( 1, "Texture: " + dir_iter_texture->path( ).string( ) );
-
-			layer++;
+			for( directory_iterator iter_multitex_sub( iter_multitex->path( ) ); iter_multitex_sub != directory_iterator( ); ++iter_multitex_sub ) {
+				if( iter_multitex_sub->path( ).extension( ).string( ) == ".png" ) {
+					++num_tex;
+				}
+			}
 		}
+
+		// Reserve bucket space fot the sub texture lookup
+		entry.map_tex_lookup.reserve( num_tex );
+
+		std::cout << "Loading MultiTex: [" << entry.name << "] dim:" << Directional::print_vec( entry.dim ) 
+			<< " size:" << entry.size << " mipmap:" << entry.num_mipmap << std::endl;
+
+		// Request space fot he copy and final multitexture
+		glGenTextures( 1, &id_copy );
+		glBindTexture( GL_TEXTURE_2D, id_copy );
+		glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, entry.dim.x, entry.dim.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr );
+
+		glGenTextures( 1, &entry.id_tex );
+		glBindTexture( GL_TEXTURE_2D_ARRAY, entry.id_tex );
+		glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+		glTexStorage3D( GL_TEXTURE_2D_ARRAY, entry.num_mipmap, GL_RGBA8, entry.dim.x, entry.dim.y, 1024 );
+
+		std::cout << "Error after allocation? " << checkGlErrors( ) << std::endl;
+
+		// Lets iterate over all the sub textures in their folders!
+		for( directory_iterator iter_multitex( path_multitex ); iter_multitex != directory_iterator( ); ++iter_multitex ) {
+			if( !is_directory( iter_multitex->status( ) ) ) {
+				continue;
+			}
+
+			for( directory_iterator iter_multitex_sub( iter_multitex->path( ) ); iter_multitex_sub != directory_iterator( ); ++iter_multitex_sub ) {
+				if( iter_multitex_sub->path( ).extension( ).string( ) != ".png" ) {
+					continue;
+				}
+
+				// Load the sub texture into copy
+				id_copy = SOIL_load_OGL_texture(
+					iter_multitex_sub->path( ).string( ).c_str( ),
+					SOIL_LOAD_RGBA,
+					id_copy,
+					SOIL_FLAG_POWER_OF_TWO | SOIL_FLAG_INVERT_Y );
+
+				// Copy it from there to our multitexture
+				glCopyImageSubData(
+					id_copy, GL_TEXTURE_2D, 0,
+					0, 0, 0,
+					entry.id_tex, GL_TEXTURE_2D_ARRAY, 0,
+					0, 0, entry.size,
+					entry.dim.x, entry.dim.y, 1 );
+
+				// Lets find the path relative to the multitexture name!
+				std::string path_relative;
+
+				auto iter_path = iter_multitex_sub->path( ).end( );
+				iter_path--;
+				iter_path--;
+
+				path_relative += iter_path->string( ) + "/";
+				iter_path++;
+				path_relative += iter_path->filename( ).stem( ).string( );
+
+				entry.map_tex_lookup.insert( { path_relative, entry.size } );
+
+				entry.size++;
+
+				std::cout << "Loading subtex: " << path_relative << std::endl;
+			}
+		}
+
+		map_multitex.insert( { entry.name, &entry } );
+
+		// Generate mipmaps!
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT );
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT );
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+
+		glDeleteTextures( 1, &id_copy );
+
+		std::cout << "Loaded MultiTex[" << entry.name << "] dim:" << Directional::print_vec( entry.dim ) << " size:" << entry.size << std::endl;
 	}
 
-	glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT );
-	glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT );
-	glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-
-	glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+	std::cout << checkGlErrors( ) << std::endl;
+	std::cout << std::endl;
 }
 
 void TextureMgr::load_skybox( ) { 
@@ -523,28 +624,12 @@ void TextureMgr::load_shader( std::string const & path_vert, std::string const &
 	glDeleteShader( id_vert );
 	glDeleteShader( id_frag );
 }
-
-int TextureMgr::get_num_blocks( ) {
-	return uvs_terrain.size( );
-}
-
-int TextureMgr::get_num_block_textures( int const id_block ) {
-	return uvs_terrain[ id_block ].size( );
-}
  
 void TextureMgr::bind_skybox( ) {
 	if( id_texture != id_skybox ) { 
 		id_texture = id_skybox;
 		glActiveTexture( GL_TEXTURE0 );
 		glBindTexture( GL_TEXTURE_2D, id_texture );
-	}
-}
-
-void TextureMgr::bind_terrain( ) {
-	if( id_texture != id_terrain ) {
-		id_texture = id_terrain;
-		glActiveTexture( GL_TEXTURE0 );
-		glBindTexture( GL_TEXTURE_2D_ARRAY, id_texture );
 	}
 }
 
@@ -562,18 +647,6 @@ void TextureMgr::bind_materials( ) {
 		glActiveTexture( GL_TEXTURE0 );
 		glBindTexture( GL_TEXTURE_2D, id_texture );
 	}
-}     
-
-FaceUvs & TextureMgr::get_uvs_block( int const id_block, int const id_texture ) {
-	/*float id_tex = id_block + id_texture + 1;
-
-	return { 
-		0.0f, 0.0f, id_tex,
-		1.0f, 0.0f, id_tex,
-		1.0f, 1.0f, id_tex,
-		0.0f, 1.0f, id_tex
-	};*/
-	return uvs_terrain[ id_block ][ id_texture ];
 }
 
 face_uvs & TextureMgr::get_uvs_skybox( FaceDirection dir_face ) {

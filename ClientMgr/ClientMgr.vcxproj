@@ -165,7 +165,6 @@
     <ClCompile Include="CircularDequeue.cpp" />
     <ClCompile Include="Client.cpp" />
     <ClCompile Include="ClientMgr.cpp" />
-    <ClCompile Include="Color4.cpp" />
     <ClCompile Include="Directional.cpp" />
     <ClCompile Include="DisplayMgr.cpp" />
     <ClCompile Include="Entity.cpp" />
@@ -202,7 +201,6 @@
     <ClInclude Include="CircularDequeue.h" />
     <ClInclude Include="Client.h" />
     <ClInclude Include="ClientMgr.h" />
-    <ClInclude Include="Color4.h" />
     <ClInclude Include="Directional.h" />
     <ClInclude Include="DisplayMgr.h" />
     <ClInclude Include="Entity.h" />
@@ -240,6 +238,11 @@
     <None Include="Shaders\ShadowMap.vert" />
     <None Include="Shaders\Terrain.frag" />
     <None Include="Shaders\Terrain.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Blocks\Default.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
