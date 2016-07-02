@@ -129,7 +129,7 @@ void BlockSelector::mesh( ) {
 	glm::vec3 const * vert;
 	glm::vec4 color;
 	glm::vec3 const * norm;
-	glm::vec2 const * uv;
+	glm::vec3 const * uv;
 
 	block = &client.chunk_mgr.get_block_data( id_block );
 
@@ -151,7 +151,7 @@ void BlockSelector::mesh( ) {
 				vert->x, vert->y, vert->z,
 				color.r, color.g, color.b, color.a,
 				norm->x, norm->y, norm->z,
-				uv->x, uv->y, ( GLfloat ) face.id_subtex
+				uv->x, uv->y, uv->z
 			} );
 		}
 	}
@@ -177,7 +177,7 @@ void BlockSelector::mesh( ) {
 					vert->x, vert->y, vert->z,
 					color.r, color.g, color.b, color.a,
 					norm->x, norm->y, norm->z,
-					uv->x, uv->y, ( GLfloat ) face.id_subtex
+					uv->x, uv->y, uv->z
 				} );
 			}
 		}
@@ -202,7 +202,7 @@ void BlockSelector::mesh( ) {
 					vert->x, vert->y, vert->z,
 					color.r, color.g, color.b, color.a,
 					norm->x, norm->y, norm->z,
-					uv->x, uv->y, ( GLfloat ) face.id_subtex
+					uv->x, uv->y, uv->z
 				} );
 			}
 		}

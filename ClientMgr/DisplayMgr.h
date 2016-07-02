@@ -86,8 +86,8 @@ public:
 		glm::ivec2 const & pos_quad, std::string const & string, 
 		glm::vec4 & color, int const size );
 	void draw_key( int const size );
-	//void draw_skybox( glm::vec3 & pos_skybox, float const size );
-	//void draw_sun( glm::vec3 & pos_sun, float const size );
+	void draw_skybox( glm::vec3 & pos_skybox, float const size );
+	void draw_sun( glm::vec3 & pos_sun, float const size );
 	void draw_record_graph( 
 		glm::ivec2 & pos_graph, glm::ivec2 & dim_graph, 
 		std::string const & name_record, float time_ref );

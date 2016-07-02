@@ -4,11 +4,28 @@
 	<Texture>Blocks</Texture>
 	<Transparent>false</Transparent>
 	<Color>
-		<R>1.0</R>
-		<G>1.0</G>
-		<B>1.0</B>
+		<R>0.5</R>
+		<G>0.5</G>
+		<B>0.5</B>
 		<A>1.0</A>
 	</Color>
+	<Collider>
+		<Offset>
+			<X>0.0</X>
+			<Y>0.0</Y>
+			<Z>0.0</Z>
+		</Offset>
+		<Dimension>
+			<X>1.0</X>
+			<Y>1.0</Y>
+			<Z>1.0</Z>
+		</Dimension>
+		<Rotation>
+			<X>0.0</X>
+			<Y>0.0</Y>
+			<Z>0.0</Z>
+		</Rotation>
+	</Collider>
 	<Face>
 		<Offset>
 			<X>0.0</X>

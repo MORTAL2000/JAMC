@@ -28,8 +28,12 @@ public:
 	static std::array < glm::ivec3 const *, FD_Size > array_vec_dir_i;
 	static std::array < glm::vec3 const *, FD_Size > array_vec_dir_f;
 
+	static std::array< FaceDirection, FaceDirection::FD_Size > array_opposite_face;
+
 	static glm::ivec3 const & get_vec_dir_i( FaceDirection dir_face );
 	static glm::vec3 const & get_vec_dir_f( FaceDirection dir_face );
+
+	static FaceDirection get_face_opposite( FaceDirection dir_face );
 
 	static bool is_point_in_rect( glm::ivec2 & pos_check, glm::ivec2 & pos_rect1, glm::ivec2 & pos_rect2 );
 

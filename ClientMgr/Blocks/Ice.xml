@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <Block>
-	<Name>Leaves Green</Name>
+	<Name>Ice</Name>
 	<Texture>Blocks</Texture>
-	<Transparent>true</Transparent>
+	<Transparent>false</Transparent>
 	<Color>
-		<R>0.0</R>
-		<G>0.502</G>
-		<B>0.0</B>
+		<R>0.5</R>
+		<G>0.5</G>
+		<B>0.5</B>
 		<A>1.0</A>
 	</Color>
 	<Collider>
@@ -49,7 +49,7 @@
 			<A>1.0</A>
 		</Color>
 		<Occlude>Front</Occlude>
-		<SubTexture>Leaves/All</SubTexture>
+		<SubTexture>Ice/All</SubTexture>
 		<UV>
 			<X>0.0</X>
 			<Y>0.0</Y>
@@ -65,7 +65,7 @@
 		<UV>
 			<X>0.0</X>
 			<Y>1.0</Y>
-		</UV>
+		</UV>	
 	</Face>
 	<Face>
 		<Offset>
@@ -90,7 +90,7 @@
 			<A>1.0</A>
 		</Color>
 		<Occlude>Back</Occlude>
-		<SubTexture>Leaves/All</SubTexture>
+		<SubTexture>Ice/All</SubTexture>
 		<UV>
 			<X>0.0</X>
 			<Y>0.0</Y>
@@ -131,7 +131,7 @@
 			<A>1.0</A>
 		</Color>
 		<Occlude>Left</Occlude>
-		<SubTexture>Leaves/All</SubTexture>
+		<SubTexture>Ice/All</SubTexture>
 		<UV>
 			<X>0.0</X>
 			<Y>0.0</Y>
@@ -172,7 +172,7 @@
 			<A>1.0</A>
 		</Color>
 		<Occlude>Right</Occlude>
-		<SubTexture>Leaves/All</SubTexture>
+		<SubTexture>Ice/All</SubTexture>
 		<UV>
 			<X>0.0</X>
 			<Y>0.0</Y>
@@ -213,7 +213,7 @@
 			<A>1.0</A>
 		</Color>
 		<Occlude>Up</Occlude>
-		<SubTexture>Leaves/All</SubTexture>
+		<SubTexture>Ice/All</SubTexture>
 		<UV>
 			<X>0.0</X>
 			<Y>0.0</Y>
@@ -254,7 +254,7 @@
 			<A>1.0</A>
 		</Color>
 		<Occlude>Down</Occlude>
-		<SubTexture>Leaves/All</SubTexture>
+		<SubTexture>Ice/All</SubTexture>
 		<UV>
 			<X>0.0</X>
 			<Y>0.0</Y>

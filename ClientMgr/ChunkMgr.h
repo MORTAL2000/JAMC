@@ -84,6 +84,7 @@ struct ChunkNoise {
 	int cnt_using = 0;
 	int height[ Chunk::size_x ][ Chunk::size_z ];
 	int biome[ Chunk::size_x ][ Chunk::size_z ];
+	int envir[ Chunk::size_x ][ Chunk::size_z ];
 };
 
 static int const size_buffer = SectionIndex::size_section_bytes / sizeof( int );
@@ -273,18 +274,28 @@ public:
 
 // Change to block pointer and face
 
-extern void put_face( 
+/*extern void put_face( 
 	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
 	FaceVerts const & verts, glm::vec4 const & color, 
-	glm::vec3 const & normal, FaceUvs const & uvs );
+	glm::vec3 const & normal, FaceUvs const & uvs );*/
 
+/*
 extern void put_face(
-	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
+	std::vector< ChunkFaceVertices > & buffer, glm::ivec3 const & pos,
 	FaceVerts const & verts, glm::vec4 const & color,
-	FaceNorms const & normal, FaceUvs const & uvs );
+	FaceNorms const & normal, FaceUvs const & uvs );*/
 
 extern void put_face(
+	std::vector< ChunkFaceVertices > & buffer, glm::ivec3 const & pos,
+	glm::vec4 const & color, Face const & face );
+
+extern void put_face(
+	std::vector< ChunkFaceVertices > & buffer, glm::ivec3 const & pos, 
+	glm::vec4 const & color, Face const & face,
+	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs );
+
+/*extern void put_face(
 	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
 	FaceVerts const & verts, glm::ivec3 const & scale_verts,
 	glm::vec4 const & color, glm::vec3 const & normal,
-	FaceUvs const & uvs, glm::ivec2 const & scale_uvs );
+	FaceUvs const & uvs, glm::ivec2 const & scale_uvs );*/

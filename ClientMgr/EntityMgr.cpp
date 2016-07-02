@@ -15,12 +15,12 @@ const char * ErrorEntityLookup::to_text[ ] = {
 };
 
 glm::vec3 verts_entity[ FaceDirection::FD_Size ][ 4 ] = {
-	{ { -0.5, -0.5, 0.5 }, { 0.5, -0.5, 0.5 }, { 0.5, 0.5, 0.5 }, { -0.5, 0.5, 0.5 } },
-	{ { -0.5, -0.5, -0.5 }, { 0.5, -0.5, -0.5 }, { 0.5, 0.5, -0.5 }, { -0.5, 0.5, -0.5 } },
-	{ { 0.5, -0.5, -0.5 }, { 0.5, -0.5, 0.5 }, { 0.5, 0.5, 0.5 }, { 0.5, 0.5, -0.5 } },
-	{ { -0.5, -0.5, -0.5 }, { -0.5, -0.5, 0.5 }, { -0.5, 0.5, 0.5 }, { -0.5, 0.5, -0.5 } },
-	{ { -0.5, 0.5, -0.5 }, { 0.5, 0.5, -0.5 }, { 0.5, 0.5, 0.5 }, { -0.5, 0.5, 0.5 } },
-	{ { -0.5, -0.5, -0.5 }, { 0.5, -0.5, -0.5 }, { 0.5, -0.5, 0.5 }, { -0.5, -0.5, 0.5 } }
+	{ { -0.5f, -0.5f, 0.5f }, { 0.5f, -0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { -0.5f, 0.5f, 0.5f } },
+	{ { 0.5f, -0.5f, -0.5f }, { -0.5f, -0.5f, -0.5f }, { -0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, -0.5f } },
+	{ { 0.5f, -0.5f, 0.5f }, { 0.5f, -0.5f, -0.5f  }, { 0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f } },
+	{ { -0.5f, -0.5f, -0.5f }, { -0.5f, -0.5f, 0.5f }, { -0.5f, 0.5f, 0.5f }, { -0.5f, 0.5f, -0.5f } },
+	{ { 0.5f, 0.5f, -0.5f }, { -0.5f, 0.5f, -0.5f }, { -0.5f, 0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f } },
+	{ { -0.5f, -0.5f, -0.5f }, { 0.5f, -0.5f, -0.5f }, { 0.5f, -0.5f, 0.5f }, { -0.5f, -0.5f, 0.5f } }
 };
 
 glm::vec2 uvs_entity[ 4 ] = { 
@@ -105,8 +105,6 @@ void EntityMgr::init( ) {
 }
 
 void EntityMgr::update( ) { 
-	//Entity * entity;
-
 	std::lock_guard< std::mutex > lock( mtx_entity );
 
 	auto iter_entity = list_entity.begin( );
@@ -367,6 +365,7 @@ void EntityMgr::entity_terrain_collide_f( ECState & ec_state ) {
 	int num_x; int num_y;
 	float step_x; float step_y;
 	int id_block;
+	Block * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.z += ec_state.pos_delta.z;
@@ -384,7 +383,9 @@ void EntityMgr::entity_terrain_collide_f( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Front ] =
 				id_block != -1 && id_block != -2;
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Front ] ) {
+			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Front ] && ptr_block->is_coll ) {
 				ec_state.is_coll = true;
 				return;
 			}
@@ -397,6 +398,7 @@ void EntityMgr::entity_terrain_collide_b( ECState & ec_state ) {
 	int num_x; int num_y;
 	float step_x; float step_y;
 	int id_block;
+	Block * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.z += ec_state.dim.z;
@@ -415,7 +417,9 @@ void EntityMgr::entity_terrain_collide_b( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Back ] =
 				id_block != -1 && id_block != -2;
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Back ] ) {
+			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Back ] && ptr_block->is_coll ) {
 				ec_state.is_coll = true;
 				return;
 			}
@@ -428,6 +432,7 @@ void EntityMgr::entity_terrain_collide_l( ECState & ec_state ) {
 	int num_z; int num_y;
 	float step_z; float step_y;
 	int id_block;
+	Block * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.x += ec_state.pos_delta.x;
@@ -445,7 +450,9 @@ void EntityMgr::entity_terrain_collide_l( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Left ] =
 				id_block != -1 && id_block != -2;
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Left ] ) {
+			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Left ] && ptr_block->is_coll ) {
 				ec_state.is_coll = true;
 				return;
 			}
@@ -458,6 +465,7 @@ void EntityMgr::entity_terrain_collide_r( ECState & ec_state ) {
 	int num_z; int num_y;
 	float step_z; float step_y;
 	int id_block;
+	Block * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.x += ec_state.dim.x;
@@ -476,7 +484,9 @@ void EntityMgr::entity_terrain_collide_r( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Right ] =
 				id_block != -1 && id_block != -2;
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Right ] ) {
+			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Right ] && ptr_block->is_coll ) {
 				ec_state.is_coll = true;
 				return;
 			}
@@ -489,6 +499,7 @@ void EntityMgr::entity_terrain_collide_u( ECState & ec_state ) {
 	int num_x; int num_z;
 	float step_x; float step_z;
 	int id_block;
+	Block * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.y += ec_state.dim.y;
@@ -507,7 +518,9 @@ void EntityMgr::entity_terrain_collide_u( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Up ] =
 				id_block != -1 && id_block != -2;
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Up ] ) {
+			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Up ] && ptr_block->is_coll ) {
 				ec_state.is_coll = true;
 				return;
 			}
@@ -520,6 +533,7 @@ void EntityMgr::entity_terrain_collide_d( ECState & ec_state ) {
 	int num_x; int num_z;
 	float step_x; float step_z;
 	int id_block;
+	Block * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.y += ec_state.pos_delta.y;
@@ -537,7 +551,9 @@ void EntityMgr::entity_terrain_collide_d( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Down ] =
 				id_block != -1 && id_block != -2;
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Down ] ) {
+			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+
+			if( ec_state.is_coll_face[ FaceDirection::FD_Down ] && ptr_block->is_coll ) {
 				ec_state.is_coll = true;
 				return;
 			}

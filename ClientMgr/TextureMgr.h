@@ -98,6 +98,7 @@ public:
 	void bind_program( std::string const & name );
 	void unbind_program( );
 
+	MultiTex * get_texture( std::string const & name_tex );
 	GLuint get_texture_id( std::string const & name_tex );
 	GLuint get_texture_layer( std::string const & name_tex, std::string const & name_subtex );
 

@@ -20,6 +20,15 @@ const glm::vec3
 	Directional::UP_F( UP_I ),
 	Directional::DOWN_F( DOWN_I );
 
+std::array< FaceDirection, FaceDirection::FD_Size > array_face_opposite { 
+	FaceDirection::FD_Back,
+	FaceDirection::FD_Front,
+	FaceDirection::FD_Right,
+	FaceDirection::FD_Left,
+	FaceDirection::FD_Down,
+	FaceDirection::FD_Up
+};
+
 std::array < glm::ivec3 const *, FD_Size > Directional::array_vec_dir_i { {
 	&FRONT_I, &BACK_I,
 	&LEFT_I, &RIGHT_I,
@@ -31,6 +40,10 @@ std::array < glm::vec3 const *, FD_Size > Directional::array_vec_dir_f { {
 	&LEFT_F, &RIGHT_F,
 	&UP_F, &DOWN_F
 	} };
+
+FaceDirection Directional::get_face_opposite( FaceDirection dir_face ) { 
+	return array_face_opposite[ dir_face ];
+}
 
 glm::ivec3 const & Directional::get_vec_dir_i( FaceDirection dir_face ) {
 	return *array_vec_dir_i[ dir_face ];

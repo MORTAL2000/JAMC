@@ -8,7 +8,7 @@
 #include <vector>
 
 typedef std::array< glm::vec3, 4 > FaceVerts;
-typedef std::array< glm::vec2, 4 > FaceUvs;
+typedef std::array< glm::vec3, 4 > FaceUvs;
 typedef std::array< glm::vec3, 4 > FaceNorms;
 
 class Face { 
@@ -45,13 +45,14 @@ public:
 
 	std::vector< Face > faces;
 
-	std::array< std::vector< Face * >, FaceDirection::FD_Size > occlude_lookup;
-	std::vector< Face * > include_lookup;
+	std::array< std::vector< int >, FaceDirection::FD_Size > occlude_lookup;
+	std::vector< int > include_lookup;
 
 	std::string texture;
 	GLuint id_texture;
 
 	bool is_trans;
+	bool is_coll;
 
 	Block( ) :
 		id( 0 ),

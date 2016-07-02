@@ -5,6 +5,15 @@
 
 #include <iostream>
 
+const glm::vec3 verts_skybox[ 6 ][ 4 ] = {
+	{ { -0.5f, -0.5f, 0.5f }, { 0.5f, -0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { -0.5f, 0.5f, 0.5f } },
+	{ { 0.5f, -0.5f, -0.5f }, { -0.5f, -0.5f, -0.5f }, { -0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, -0.5f } },
+	{ { 0.5f, -0.5f, 0.5f }, { 0.5f, -0.5f, -0.5f }, { 0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f } },
+	{ { -0.5f, -0.5f, -0.5f }, { -0.5f, -0.5f, 0.5f }, { -0.5f, 0.5f, 0.5f }, { -0.5f, 0.5f, -0.5f } },
+	{ { 0.5f, 0.5f, -0.5f }, { -0.5f, 0.5f, -0.5f }, { -0.5f, 0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f } },
+	{ { -0.5f, -0.5f, -0.5f }, { 0.5f, -0.5f, -0.5f }, { 0.5f, -0.5f, 0.5f }, { -0.5f, -0.5f, 0.5f } }
+};
+
 Camera::Camera( ) :
 	pos_camera( 0, Chunk::size_y * 2 / 3, 0 ),
 	rot_camera( 0.0f, 180.0f, 0.0f ) { }
@@ -377,7 +386,7 @@ void DisplayMgr::draw_key( int const size ) {
 	glPopMatrix( );
 }
 
-/*
+
 void DisplayMgr::draw_skybox( glm::vec3 & pos_skybox, float const size ) {
 	client.texture_mgr.bind_skybox( );
 
@@ -388,17 +397,17 @@ void DisplayMgr::draw_skybox( glm::vec3 & pos_skybox, float const size ) {
 
 	glTranslatef( pos_skybox.x, pos_skybox.y, pos_skybox.z );
 	glRotatef( client.time_mgr.get_time( TimeStrings::GAME ) / TIME_MILLISEC, 0, 1, 0 );
-	glTranslatef( -size / 2, -size / 2, -size / 2 );
+	//glTranslatef( -size / 2, -size / 2, -size / 2 );
 
 	glBegin( GL_QUADS );
 	glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
 	for( int i = 0; i < FD_Size; i++ ) {
 		auto face = ( FaceDirection ) i;
 		auto & face_uvs = client.texture_mgr.get_uvs_skybox( face );
-		auto & face_verts = Block::get_verts( face );
+		auto & face_verts = verts_skybox[ face ];
 		for( int j = 0; j < 4; j++ ) {
 			glTexCoord2f( face_uvs[ j ][ 0 ], face_uvs[ j ][ 1 ] );
-			glVertex3f( face_verts[ j ][ 0 ] * size, face_verts[ j ][ 1 ] * size, face_verts[ j ][ 2 ] * size );
+			glVertex3f( face_verts[ j ].x * size, face_verts[ j ].y * size, face_verts[ j ].z * size );
 		}
 	}
 	glEnd( );
@@ -418,7 +427,7 @@ void DisplayMgr::draw_sun( glm::vec3 & pos_sun, float const size ) {
 		0 );
 
 	auto & sun_uvs = client.texture_mgr.get_uvs_sun( );
-	auto & sun_verts = Block::get_verts( FD_Front );
+	auto & sun_verts = verts_skybox[ FaceDirection::FD_Front ];
 
 	glPushMatrix( );
 
@@ -436,16 +445,16 @@ void DisplayMgr::draw_sun( glm::vec3 & pos_sun, float const size ) {
 			sun_uvs[ m ][ 1 ] );
 
 		glVertex3f(
-			sun_verts[ m ][ 0 ] * size,
-			sun_verts[ m ][ 1 ] * size,
-			sun_verts[ m ][ 2 ] * size );
+			sun_verts[ m ].x * size,
+			sun_verts[ m ].y * size,
+			sun_verts[ m ].z * size );
 	}
 	glEnd( );
 
 	glEnable( GL_LIGHTING );
 
 	glPopMatrix( );
-}*/
+}
 
 static int const size_graph_text = 12;
 

@@ -114,6 +114,13 @@ void TextureMgr::unbind_program( ) {
 	glUseProgram( 0 );
 }
 
+MultiTex * TextureMgr::get_texture( std::string const & name_tex ) {
+	auto iter = map_multitex.find( name_tex );
+	if( iter == map_multitex.end( ) ) return nullptr;
+	return iter->second;
+	return nullptr;
+}
+
 GLuint TextureMgr::get_texture_id( std::string const & name_tex ) {
 	auto iter = map_multitex.find( name_tex );
 	if( iter == map_multitex.end( ) ) return 0;
