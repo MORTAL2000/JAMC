@@ -682,6 +682,7 @@ void GuiMgr::process_input( ) {
 				out.str( "" );
 				out << "Command Format is: '/cmd <setsun> <d:int> [p:bool]'.";
 				print_to_console( out.str( ) );
+				return;
 			}
 
 			if( ( iter_map = map.find( list_delim[ 1 ] ) ) != map.end( ) && iter_map->second.size() == 1 ) {
@@ -828,8 +829,14 @@ void GuiMgr::process_input( ) {
 		else if( token == "toggleshadows" ) {
 			client.chunk_mgr.toggle_shadows( );
 		}
-		else if( token == "toggleshadowmap" ) { 
+		else if( token == "toggleshadowmap" ) {
 			client.chunk_mgr.toggle_shadow_debug( );
+		}
+		else if( token == "togglelimiter" ) {
+			client.display_mgr.toggle_limiter( );
+		}
+		else if( token == "togglevsync" ) {
+			client.display_mgr.toggle_vsync( );
 		}
 		else {
 			out.str( "" );

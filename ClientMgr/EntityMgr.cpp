@@ -140,6 +140,11 @@ void EntityMgr::update( ) {
 	out.str( "" );
 	out << "[Entity Live] Entity: " << list_entity.size( );
 	client.gui_mgr.print_to_static( out.str( ) );
+
+	out.str( "" );
+	auto & ecp_state = entity_player->h_state.get( );
+	out << "[Player ] Veloc: " << Directional::print_vec( ecp_state.veloc );
+	client.gui_mgr.print_to_static( out.str( ) );
 }
 
 void EntityMgr::render( ) {
@@ -383,11 +388,13 @@ void EntityMgr::entity_terrain_collide_f( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Front ] =
 				id_block != -1 && id_block != -2;
 
-			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+			if( ec_state.is_coll_face[ FaceDirection::FD_Front ] ) {
+				ptr_block = &client.chunk_mgr.get_block_data( id_block );
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Front ] && ptr_block->is_coll ) {
-				ec_state.is_coll = true;
-				return;
+				if( ptr_block->is_coll ) {
+					ec_state.is_coll = true;
+					return;
+				}
 			}
 		}
 	}
@@ -417,11 +424,13 @@ void EntityMgr::entity_terrain_collide_b( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Back ] =
 				id_block != -1 && id_block != -2;
 
-			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+			if( ec_state.is_coll_face[ FaceDirection::FD_Back ] ) {
+				ptr_block = &client.chunk_mgr.get_block_data( id_block );
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Back ] && ptr_block->is_coll ) {
-				ec_state.is_coll = true;
-				return;
+				if( ptr_block->is_coll ) {
+					ec_state.is_coll = true;
+					return;
+				}
 			}
 		}
 	}
@@ -450,11 +459,13 @@ void EntityMgr::entity_terrain_collide_l( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Left ] =
 				id_block != -1 && id_block != -2;
 
-			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+			if( ec_state.is_coll_face[ FaceDirection::FD_Left ] ) {
+				ptr_block = &client.chunk_mgr.get_block_data( id_block );
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Left ] && ptr_block->is_coll ) {
-				ec_state.is_coll = true;
-				return;
+				if( ptr_block->is_coll ) {
+					ec_state.is_coll = true;
+					return;
+				}
 			}
 		}
 	}
@@ -484,11 +495,13 @@ void EntityMgr::entity_terrain_collide_r( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Right ] =
 				id_block != -1 && id_block != -2;
 
-			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+			if( ec_state.is_coll_face[ FaceDirection::FD_Right ] ) {
+				ptr_block = &client.chunk_mgr.get_block_data( id_block );
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Right ] && ptr_block->is_coll ) {
-				ec_state.is_coll = true;
-				return;
+				if( ptr_block->is_coll ) {
+					ec_state.is_coll = true;
+					return;
+				}
 			}
 		}
 	}
@@ -518,11 +531,13 @@ void EntityMgr::entity_terrain_collide_u( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Up ] =
 				id_block != -1 && id_block != -2;
 
-			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+			if( ec_state.is_coll_face[ FaceDirection::FD_Up ] ) {
+				ptr_block = &client.chunk_mgr.get_block_data( id_block );
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Up ] && ptr_block->is_coll ) {
-				ec_state.is_coll = true;
-				return;
+				if( ptr_block->is_coll ) {
+					ec_state.is_coll = true;
+					return;
+				}
 			}
 		}
 	}
@@ -551,11 +566,13 @@ void EntityMgr::entity_terrain_collide_d( ECState & ec_state ) {
 			ec_state.is_coll_face[ FaceDirection::FD_Down ] =
 				id_block != -1 && id_block != -2;
 
-			ptr_block = &client.chunk_mgr.get_block_data( id_block );
+			if( ec_state.is_coll_face[ FaceDirection::FD_Down ] ) {
+				ptr_block = &client.chunk_mgr.get_block_data( id_block );
 
-			if( ec_state.is_coll_face[ FaceDirection::FD_Down ] && ptr_block->is_coll ) {
-				ec_state.is_coll = true;
-				return;
+				if( ptr_block->is_coll ) {
+					ec_state.is_coll = true;
+					return;
+				}
 			}
 		}
 	}

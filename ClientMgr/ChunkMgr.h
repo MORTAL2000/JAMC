@@ -148,14 +148,19 @@ private:
 	// Emitter data
 	LightData light_data;
 
+public:
+	static const GLuint num_cascade = 3;
+
 private:
-	GLuint const SHADOW_WIDTH = 8192, SHADOW_HEIGHT = 8192;
-	GLfloat const near_plane = 1.0f;
-	GLfloat const far_plane = 756.0f;
-	GLfloat const dim_ortho = 64.0f;
+	GLuint const SHADOW_WIDTH;
+	GLuint const SHADOW_HEIGHT;
+	GLfloat const near_plane;
+	GLfloat const far_plane;
+	GLfloat const dim_ortho[ num_cascade ];
 
 	GLuint id_depth_fbo;
-	GLuint id_tex_depth;
+	GLuint id_tex_depth[ num_cascade ];
+	GLuint id_tex_blur;
 
 	// Light functions
 	void init_light( );
@@ -285,11 +290,11 @@ extern void put_face(
 	FaceVerts const & verts, glm::vec4 const & color,
 	FaceNorms const & normal, FaceUvs const & uvs );*/
 
-extern void put_face(
+extern inline void put_face(
 	std::vector< ChunkFaceVertices > & buffer, glm::ivec3 const & pos,
 	glm::vec4 const & color, Face const & face );
 
-extern void put_face(
+extern inline void put_face(
 	std::vector< ChunkFaceVertices > & buffer, glm::ivec3 const & pos, 
 	glm::vec4 const & color, Face const & face,
 	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs );

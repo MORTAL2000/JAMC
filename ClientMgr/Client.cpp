@@ -82,32 +82,35 @@ void Client::thread_main_loop( ) {
 		//if( time_main < 0.5f ) time_main = 0.5f;
 		thread_mgr.loop_main( time_main );
 
+		client.time_mgr.begin_record( RecordStrings::RENDER_SWAP );
 		display_mgr.swap_buffers( );
+		client.time_mgr.push_record( RecordStrings::RENDER_SWAP );
+		client.time_mgr.end_record( RecordStrings::RENDER_SWAP );
+		
+		if( !display_mgr.is_vsync && display_mgr.is_limiter ) {
+			float time_sleep = TIME_FRAME_MILLI -
+				time_mgr.get_record_curr( RecordStrings::UPDATE_PRE ) -
+				time_mgr.get_record_curr( RecordStrings::UPDATE ) -
+				time_mgr.get_record_curr( RecordStrings::TASK_MAIN ) -
+				time_mgr.get_record_curr( RecordStrings::RENDER ) -
+				time_mgr.get_record_curr( RecordStrings::RENDER_SWAP );
 
-		/*
-		float time_sleep = TIME_FRAME_MILLI -
-			time_mgr.get_record_curr( RecordStrings::UPDATE_PRE ) -
-			time_mgr.get_record_curr( RecordStrings::UPDATE ) -
-			time_mgr.get_record_curr( RecordStrings::TASK_MAIN ) -
-			time_mgr.get_record_curr( RecordStrings::RENDER );
-
-		if( time_sleep > 0 ) {
-			time_mgr.begin_record( RecordStrings::SLEEP );
-			time_mgr.end_record( RecordStrings::SLEEP );
-
-			float time_curr_sleep;
-			while( ( time_curr_sleep = time_mgr.get_record_curr( RecordStrings::SLEEP ) ) < time_sleep ) {
+			if( time_sleep > 0 ) {
+				time_mgr.begin_record( RecordStrings::SLEEP );
 				time_mgr.end_record( RecordStrings::SLEEP );
-			}
 
-			time_mgr.push_record( RecordStrings::SLEEP );
-		}*/
+				float time_curr_sleep;
+				while( ( time_curr_sleep = time_mgr.get_record_curr( RecordStrings::SLEEP ) ) < time_sleep ) {
+					time_mgr.end_record( RecordStrings::SLEEP );
+				}
+
+				time_mgr.push_record( RecordStrings::SLEEP );
+			}
+		}
 	}
 }
 
 void Client::init( ) {
-	//timeBeginPeriod( 1 );
-
 	resource_mgr.init( );
 	thread_mgr.init( );
 	display_mgr.init( );

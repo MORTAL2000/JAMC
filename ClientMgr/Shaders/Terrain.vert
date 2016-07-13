@@ -29,14 +29,14 @@ layout( location = 3 ) in vec3 uv;
 
 uniform mat4 mat_model;
 uniform mat3 mat_norm;
-uniform mat4 mat_light;
+uniform mat4 mat_light[ 3 ];
 
 out vec4 frag_diffuse;
 out vec4 frag_color;
 out vec3 frag_uv;
 out vec4 vert_model;
 out vec3 frag_norm;
-out vec4 frag_vert_light;
+out vec4 frag_vert_light[ 3 ];
 out vec3 diff_sun;
 
 float grad_diffuse;
@@ -46,10 +46,12 @@ void main() {
 	frag_norm = mat_norm * norm;
 
 	diff_sun = normalize( vec3( pos_sun - pos_camera ) );
-	grad_diffuse = clamp( dot(  frag_norm, diff_sun ), 0.0, 1.0 );
+	grad_diffuse = clamp( dot( frag_norm, diff_sun ), 0.0, 1.0 );
 	frag_diffuse = diffuse * vec4( grad_diffuse, grad_diffuse, grad_diffuse, 1.0 );
 
-	frag_vert_light = mat_light * mat_model * vec4( vert.xyz, 1.0 );
+	frag_vert_light[ 0 ] = mat_light[ 0 ] * mat_model * vec4( vert.xyz, 1.0 );
+	frag_vert_light[ 1 ] = mat_light[ 1 ] * mat_model * vec4( vert.xyz, 1.0 );
+	frag_vert_light[ 2 ] = mat_light[ 2 ] * mat_model * vec4( vert.xyz, 1.0 );
 
 	gl_Position = mat_perspective * mat_view * vert_model;
 	frag_color = color;

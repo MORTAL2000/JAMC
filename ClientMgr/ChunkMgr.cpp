@@ -17,7 +17,11 @@
 glm::ivec3 const World::size_vect( World::size_x, World::size_y, World::size_z );
 
 ChunkMgr::ChunkMgr( Client & client ) :
-	Manager( client ) { }
+	Manager( client ),
+	SHADOW_WIDTH( 4096 ), SHADOW_HEIGHT( 4096 ),
+	near_plane( 1.0f ),
+	far_plane( 756.0f ),
+	dim_ortho { 16.0f, 64.0f, 256.0f } { }
 
 ChunkMgr::~ChunkMgr( ) { }
 
@@ -102,24 +106,27 @@ void ChunkMgr::init( ) {
 
 	std::cout << std::endl;
 	printTabbedLine( 1, "Creating shadowmap texture..." );
-	glGenTextures( 1, &id_tex_depth );
-	glActiveTexture( GL_TEXTURE1 );
-	glBindTexture( GL_TEXTURE_2D, id_tex_depth );
+	glGenTextures( num_cascade, &id_tex_depth[ 0 ] );
 
-	std::cout << std::endl;
-	printTabbedLine( 1, "Binding shadowmap data..." );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
-		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER );
-	GLfloat borderColor[ ] = { 1.0, 1.0, 1.0, 1.0 };
-	glTexParameterfv( GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor );
 
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, id_tex_depth, 0 );
-	glDrawBuffer( GL_NONE );
-	glReadBuffer( GL_NONE );
+	for( GLuint i = 0; i < num_cascade; ++i ) {
+		client.texture_mgr.bind_texture( 1 + i, id_tex_depth[ i ] );
+
+		std::cout << std::endl;
+		printTabbedLine( 1, "Binding shadowmap data..." );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER );
+		GLfloat borderColor[ ] = { 1.0, 1.0, 1.0, 1.0 };
+		glTexParameterfv( GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor );
+
+		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, id_tex_depth[ i ], 0 );
+		glDrawBuffer( GL_NONE );
+		glReadBuffer( GL_NONE );
+	}
+
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	client.texture_mgr.bind_program( "ShadowMap" );
@@ -128,7 +135,8 @@ void ChunkMgr::init( ) {
 
 	client.texture_mgr.bind_program( "Terrain" );
 	idx_sampler = glGetUniformLocation( client.texture_mgr.id_prog, "frag_shadow" );
-	glUniform1i( idx_sampler, 1 );
+	GLint id_shadow[] = { 1, 2, 3 };
+	glUniform1iv( idx_sampler, num_cascade, &id_shadow[ 0 ] );
 
 	int idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_l" );
 	glUniform1f( idx_bias, 0.000005f );
@@ -370,7 +378,10 @@ static glm::mat4 mat_model;
 static glm::mat3 mat_norm;
 static glm::mat4 mat_ortho_light;
 static glm::mat4 mat_view_light;
-static glm::mat4 mat_proj_light;
+static glm::mat4 mat_proj_light[ ChunkMgr::num_cascade ];
+
+static glm::vec2 dim_shadow = { 200, 200 };
+static glm::vec2 pos_shadow = { 0, 0 };
 
 void ChunkMgr::render_pass_shadow( ) {
 	static GLuint id_blocks = client.texture_mgr.get_texture_id( "Blocks" );
@@ -379,22 +390,64 @@ void ChunkMgr::render_pass_shadow( ) {
 		client.texture_mgr.unbind_program( );
 		client.display_mgr.set_ortho( );
 
-		glBindTexture( GL_TEXTURE_2D, id_tex_depth );
-
 		glDisable( GL_LIGHTING );
+
+		glBindTexture( GL_TEXTURE_2D, id_tex_depth[ 2 ] );
+
+		dim_shadow = { 800, 800 };
+		pos_shadow = { 320, 250 };
 
 		glBegin( GL_QUADS );
 		glTexCoord2f( 0.0f, 0.0f );
-		glVertex2f( 200.0f, 200.0f );
+		glVertex2f( pos_shadow.x, pos_shadow.y );
 
 		glTexCoord2f( 1.0f, 0.0f );
-		glVertex2f( 500.0f, 200.0f );
+		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y );
 
 		glTexCoord2f( 1.0f, 1.0f );
-		glVertex2f( 500.0f, 500.0f );
+		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y + dim_shadow.y );
 
 		glTexCoord2f( 0.0f, 1.0f );
-		glVertex2f( 200.0f, 500.0f );
+		glVertex2f( pos_shadow.x, pos_shadow.y + dim_shadow.y );
+
+		glEnd( );
+
+		glBindTexture( GL_TEXTURE_2D, id_tex_depth[ 1 ] );
+
+		dim_shadow = { 200, 200 };
+		pos_shadow = { 110, 250 };
+
+		glBegin( GL_QUADS );
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex2f( pos_shadow.x, pos_shadow.y );
+
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y + dim_shadow.y );
+
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex2f( pos_shadow.x, pos_shadow.y + dim_shadow.y );
+
+		glEnd( );
+
+		glBindTexture( GL_TEXTURE_2D, id_tex_depth[ 0 ] );
+
+		dim_shadow = { 50, 50 };
+		pos_shadow = { 50, 250 };
+		glBegin( GL_QUADS );
+		glTexCoord2f( 0.0f, 0.0f );
+		glVertex2f( pos_shadow.x, pos_shadow.y );
+
+		glTexCoord2f( 1.0f, 0.0f );
+		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y );
+
+		glTexCoord2f( 1.0f, 1.0f );
+		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y + dim_shadow.y );
+
+		glTexCoord2f( 0.0f, 1.0f );
+		glVertex2f( pos_shadow.x, pos_shadow.y + dim_shadow.y );
 
 		glEnd( );
 
@@ -409,36 +462,65 @@ void ChunkMgr::render_pass_shadow( ) {
 		static GLuint idx_mat_light = glGetUniformLocation( client.texture_mgr.id_prog, "mat_light" );
 		static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
 
-		glViewport( 0, 0, SHADOW_WIDTH, SHADOW_HEIGHT );
+		for( GLuint i = 0; i < num_cascade; i++ ) {
+			mat_ortho_light = glm::ortho( -dim_ortho[ i ], dim_ortho[ i ], -dim_ortho[ i ], dim_ortho[ i ], near_plane, far_plane );
+
+			glm::vec3 vec_look = glm::normalize( glm::vec3( client.chunk_mgr.light_data.sun_data.pos_sun ) - client.display_mgr.camera.pos_camera );
+			glm::vec3 vec_fwd = glm::normalize(
+				glm::vec3( client.display_mgr.camera.vec_front.x, 0, client.display_mgr.camera.vec_front.z )
+			) * ( std::sqrt( std::pow( dim_ortho[ i ], 2 ) * 2 ) - 2.0f );
+			//glm::vec3 vec_up = { 0, 1, 0 };
+
+			mat_view_light = glm::lookAt(
+				client.display_mgr.camera.pos_camera + vec_fwd + vec_look * ( far_plane / 2.0f ),
+				client.display_mgr.camera.pos_camera + vec_fwd,
+				glm::vec3( 0.0f, 1.0f, 0.0f ) );
+
+			//vec_up = glm::vec3( mat_view_light * glm::vec4( vec_up, 1 ) );
+
+			/*mat_view_light =
+			glm::rotate( glm::mat4( 1.0f ), glm::radians( 315.0f ), glm::vec3( 0.0f, 0.0f, 1.0f ) ) *
+			mat_view_light;*/
+
+			/*mat_view_light =
+			glm::translate( glm::mat4( 1.0f ), client.display_mgr.camera.vec_front * 22.0f ) *
+			mat_view_light;*/
+
+			mat_view_light =
+				glm::rotate( glm::mat4( 1.0f ), glm::radians( 135 + client.display_mgr.camera.rot_camera.y ), glm::vec3( 0, 0, 1 ) ) *
+				mat_view_light;
+
+			mat_proj_light[ i ] = mat_ortho_light * mat_view_light * glm::mat4( 1.0f );
+		}
+
 		glBindFramebuffer( GL_FRAMEBUFFER, id_depth_fbo );
-		glClear( GL_DEPTH_BUFFER_BIT );
 
-		mat_ortho_light = glm::ortho( -dim_ortho, dim_ortho, -dim_ortho, dim_ortho, near_plane, far_plane );
+		for( GLuint i = 0; i < num_cascade; i++ ) {
+			glUniformMatrix4fv( idx_mat_light, 1, GL_FALSE, glm::value_ptr( mat_proj_light[ i ] ) );
 
-		mat_view_light = glm::lookAt(
-			client.display_mgr.camera.pos_camera +
-			glm::normalize(
-				glm::vec3( client.chunk_mgr.light_data.sun_data.pos_sun ) - client.display_mgr.camera.pos_camera
-			) * ( far_plane / 2.0f ),
-			client.display_mgr.camera.pos_camera,
-			glm::vec3( 0.0f, 1.0f, 0.0f ) );
+			client.texture_mgr.bind_texture( 1 + i, id_tex_depth[ i ] );
 
-		mat_view_light =
-			glm::rotate( glm::mat4( 1.0f ), glm::radians( client.display_mgr.camera.rot_camera.y ), glm::vec3( 0.0f, 0.0f, 1.0f ) ) *
-			mat_view_light;
+			glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, id_tex_depth[ i ], 0 );
+			glViewport( 0, 0, SHADOW_WIDTH, SHADOW_HEIGHT );
+			glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
+			glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
 
-		mat_proj_light = mat_ortho_light * mat_view_light * glm::mat4( 1.0f );
+			glCullFace( GL_FRONT );
 
-		glCullFace( GL_FRONT );
+			client.texture_mgr.bind_texture( 0, id_blocks );
 
-		glUniformMatrix4fv( idx_mat_light, 1, GL_FALSE, glm::value_ptr( mat_proj_light ) );
+			for( auto chunk : list_render ) {
+				//glm::ivec3 world_inner = { World::size_x / i * i, World::size_y, World::size_z / i * i };
+				//glm::ivec3 world_outer = { World::size_x / i * i + i, World::size_y, World::size_z / i * i + i };
 
-		for( auto chunk : list_render ) {
-			if( Directional::is_within_range( chunk->pos_lw, glm::ivec3( 4, 3, 4 ), pos_center_chunk_lw ) ) {
-				mat_model = glm::translate( glm::mat4( 1.0f ), glm::vec3( chunk->pos_gw ) );
-				glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( mat_model ) );
+				//if( Directional::is_within_range( chunk->pos_lw, world_outer, pos_center_chunk_lw ) &&
+				//	!Directional::is_within_range( chunk->pos_lw, world_inner, pos_center_chunk_lw ) ) {
 
-				chunk_render_shadowmap( *chunk );
+					mat_model = glm::translate( glm::mat4( 1.0f ), glm::vec3( chunk->pos_gw ) );
+					glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( mat_model ) );
+
+					chunk_render_shadowmap( *chunk );
+				//}
 			}
 		}
 
@@ -448,7 +530,13 @@ void ChunkMgr::render_pass_shadow( ) {
 	}
 	else { 
 		glBindFramebuffer( GL_FRAMEBUFFER, id_depth_fbo );
-		glClear( GL_DEPTH_BUFFER_BIT );
+
+		for( GLuint i = 0; i < num_cascade; i++ ) {
+			client.texture_mgr.bind_texture( 1 + i, id_tex_depth[ i ] );
+			glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, id_tex_depth[ i ], 0 );
+			glClear( GL_DEPTH_BUFFER_BIT );
+		}
+
 		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	}
 }
@@ -461,7 +549,8 @@ void ChunkMgr::render_pass_norm( ) {
 	static GLuint idx_mat_norm = glGetUniformLocation( client.texture_mgr.id_prog, "mat_norm" );
 	static GLuint idx_mat_light = glGetUniformLocation( client.texture_mgr.id_prog, "mat_light" );
 
-	glUniformMatrix4fv( idx_mat_light, 1, GL_FALSE, glm::value_ptr( mat_proj_light ) );
+
+	glUniformMatrix4fv( idx_mat_light, num_cascade, GL_FALSE, glm::value_ptr( mat_proj_light[ 0 ] ) );
 
 	client.display_mgr.resize_window( client.display_mgr.get_window ( ) );
 
@@ -480,19 +569,22 @@ void ChunkMgr::render_debug( ) {
 	//vbo.render( client );
 
 	if( is_chunk_debug ) {
-		/*
 		client.display_mgr.set_camera( );
 
 		auto & camera = client.display_mgr.camera.pos_camera;
 
+		//client.texture_mgr.bind_texture( 0, client.texture_mgr.id_materials );
+		//client.texture_mgr.bind_program( "Basic" );
 		client.texture_mgr.unbind_program( );
 
 		glDisable( GL_TEXTURE_2D );
 
 		glBindBuffer( GL_ARRAY_BUFFER, id_vbo_chunk_outline );
+		glEnableClientState( GL_VERTEX_ARRAY );
 		glVertexPointer( 3, GL_FLOAT, sizeof( GLfloat ) * 3, BUFFER_OFFSET( 0 ) );
 
 		Chunk * chunk;
+
 		glm::ivec3 * pos_chunk;
 		std::lock_guard< std::recursive_mutex > lock( mtx_render );
 		for( auto & pair_render : map_render ) {
@@ -519,6 +611,7 @@ void ChunkMgr::render_debug( ) {
 			}
 		}
 
+		/*
 		glBegin( GL_LINES );
 		glVertex3f( camera.x, camera.y - 1, camera.z );
 		glVertex3f(
@@ -526,9 +619,12 @@ void ChunkMgr::render_debug( ) {
 			camera.y + light_data.sun_data.pos_sun.y,
 			camera.z + light_data.sun_data.pos_sun.z );
 		glEnd( );
-
-		glEnable( GL_TEXTURE_2D );
 		*/
+
+		glDisableClientState( GL_VERTEX_ARRAY );
+		glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+		glDisable( GL_VERTEX_ARRAY );
 	}
 }
 
@@ -554,7 +650,7 @@ GLfloat spec_mat[ ] = { 0.5f, 0.5f, 0.3f, 1.0f };
 
 void ChunkMgr::init_light( ) {
 	light_data.num_emitters.x = 0;
-	pos_deg_light = 75;
+	pos_deg_light = 90;
 	is_sun_pause = true;
 
 	glEnable( GL_LIGHT0 );
@@ -1304,7 +1400,7 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 		client.thread_mgr.task_async( priority, [ & ] ( ) {
 			chunk_state( chunk, ChunkState::CS_SMesh, false );
-
+			
 			static FaceDirection list_face_z[ ] = { FD_Up, FD_Down, FD_Left, FD_Right };
 			static FaceDirection list_face_x[ ] = { FD_Front, FD_Back };
 			static glm::vec3 list_scale_verts[ ] = {
@@ -1369,6 +1465,443 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 						block_curr = &get_block_data( id_curr );
 
+						// Add the included faces
+						for( auto idx_face : block_curr->include_lookup ) { 
+
+							if( block_curr->is_trans ) {
+								put_face(
+									chunk.ptr_buffer->list_vertices_trans,
+									pos_curr,
+									block_curr->color * block_curr->faces[ idx_face ].color,
+									block_curr->faces[ idx_face ] );
+
+								chunk.ptr_buffer->list_sort.emplace_back(
+									std::pair< float, int > {
+									glm::distance(
+										glm::vec3( chunk.pos_gw + pos_curr ) +
+										glm::vec3( 0.5f, 0.5f, 0.5f ) +
+										block_curr->faces[ idx_face ].offset,
+
+										client.display_mgr.camera.pos_camera
+									),
+									chunk.ptr_buffer->list_vertices_trans.size( ) - 1
+								}
+								);
+							}
+							else {
+								put_face(
+									chunk.ptr_buffer->list_vertices_solid,
+									pos_curr,
+									block_curr->color * block_curr->faces[ idx_face ].color,
+									block_curr->faces[ idx_face ] );
+							}
+						}
+
+						// Start List z
+						for( auto iter_face : list_face_z ) {
+							dir_face = iter_face;
+
+							pos_adj = pos_curr + Directional::get_vec_dir_i( dir_face );
+							chunk_adj = &chunk;
+
+							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
+								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
+
+								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+								chunk_adj = chunk.ptr_adj[ dir_face ];
+
+								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
+									// Chunk Aint loaded
+									list_id_last[ dir_face ].first = -1;
+
+									continue;
+								}
+							}
+
+							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+
+							if( id_adj == -1 ) { 
+								if( id_curr == list_id_last[ dir_face ].first ) {
+									// We have the same face in a row...
+									list_cnt_last[ dir_face ]++;
+								}
+								else {
+									// New face! Lets record some info...
+									if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
+										if( list_block_last[ dir_face ]->is_trans ) {
+											put_face(
+												chunk.ptr_buffer->list_vertices_trans,
+												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+
+											float dist = 0;
+											for( int i = 0; i < 4; ++i ) {
+												dist = std::max(
+													dist,
+													glm::distance(
+														glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
+														list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
+														glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+
+														client.display_mgr.camera.pos_camera
+													)
+												);
+											}
+
+											chunk.ptr_buffer->list_sort.emplace_back(
+												std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
+											);
+										}
+										else {
+											put_face(
+												chunk.ptr_buffer->list_vertices_solid,
+												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+										}
+									}
+
+									list_id_last[ dir_face ] = { id_curr, id_curr };
+									list_pos_last[ dir_face ] = pos_curr;
+									list_block_last[ dir_face ] = block_curr;
+									list_cnt_last[ dir_face ] = 1;
+								}
+
+								continue;
+							}
+							else {
+								block_adj = &get_block_data( id_adj );
+
+								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
+									block_curr->is_visible( *block_adj ) ) {
+									// A face is visible!
+
+									if( id_curr == list_id_last[ dir_face ].first ) {
+										// We have the same face in a row...
+										list_cnt_last[ dir_face ]++;
+									}
+									else {
+										// New face! Lets record some info...
+										if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
+											if( list_block_last[ dir_face ]->is_trans ) {
+												put_face(
+													chunk.ptr_buffer->list_vertices_trans,
+													list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+													list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+													glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+													glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+
+												float dist = 0;
+												for( int i = 0; i < 4; ++i ) {
+													dist = std::max(
+														dist,
+														glm::distance(
+															glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
+															list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
+															glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+
+															client.display_mgr.camera.pos_camera
+														)
+													);
+												}
+
+												chunk.ptr_buffer->list_sort.emplace_back(
+													std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
+												);
+											}
+											else { 
+												put_face(
+													chunk.ptr_buffer->list_vertices_solid,
+													list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+													list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+													glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+													glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+											}
+										}
+
+										list_id_last[ dir_face ] = { id_curr, id_curr };
+										list_pos_last[ dir_face ] = pos_curr;
+										list_block_last[ dir_face ] = block_curr;
+										list_cnt_last[ dir_face ] = 1;
+									}
+
+									continue;
+								}
+							}
+
+							list_id_last[ dir_face ].first = -1;
+						}
+
+						// Start list x
+						list_x:
+						pos_curr_x = { pos_curr.z, pos_curr.y, pos_curr.x };
+						id_curr = chunk.id_blocks[ pos_curr_x.x ][ pos_curr_x.y ][ pos_curr_x.z ];
+
+						if( id_curr == -1 ) {
+							// Is air, skip
+							for( FaceDirection iter_face : list_face_x ) {
+								list_id_last[ iter_face ].first = -1;
+							}
+
+							continue;
+						}
+
+						block_curr = &get_block_data( id_curr );
+
+						for( auto iter_face : list_face_x ) {
+							dir_face = iter_face;
+
+							pos_adj = pos_curr_x + Directional::get_vec_dir_i( dir_face );
+							chunk_adj = &chunk;
+
+							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
+								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
+
+								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+								chunk_adj = chunk.ptr_adj[ dir_face ];
+
+								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
+									// Chunk Aint loaded
+									list_id_last[ dir_face ].first = -1;
+
+									continue;
+								}
+							}
+
+							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+
+							if( id_adj == -1 ) {
+								if( id_curr == list_id_last[ dir_face ].first ) {
+									// We have the same face in a row...
+									list_cnt_last[ dir_face ]++;
+								}
+								else {
+									// New face! Lets record some info...
+									if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
+										if( list_block_last[ dir_face ]->is_trans ) {
+											put_face(
+												chunk.ptr_buffer->list_vertices_trans,
+												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+
+											float dist = 0;
+											for( int i = 0; i < 4; ++i ) {
+												dist = std::max(
+													dist,
+													glm::distance(
+														glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
+														list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
+														glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+
+														client.display_mgr.camera.pos_camera
+													)
+												);
+											}
+
+											chunk.ptr_buffer->list_sort.emplace_back(
+												std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
+											);
+										}
+										else {
+											put_face(
+												chunk.ptr_buffer->list_vertices_solid,
+												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+										}
+									}
+
+									list_id_last[ dir_face ] = { id_curr, id_curr };
+									list_pos_last[ dir_face ] = pos_curr_x;
+									list_block_last[ dir_face ] = block_curr;
+									list_cnt_last[ dir_face ] = 1;
+								}
+
+								continue;
+							}
+							else {
+								block_adj = &get_block_data( id_adj );
+
+								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
+									block_curr->is_visible( *block_adj ) ) {
+									// A face is visible!
+
+									if( id_curr == list_id_last[ dir_face ].first ) {
+										// We have the same face in a row...
+										list_cnt_last[ dir_face ]++;
+									}
+									else {
+										// New face! Lets record some info...
+										if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
+											if( list_block_last[ dir_face ]->is_trans ) {
+												put_face(
+													chunk.ptr_buffer->list_vertices_trans,
+													list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+													list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+													glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+													glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+
+												float dist = 0;
+												for( int i = 0; i < 4; ++i ) {
+													dist = std::max(
+														dist,
+														glm::distance(
+															glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
+															list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
+															glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+
+															client.display_mgr.camera.pos_camera
+														)
+													);
+												}
+
+												chunk.ptr_buffer->list_sort.emplace_back(
+													std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
+												);
+											}
+											else {
+												put_face(
+													chunk.ptr_buffer->list_vertices_solid,
+													list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+													list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+													glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+													glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+											}
+										}
+
+										list_id_last[ dir_face ] = { id_curr, id_curr };
+										list_pos_last[ dir_face ] = pos_curr_x;
+										list_block_last[ dir_face ] = block_curr;
+										list_cnt_last[ dir_face ] = 1;
+									}
+
+									continue;
+								}
+							}
+
+							list_id_last[ dir_face ].first = -1;
+						}
+					}
+					// Woooo we made it through a row
+					for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
+						dir_face = ( FaceDirection ) iter_face;
+						list_id_last[ dir_face ].first = -1;
+					}
+				}
+			}
+
+			for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
+				dir_face = ( FaceDirection ) iter_face;
+				list_id_last[ dir_face ].first = -1;
+				if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
+					if( list_block_last[ dir_face ]->is_trans ) {
+						put_face(
+							chunk.ptr_buffer->list_vertices_trans,
+							list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+							list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+							glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+							glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+
+						float dist = 0;
+						for( int i = 0; i < 4; ++i ) { 
+							dist = std::max(
+								dist,
+								glm::distance(
+									glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
+									list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] * 
+									glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+
+									client.display_mgr.camera.pos_camera
+								)
+							);
+						}
+
+						chunk.ptr_buffer->list_sort.emplace_back(
+							std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
+						);
+					}
+					else {
+						put_face(
+							chunk.ptr_buffer->list_vertices_solid,
+							list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+							list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+							glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+							glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+					}
+				}
+			}
+			
+			/*
+			static FaceDirection list_face_z[ ] = { FD_Up, FD_Down, FD_Left, FD_Right };
+			static FaceDirection list_face_x[ ] = { FD_Front, FD_Back };
+			static glm::vec3 list_scale_verts[ ] = {
+				{ 1, 0, 0 }, { 1, 0, 0 },	// Front / Back
+				{ 0, 0, 1 }, { 0, 0, 1 },	// Left / Right
+				{ 0, 0, 1 }, { 0, 0, 1 }	// Up / Down
+			};
+
+			static glm::vec2 list_scale_uvs[ ] = {
+				{ 1, 0 }, { 1, 0 },		// Front / Back
+				{ 1, 0 }, { 1, 0 },		// Left / Right
+				{ 0, 1 }, { 0, 1 }		// Up / Down
+			};
+			
+			glm::ivec3 pos_curr;
+			glm::ivec3 pos_curr_x;
+			glm::ivec3 pos_adj;
+			glm::ivec3 pos_min( 0, 0, 0 );
+			glm::ivec3 pos_max( Chunk::size_x - 1, Chunk::size_y - 1, Chunk::size_z - 1 );
+
+			int id_curr, id_adj;
+
+			std::array< glm::ivec3, FaceDirection::FD_Size > list_pos_last;
+			std::array< std::pair< int, int >, FaceDirection::FD_Size > list_id_last;
+			std::array< int, FaceDirection::FD_Size > list_cnt_last;
+			std::array< Block *, FaceDirection::FD_Size > list_block_last;
+
+			FaceDirection dir_face;
+
+			Block * block_curr = nullptr;
+			Block * block_adj = nullptr;
+
+			Chunk * chunk_adj;
+
+			chunk.ptr_buffer->list_indices.clear( );
+			chunk.ptr_buffer->list_vertices_solid.clear( );
+			chunk.ptr_buffer->list_vertices_trans.clear( );
+			chunk.ptr_buffer->list_sort.clear( );
+			chunk.ptr_buffer->size_solid = 0;
+			chunk.ptr_buffer->size_trans = 0;
+
+			for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
+				dir_face = ( FaceDirection ) iter_face;
+				list_id_last[ dir_face ] = { -1, -1 };
+				list_cnt_last[ dir_face ] = 0;
+				list_block_last[ dir_face ] = nullptr;
+			}
+
+			for( pos_curr.x = 0; pos_curr.x < Chunk::size_x; pos_curr.x++ ) {
+				for( pos_curr.y = 0; pos_curr.y < Chunk::size_y; pos_curr.y++ ) {
+					for( pos_curr.z = 0; pos_curr.z < Chunk::size_z; pos_curr.z++ ) {
+						id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
+
+						if( id_curr == -1 ) {
+							// Is air, skip
+							for( FaceDirection iter_face : list_face_z ) {
+								list_id_last[ iter_face ].first = -1;
+							}
+
+							goto list_x;
+						}
+
+						block_curr = &get_block_data( id_curr );
+
 						if( block_curr->is_trans ) {
 							// Is trans, skip
 							for( FaceDirection iter_face : list_face_z ) {
@@ -1379,7 +1912,7 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 						}
 
 						// Add the included faces
-						for( auto idx_face : block_curr->include_lookup ) { 
+						for( auto idx_face : block_curr->include_lookup ) {
 							put_face( chunk.ptr_buffer->list_vertices_solid,
 								pos_curr,
 								block_curr->color * block_curr->faces[ idx_face ].color,
@@ -1408,7 +1941,7 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
 
-							if( id_adj == -1 ) { 
+							if( id_adj == -1 ) {
 								if( id_curr == list_id_last[ dir_face ].first ) {
 									// We have the same face in a row...
 									list_cnt_last[ dir_face ]++;
@@ -1617,21 +2150,21 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 							chunk.ptr_buffer->list_sort.emplace_back(
 								std::pair< float, int > {
-									glm::distance(
-										glm::vec3( chunk.pos_gw + pos_curr ) +
-										glm::vec3( 0.5f, 0.5f, 0.5f ) +
-										block_curr->faces[ idx_face ].offset,
-										client.display_mgr.camera.pos_camera
-									),
+								glm::distance(
+									glm::vec3( chunk.pos_gw + pos_curr ) +
+									glm::vec3( 0.5f, 0.5f, 0.5f ) +
+									block_curr->faces[ idx_face ].offset,
+									client.display_mgr.camera.pos_camera
+								),
 									chunk.ptr_buffer->list_vertices_trans.size( ) - 1
-								}
+							}
 							);
 						}
 
 						for( int i = 0; i < FaceDirection::FD_Size; i++ ) {
 							dir_face = ( FaceDirection ) i;
 
-							if( block_curr->occlude_lookup[ dir_face ].size( ) == 0 ) { 
+							if( block_curr->occlude_lookup[ dir_face ].size( ) == 0 ) {
 								continue;
 							}
 
@@ -1658,18 +2191,18 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 								chunk.ptr_buffer->list_sort.emplace_back(
 									std::pair< float, int > {
-										glm::distance(
-											glm::vec3( chunk.pos_gw + pos_curr ) +
-											glm::vec3( 0.5f, 0.5f, 0.5f ) +
-											block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ].offset,
+									glm::distance(
+										glm::vec3( chunk.pos_gw + pos_curr ) +
+										glm::vec3( 0.5f, 0.5f, 0.5f ) +
+										block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ].offset,
 
-											client.display_mgr.camera.pos_camera
-										),
-											chunk.ptr_buffer->list_vertices_trans.size( ) - 1
-									}
+										client.display_mgr.camera.pos_camera
+									),
+										chunk.ptr_buffer->list_vertices_trans.size( ) - 1
+								}
 								);
 							}
-							else { 
+							else {
 								block_adj = &get_block_data( id_adj );
 
 								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
@@ -1683,22 +2216,22 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 									chunk.ptr_buffer->list_sort.emplace_back(
 										std::pair< float, int > {
-											glm::distance(
-												glm::vec3( chunk.pos_gw + pos_curr ) +
-												glm::vec3( 0.5f, 0.5f, 0.5f ) +
-												block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ].offset,
+										glm::distance(
+											glm::vec3( chunk.pos_gw + pos_curr ) +
+											glm::vec3( 0.5f, 0.5f, 0.5f ) +
+											block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ].offset,
 
-												client.display_mgr.camera.pos_camera
-											),
+											client.display_mgr.camera.pos_camera
+										),
 											chunk.ptr_buffer->list_vertices_trans.size( ) - 1
-										}
+									}
 									);
 								}
 							}
 						}
 					}
 				}
-			}
+			}*/
 
 			for( int unsigned i = 0; i < chunk.ptr_buffer->list_vertices_solid.size( ); i++ ) { 
 				chunk.ptr_buffer->list_indices.emplace_back(
@@ -2419,34 +2952,41 @@ void ChunkMgr::load_block_data( ) {
 
 			for( auto & vert : face.verts ) { 
 				vert = glm::vec3( rotate_z * glm::vec4( vert, 0 ) );
-				vert = glm::vec3( rotate_x * glm::vec4( vert, 0 ) );
 				vert = glm::vec3( rotate_y * glm::vec4( vert, 0 ) );
+				vert = glm::vec3( rotate_x * glm::vec4( vert, 0 ) );
 				vert = vert + pos_c + face.offset;
 			}
 
 			for( auto & norm : face.norms ) { 
 				norm = glm::vec3( rotate_z * glm::vec4( norm, 0 ) );
-				norm = glm::vec3( rotate_x * glm::vec4( norm, 0 ) );
 				norm = glm::vec3( rotate_y * glm::vec4( norm, 0 ) );
+				norm = glm::vec3( rotate_x * glm::vec4( norm, 0 ) );
 				norm = glm::normalize( norm );
 			}
 
-			glm::vec2 dim_dx = { 1.0f, 1.0f };
+			/*glm::vec2 dim_dx = { 1.0f, 1.0f };
 			glm::ivec2 const & dim = client.texture_mgr.get_texture( block.texture )->dim;
 			dim_dx /= dim;
-
-			face.uvs[ 0 ].x += dim_dx.x;
-			face.uvs[ 0 ].y += dim_dx.y;
-
-			face.uvs[ 1 ].y += dim_dx.y;
-			face.uvs[ 3 ].x += dim_dx.x;
+			int num_x, num_y;*/
 			
+			std::cout << "Face uvs: " << std::endl;
+
 			for( auto & uv : face.uvs ) {
-				uv.x = std::floor( uv.x / dim_dx.x ) * dim_dx.x - dim_dx.x / 2.0f;
-				uv.y = std::floor( uv.y / dim_dx.y ) * dim_dx.y - dim_dx.y / 2.0f;
+				/*num_x = std::floor( uv.x / dim_dx.x );
+				num_y = std::floor( uv.y / dim_dx.y );
+
+				if( num_x == 0 ) num_x = 1;
+				if( num_y == 0 ) num_y = 1;
+
+				uv.x = num_x * dim_dx.x - dim_dx.x / 2.0f;
+				uv.y = num_y * dim_dx.y - dim_dx.y / 2.0f;
+
+
+				std::cout << "Uv: num_x: " << num_x << " num_y: " << num_y << std::endl;
+				std::cout << "dim_dx: " << Directional::print_vec( dim_dx ) << " uv: " << Directional::print_vec( uv ) << std::endl;*/
 
 				uv.z = face.id_subtex;
-			}
+			} 
 		}
 
 		block.id = list_block_data.size( );
@@ -3132,7 +3672,7 @@ void put_face(
 	);
 }*/
 
-void put_face(
+inline void put_face(
 	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
 	glm::vec4 const & color, Face const & face ) { 
 
@@ -3161,7 +3701,7 @@ void put_face(
 	);
 }
 
-void put_face( 
+inline void put_face( 
 	std::vector< ChunkFaceVertices > & buffer_verts,glm::ivec3 const & pos, 
 	glm::vec4 const & color, Face const & face,
 	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs ) {
@@ -3171,23 +3711,23 @@ void put_face(
 			{ { pos.x + face.verts[ 0 ].x * scale_verts.x, pos.y + face.verts[ 0 ].y * scale_verts.y, pos.z + face.verts[ 0 ].z * scale_verts.z },
 			{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
 			{ face.norms[ 0 ].x, face.norms[ 0 ].y, face.norms[ 0 ].z },
-			{ face.uvs[ 0 ].x * scale_uvs.x, face.uvs[ 0 ].y * scale_uvs.y, face.uvs[ 0 ].z } },
+			{ face.uvs[ 0 ].x, face.uvs[ 0 ].y, face.uvs[ 0 ].z } },
 
 			{ { pos.x + face.verts[ 1 ].x * scale_verts.x, pos.y + face.verts[ 1 ].y * scale_verts.y, pos.z + face.verts[ 1 ].z * scale_verts.z },
 			{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
 			{ face.norms[ 1 ].x, face.norms[ 1 ].y, face.norms[ 1 ].z },
-			{ face.uvs[ 1 ].x * scale_uvs.x, face.uvs[ 1 ].y * scale_uvs.y, face.uvs[ 1 ].z } },
+			{ face.uvs[ 1 ].x + ( ( scale_uvs.x - 1 ) * 1.0f ), face.uvs[ 1 ].y, face.uvs[ 1 ].z } },
 
 			{ { pos.x + face.verts[ 2 ].x * scale_verts.x, pos.y + face.verts[ 2 ].y * scale_verts.y, pos.z + face.verts[ 2 ].z * scale_verts.z },
 			{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
 			{ face.norms[ 2 ].x, face.norms[ 2 ].y, face.norms[ 2 ].z },
-			{ face.uvs[ 2 ].x * scale_uvs.x, face.uvs[ 2 ].y * scale_uvs.y, face.uvs[ 2 ].z } },
+			{ face.uvs[ 2 ].x + ( ( scale_uvs.x - 1 ) * 1.0f ), face.uvs[ 2 ].y + ( ( scale_uvs.y - 1 ) * 1.0f ), face.uvs[ 2 ].z } },
 
 			{ { pos.x + face.verts[ 3 ].x * scale_verts.x, pos.y + face.verts[ 3 ].y * scale_verts.y, pos.z + face.verts[ 3 ].z * scale_verts.z },
 			{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
 			{ face.norms[ 3 ].x, face.norms[ 3 ].y, face.norms[ 3 ].z },
-			{ face.uvs[ 3 ].x * scale_uvs.x, face.uvs[ 3 ].y * scale_uvs.y, face.uvs[ 3 ].z } }
-			} }
+			{ face.uvs[ 3 ].x, face.uvs[ 3 ].y + ( ( scale_uvs.y - 1 ) * 1.0f ), face.uvs[ 3 ].z } }
+		} }
 	);
 }
 

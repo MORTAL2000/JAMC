@@ -140,7 +140,9 @@ void VBO::render( Client & client ) {
 	glBindVertexArray( 0 );
 }
 
-void VBO::render_range( Client & client, GLuint index, GLuint length ) { 
+void VBO::render_range( Client & client, GLuint index, GLuint length ) {
+	if( index >= list_sets.size( ) ) return;
+
 	auto iter_set = list_sets.begin( ) + index;
 	GLuint curr_length = 0;
 

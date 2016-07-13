@@ -9,7 +9,11 @@ layout(location = 0) out float frag_depth;
 
 void main() {
 	vec4 color = texture( frag_sampler, frag_uv ) * frag_color;
+
 	if( color.a < 0.8 ) {
 		discard;
+		//frag_depth = vec4( 1.0, 1.0, 1.0, 1.0 );
 	}
+
+	frag_depth = gl_FragCoord.z;
 }

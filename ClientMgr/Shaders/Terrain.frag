@@ -23,7 +23,7 @@ layout( std140 ) uniform light_data {
 };
 
 uniform sampler2DArray frag_sampler;
-uniform sampler2D frag_shadow;
+uniform sampler2D frag_shadow[ 3 ];
 uniform float bias_l;
 uniform float bias_h;
 
@@ -32,7 +32,7 @@ in vec4 frag_color;
 in vec3 frag_uv;
 in vec4 vert_model;
 in vec3 frag_norm;
-in vec4 frag_vert_light;
+in vec4 frag_vert_light[ 3 ];
 in vec3 diff_sun;
 
 out vec4 out_color;
@@ -44,36 +44,92 @@ float grad_emitter;
 float grad_shadow;
 
 vec3 proj_coord;
-//float depth_close;
 float depth_curr;
 float depth_pcf;
 float bias;
 float shadow;
 vec2 size_texel;
 vec2 offset;
+vec2 pos_texel;
 
-float shadow_calc( vec4 vert_light ) {
-	proj_coord = vert_light.xyz / vert_light.w;
+float shadow_calc( vec4 vert_light[ 3 ] ) {
+	proj_coord = vert_light[ 0 ].xyz / vert_light[ 0 ].w;
 	proj_coord = proj_coord * 0.5 + 0.5;
+	size_texel = 1.0 / textureSize( frag_shadow[ 0 ], 0 );
 
 	if( proj_coord.z > 1.0 ) {
 		return 0.0;
 	}
 
-	depth_curr = proj_coord.z;
-	bias = max( bias_h * ( 1.0 - dot( frag_norm, diff_sun ) ), bias_l );
+	if( length( proj_coord.xy ) < 2000.0 * size_texel.y ) {
+		depth_curr = proj_coord.z;
+		bias = max( bias_h * ( 1.0 - dot( frag_norm, diff_sun ) ), bias_l );
 
-	shadow = 0.0;
-	size_texel = 1.0 / textureSize( frag_shadow, 0 );
+		shadow = 0.0;
 
-	for( offset.x = -1; offset.x <= 1; ++offset.x ) {
-		for( offset.y = -1; offset.y <= 1; ++offset.y ) {
-			depth_pcf = texture( frag_shadow, proj_coord.xy + offset * size_texel ).z; 
-			shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;        
-		}
+		depth_pcf = texture( frag_shadow[ 0 ], proj_coord.xy ).z;
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+
+		depth_pcf = texture( frag_shadow[ 0 ], proj_coord.xy + vec2( -1, -1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+		depth_pcf = texture( frag_shadow[ 0 ], proj_coord.xy + vec2( 1, -1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+		depth_pcf = texture( frag_shadow[ 0 ], proj_coord.xy + vec2( 1, 1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+		depth_pcf = texture( frag_shadow[ 0 ], proj_coord.xy + vec2( -1, 1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+
+		return shadow / 5.0;
+		//return shadow;
 	}
+	else if( length( proj_coord.xy ) < 2000.0 * 4.0 * size_texel.y ) {
+		proj_coord = vert_light[ 1 ].xyz / vert_light[ 1 ].w;
+		proj_coord = proj_coord * 0.5 + 0.5;
 
-	return shadow / 9.0;
+		depth_curr = proj_coord.z;
+		bias = max( bias_h * ( 1.0 - dot( frag_norm, diff_sun ) ), bias_l );
+
+		shadow = 0.0;
+		size_texel = 1.0 / textureSize( frag_shadow[ 1 ], 0 );
+
+		depth_pcf = texture( frag_shadow[ 1 ], proj_coord.xy ).z;
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+
+		depth_pcf = texture( frag_shadow[ 1 ], proj_coord.xy + vec2( -1, -1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+		depth_pcf = texture( frag_shadow[ 1 ], proj_coord.xy + vec2( 1, -1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+		depth_pcf = texture( frag_shadow[ 1 ], proj_coord.xy + vec2( 1, 1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+		depth_pcf = texture( frag_shadow[ 1 ], proj_coord.xy + vec2( -1, 1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+
+		return shadow / 5.0;
+	}
+	else {
+		proj_coord = vert_light[ 2 ].xyz / vert_light[ 2 ].w;
+		proj_coord = proj_coord * 0.5 + 0.5;
+
+		depth_curr = proj_coord.z;
+		bias = max( bias_h * ( 1.0 - dot( frag_norm, diff_sun ) ), bias_l );
+
+		shadow = 0.0;
+		size_texel = 1.0 / textureSize( frag_shadow[ 2 ], 0 );
+
+		depth_pcf = texture( frag_shadow[ 2 ], proj_coord.xy ).z;
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+
+		depth_pcf = texture( frag_shadow[ 2 ], proj_coord.xy + vec2( -1, -1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+		depth_pcf = texture( frag_shadow[ 2 ], proj_coord.xy + vec2( 1, -1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+		depth_pcf = texture( frag_shadow[ 2 ], proj_coord.xy + vec2( 1, 1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+		depth_pcf = texture( frag_shadow[ 2 ], proj_coord.xy + vec2( -1, 1 ) * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+
+		return shadow / 5.0;
+	}
 }
 
 float size_torch = 25.0;

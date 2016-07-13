@@ -19,8 +19,10 @@ Camera::Camera( ) :
 	rot_camera( 0.0f, 180.0f, 0.0f ) { }
 
 DisplayMgr::DisplayMgr( Client & client ) :
+	Manager( client ),
 	block_selector( client ),
-	Manager( client ) { }
+	is_vsync( false ),
+	is_limiter( true ) { }
 
 DisplayMgr::~DisplayMgr( ) { }
 
@@ -255,18 +257,7 @@ void DisplayMgr::init_gl( ) {
 	printTabbedLine( 1, "Init GL..." );
 
 	// set vsync
-	typedef BOOL( APIENTRY* PFNWGLSWAPINTERVALPROC )( int );
-	PFNWGLSWAPINTERVALPROC wglSwapIntervalEXT = 0;
-
-	const char *extensions = ( char* ) glGetString( GL_EXTENSIONS );
-
-	if( strstr( extensions, "WGL_EXT_swap_control" ) == 0 ) {
-		return;
-	}
-	else {
-		wglSwapIntervalEXT = ( PFNWGLSWAPINTERVALPROC ) wglGetProcAddress( "wglSwapIntervalEXT" );
-		if( wglSwapIntervalEXT ) wglSwapIntervalEXT( 1 );
-	}
+	set_vsync( is_vsync );
 
 	printTabbedLine( 2, "Init Glew..." );
 	glewInit( );
@@ -280,6 +271,8 @@ void DisplayMgr::init_gl( ) {
 	//glEnable( GL_CULL_FACE );
 	//glCullFace( GL_BACK );
 
+	glEnable( GL_MULTISAMPLE );
+
 	glEnable( GL_TEXTURE_2D );
 	glEnable( GL_DEPTH_TEST );
 
@@ -291,10 +284,10 @@ void DisplayMgr::init_gl( ) {
 
 	glShadeModel( GL_SMOOTH );
 
-	glEnableClientState( GL_VERTEX_ARRAY );
-	glEnableClientState( GL_COLOR_ARRAY );
-	glEnableClientState( GL_NORMAL_ARRAY );
-	glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+	//glEnableClientState( GL_VERTEX_ARRAY );
+	//glEnableClientState( GL_COLOR_ARRAY );
+	//glEnableClientState( GL_NORMAL_ARRAY );
+	//glEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	glEnable( GL_COLOR_MATERIAL );
 
@@ -313,6 +306,37 @@ void DisplayMgr::resize_window( glm::ivec2 & dim_window ) {
 	glViewport( 0, 0, dim_window.x, dim_window.y );
 	camera.mvp_matrices.mat_ortho = glm::ortho( 0.0f, ( float ) dim_window.x, 0.0f, ( float ) dim_window.y, 0.0f, 1000.0f );
 	set_proj( );
+}
+
+typedef BOOL( APIENTRY* PFNWGLSWAPINTERVALPROC )( int );
+
+PFNWGLSWAPINTERVALPROC get_vsync( ) {
+	const char *extensions = ( char* ) glGetString( GL_EXTENSIONS );
+
+	if( strstr( extensions, "WGL_EXT_swap_control" ) == 0 ) {
+		return nullptr;
+	}
+	else {
+		return ( PFNWGLSWAPINTERVALPROC ) wglGetProcAddress( "wglSwapIntervalEXT" );
+	}
+}
+
+void DisplayMgr::set_vsync( bool is_vsync ) { 
+	static PFNWGLSWAPINTERVALPROC wglSwapIntervalEXT = get_vsync( );
+
+	this->is_vsync = is_vsync;
+	if( wglSwapIntervalEXT ) {
+		wglSwapIntervalEXT( is_vsync );
+	}
+}
+
+void DisplayMgr::toggle_vsync( ) { 
+	is_vsync = !is_vsync;
+	set_vsync( is_vsync );
+}
+
+void DisplayMgr::toggle_limiter( ) { 
+	is_limiter = !is_limiter;
 }
 
 void DisplayMgr::draw_string( glm::ivec2 const & pos, std::string const & string, glm::vec4 & color, int const size ) {

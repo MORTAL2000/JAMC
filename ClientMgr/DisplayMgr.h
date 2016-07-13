@@ -61,6 +61,9 @@ public:
 	int freq_display;
 	float fov = 90;
 
+	bool is_vsync;
+	bool is_limiter;
+
 	Camera camera;
 	BlockSelector block_selector;
 
@@ -81,6 +84,10 @@ public:
 
 	glm::ivec2 & get_window();
 	void resize_window( glm::ivec2 & dim_window );
+
+	void set_vsync( bool is_vsync );
+	void toggle_vsync( );
+	void toggle_limiter( );
 
 	void draw_string( 
 		glm::ivec2 const & pos_quad, std::string const & string, 
