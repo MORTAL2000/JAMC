@@ -195,6 +195,9 @@
     <ClCompile Include="SpawnBlock.cpp">
       <Filter>Source Files\Managers\EntityMgr\Entities</Filter>
     </ClCompile>
+    <ClCompile Include="SharedMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Globals.h">
@@ -295,6 +298,9 @@
     </ClInclude>
     <ClInclude Include="SpawnBlock.h">
       <Filter>Header Files\Managers\EntityMgr\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="SharedMesh.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

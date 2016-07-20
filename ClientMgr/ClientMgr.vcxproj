@@ -183,6 +183,7 @@
     <ClCompile Include="PageFuncs.cpp" />
     <ClCompile Include="ResourceMgr.cpp" />
     <ClCompile Include="ResPool.cpp" />
+    <ClCompile Include="SharedMesh.cpp" />
     <ClCompile Include="simplexnoise.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SpawnBlock.cpp" />
@@ -219,6 +220,7 @@
     <ClInclude Include="Player.h" />
     <ClInclude Include="ResourceMgr.h" />
     <ClInclude Include="ResPool.h" />
+    <ClInclude Include="SharedMesh.h" />
     <ClInclude Include="simplexnoise.h" />
     <ClInclude Include="SpawnBlock.h" />
     <ClInclude Include="TextureMgr.h" />

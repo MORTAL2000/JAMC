@@ -40,6 +40,7 @@ static int num_entity = 10000;
 static std::vector< ChunkFaceVertices > list_faces;
 
 void EntityMgr::init( ) { 
+	std::cout << "Init entity manager..." << std::endl;
 	client.resource_mgr.reg_pool< Entity >( num_entity );
 	client.resource_mgr.reg_pool< ECState >( num_entity );
 	client.resource_mgr.reg_pool< ECTnt >( num_entity );
@@ -101,6 +102,7 @@ void EntityMgr::init( ) {
 
 		return ErrorEntity::EE_Ok;
 	} );
+
 	entity_player = &list_entity[ 0 ].get( );
 }
 
@@ -284,6 +286,7 @@ void EntityMgr::entity_add( std::string const & str_name, EFCustom ef_custom ) {
 			out.str( "" );
 			out << "No entity loader exists matching: " << str_name;
 			client.gui_mgr.print_to_console( out.str( ) );
+			std::cout << out.str( ) << std::endl;
 		} );
 		return;
 	}
@@ -294,6 +297,7 @@ void EntityMgr::entity_add( std::string const & str_name, EFCustom ef_custom ) {
 			out.str( "" );
 			out << "ENTITY ERROR: Out of entities!";
 			client.gui_mgr.print_to_console( out.str( ) );
+			std::cout << out.str( ) << std::endl;
 		} );
 		return;
 	}
@@ -312,6 +316,7 @@ void EntityMgr::entity_add( std::string const & str_name, EFCustom ef_custom ) {
 			out.str( "" );
 			out << "ENTITY ERROR: " << ErrorEntityLookup::to_text[ error ];
 			client.gui_mgr.print_to_console( out.str( ) );
+			std::cout << out.str( ) << std::endl;
 		} );
 	
 		release_base( client, entity );

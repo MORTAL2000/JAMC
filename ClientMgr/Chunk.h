@@ -26,10 +26,12 @@ struct ChunkFaceVertices {
 
 struct ChunkBuffer {
 	int size_solid, size_trans;
-	std::vector< ChunkFaceIndices > list_indices;
+	std::vector< ChunkFaceIndices > list_indices_solid;
+	std::vector< ChunkFaceIndices > list_indices_trans;
 	std::vector< ChunkFaceVertices > list_vertices_solid;
 	std::vector< ChunkFaceVertices > list_vertices_trans;
-	std::vector< std::pair< float, int > > list_sort;
+	std::vector< std::pair< float, GLuint > > list_sort;
+	bool is_solid, is_trans;
 };
 
 enum ChunkState { 
@@ -76,7 +78,7 @@ public:
 
 	GLuint id_vao, id_vbo, id_ibo;
 
-	int idx_solid, idx_trans;
+	int size_solid, size_trans;
 	ChunkBuffer * ptr_buffer = nullptr;
 	ChunkFile * ptr_file;
 	ChunkNoise * ptr_noise;

@@ -231,6 +231,7 @@ void ChunkMgr::update( ) {
 							auto & chunk = iter_chunks->second.get( );
 							if( chunk.is_loaded && !chunk.is_shutdown ) {
 								chunk_state( chunk, ChunkState::CS_SMesh, true );
+								chunk_state( chunk, ChunkState::CS_TMesh, true );
 							}
 						}
 					}
@@ -816,16 +817,21 @@ void ChunkMgr::chunk_update( Chunk & chunk ) {
 	}
 }
 
+constexpr int size_prealloc = Chunk::size_x * Chunk::size_z * 2;
+constexpr int size_alloc_verts = size_prealloc * sizeof( ChunkFaceVertices );
+constexpr int size_alloc_inds = size_prealloc * sizeof( ChunkFaceIndices );
+
 void ChunkMgr::chunk_render( Chunk & chunk ) {
 	glBindVertexArray( chunk.id_vao );
 
-	if( chunk.idx_solid > 0 ) {
-		glDrawElements( GL_TRIANGLES, chunk.idx_solid * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( 0 ) );
+	if( chunk.size_solid > 0 ) {
+		glDrawElements( GL_TRIANGLES, chunk.size_solid * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( 0 ) );
 	}
 
-	if( chunk.idx_trans > chunk.idx_solid ) {
+	if( chunk.size_trans > 0 ) {
 		glDisable( GL_CULL_FACE );
-		glDrawElements( GL_TRIANGLES, ( chunk.idx_trans - chunk.idx_solid ) * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( chunk.idx_solid * sizeof( ChunkFaceIndices ) ) );
+		//glDrawElements( GL_TRIANGLES, chunk.size_trans * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( size_alloc_inds - chunk.size_trans * sizeof( ChunkFaceIndices ) ) );
+		glDrawElementsBaseVertex( GL_TRIANGLES, chunk.size_trans * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( size_alloc_inds / 2 ), size_prealloc / 2 * 4 );
 		glEnable( GL_CULL_FACE );
 	}
 
@@ -835,24 +841,30 @@ void ChunkMgr::chunk_render( Chunk & chunk ) {
 void ChunkMgr::chunk_render_shadowmap( Chunk & chunk ) {
 	glBindVertexArray( chunk.id_vao );
 
-	if( chunk.idx_solid > 0 ) {
-		glDrawElements( GL_TRIANGLES, chunk.idx_solid * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( 0 ) );
+	if( chunk.size_solid > 0 ) {
+		glDrawElements( GL_TRIANGLES, chunk.size_solid * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( 0 ) );
 	}
 
-	if( chunk.idx_trans > chunk.idx_solid ) {
+	
+	/*if( chunk.idx_trans > chunk.idx_solid ) {
 		glDisable( GL_CULL_FACE );
 		glDrawElements( GL_TRIANGLES, ( chunk.idx_trans - chunk.idx_solid ) * 6, GL_UNSIGNED_INT, BUFFER_OFFSET( chunk.idx_solid * sizeof( ChunkFaceIndices ) ) );
 		glEnable( GL_CULL_FACE );
-	}
+	}*/
 
 	glBindVertexArray( 0 );
 }
 
 void ChunkMgr::chunk_vbo( Chunk & chunk ) {
-	glGenVertexArrays( 1, &chunk.id_vao );
 	glGenBuffers( 1, &chunk.id_vbo );
 	glGenBuffers( 1, &chunk.id_ibo );
 
+	glBindBuffer( GL_ARRAY_BUFFER, chunk.id_vbo );
+	glBufferData( GL_ARRAY_BUFFER, size_alloc_verts, nullptr, GL_STATIC_DRAW );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, chunk.id_ibo );
+	glBufferData( GL_ELEMENT_ARRAY_BUFFER, size_alloc_inds, nullptr, GL_STATIC_DRAW );
+
+	glGenVertexArrays( 1, &chunk.id_vao );
 	glBindVertexArray( chunk.id_vao );
 	glBindBuffer( GL_ARRAY_BUFFER, chunk.id_vbo );
 
@@ -948,8 +960,8 @@ void ChunkMgr::chunk_add( glm::ivec3 const & pos_lw ) {
 			}
 		}
 
-		chunk->idx_solid = 0;
-		chunk->idx_trans = 0;
+		chunk->size_solid = 0;
+		chunk->size_trans = 0;
 
 		if( chunk->ptr_buffer != nullptr ) {
 			put_buffer( chunk->ptr_buffer );
@@ -1203,6 +1215,7 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 
 			//chunk_state( chunk, ChunkState::CS_Wait, true );
 			chunk_state( chunk, ChunkState::CS_SMesh, true );
+			chunk_state( chunk, ChunkState::CS_TMesh, true );
 		}
 		else {
 			chunk_state( chunk, ChunkState::CS_Load, true );
@@ -1377,11 +1390,13 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 			for( int i = 0; i < FD_Size; i++ ) {
 				if( chunk.ptr_adj[ i ] != nullptr ) {
 					chunk_state( *chunk.ptr_adj[ i ], ChunkState::CS_SMesh, true );
+					chunk_state( *chunk.ptr_adj[ i ], ChunkState::CS_TMesh, true );
 				}
 			}
 		}
 
 		chunk_state( chunk, ChunkState::CS_SMesh, true );
+		chunk_state( chunk, ChunkState::CS_TMesh, true );
 		chunk.is_working = false;
 	} );
 }
@@ -1391,6 +1406,13 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 	if( !chunk.ptr_buffer ) { 
 		chunk.ptr_buffer = get_buffer( );
+
+		if( chunk.ptr_buffer ) {
+			chunk.ptr_buffer->size_solid = 0;
+			chunk.ptr_buffer->size_trans = 0;
+			chunk.ptr_buffer->is_solid = false;
+			chunk.ptr_buffer->is_trans = false;
+		}
 	}
 
 	if( chunk.ptr_buffer ) {
@@ -1435,12 +1457,10 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 			Chunk * chunk_adj;
 
-			chunk.ptr_buffer->list_indices.clear( );
+			chunk.ptr_buffer->list_indices_solid.clear( );
 			chunk.ptr_buffer->list_vertices_solid.clear( );
-			chunk.ptr_buffer->list_vertices_trans.clear( );
-			chunk.ptr_buffer->list_sort.clear( );
 			chunk.ptr_buffer->size_solid = 0;
-			chunk.ptr_buffer->size_trans = 0;
+			chunk.ptr_buffer->is_solid = false;
 
 			for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
 				dir_face = ( FaceDirection ) iter_face;
@@ -1454,7 +1474,7 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 					for( pos_curr.z = 0; pos_curr.z < Chunk::size_z; pos_curr.z++ ) {
 						id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
 
-						if( id_curr == -1 ) {
+						if( id_curr == -1 || id_curr == -2 ) {
 							// Is air, skip
 							for( FaceDirection iter_face : list_face_z ) {
 								list_id_last[ iter_face ].first = -1;
@@ -1465,36 +1485,21 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 						block_curr = &get_block_data( id_curr );
 
+						if( block_curr->is_trans ) { 
+							for( FaceDirection iter_face : list_face_z ) {
+								list_id_last[ iter_face ].first = -1;
+							}
+
+							goto list_x;
+						}
+
 						// Add the included faces
 						for( auto idx_face : block_curr->include_lookup ) { 
-
-							if( block_curr->is_trans ) {
-								put_face(
-									chunk.ptr_buffer->list_vertices_trans,
-									pos_curr,
-									block_curr->color * block_curr->faces[ idx_face ].color,
-									block_curr->faces[ idx_face ] );
-
-								chunk.ptr_buffer->list_sort.emplace_back(
-									std::pair< float, int > {
-									glm::distance(
-										glm::vec3( chunk.pos_gw + pos_curr ) +
-										glm::vec3( 0.5f, 0.5f, 0.5f ) +
-										block_curr->faces[ idx_face ].offset,
-
-										client.display_mgr.camera.pos_camera
-									),
-									chunk.ptr_buffer->list_vertices_trans.size( ) - 1
-								}
-								);
-							}
-							else {
-								put_face(
-									chunk.ptr_buffer->list_vertices_solid,
-									pos_curr,
-									block_curr->color * block_curr->faces[ idx_face ].color,
-									block_curr->faces[ idx_face ] );
-							}
+							put_face(
+								chunk.ptr_buffer->list_vertices_solid,
+								pos_curr,
+								block_curr->color * block_curr->faces[ idx_face ].color,
+								block_curr->faces[ idx_face ] );
 						}
 
 						// Start List z
@@ -1528,427 +1533,6 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 								else {
 									// New face! Lets record some info...
 									if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
-										if( list_block_last[ dir_face ]->is_trans ) {
-											put_face(
-												chunk.ptr_buffer->list_vertices_trans,
-												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
-												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
-												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
-
-											float dist = 0;
-											for( int i = 0; i < 4; ++i ) {
-												dist = std::max(
-													dist,
-													glm::distance(
-														glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
-														list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
-														glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-
-														client.display_mgr.camera.pos_camera
-													)
-												);
-											}
-
-											chunk.ptr_buffer->list_sort.emplace_back(
-												std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
-											);
-										}
-										else {
-											put_face(
-												chunk.ptr_buffer->list_vertices_solid,
-												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
-												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
-												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
-										}
-									}
-
-									list_id_last[ dir_face ] = { id_curr, id_curr };
-									list_pos_last[ dir_face ] = pos_curr;
-									list_block_last[ dir_face ] = block_curr;
-									list_cnt_last[ dir_face ] = 1;
-								}
-
-								continue;
-							}
-							else {
-								block_adj = &get_block_data( id_adj );
-
-								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
-									block_curr->is_visible( *block_adj ) ) {
-									// A face is visible!
-
-									if( id_curr == list_id_last[ dir_face ].first ) {
-										// We have the same face in a row...
-										list_cnt_last[ dir_face ]++;
-									}
-									else {
-										// New face! Lets record some info...
-										if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
-											if( list_block_last[ dir_face ]->is_trans ) {
-												put_face(
-													chunk.ptr_buffer->list_vertices_trans,
-													list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
-													list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
-													glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-													glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
-
-												float dist = 0;
-												for( int i = 0; i < 4; ++i ) {
-													dist = std::max(
-														dist,
-														glm::distance(
-															glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
-															list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
-															glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-
-															client.display_mgr.camera.pos_camera
-														)
-													);
-												}
-
-												chunk.ptr_buffer->list_sort.emplace_back(
-													std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
-												);
-											}
-											else { 
-												put_face(
-													chunk.ptr_buffer->list_vertices_solid,
-													list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
-													list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
-													glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-													glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
-											}
-										}
-
-										list_id_last[ dir_face ] = { id_curr, id_curr };
-										list_pos_last[ dir_face ] = pos_curr;
-										list_block_last[ dir_face ] = block_curr;
-										list_cnt_last[ dir_face ] = 1;
-									}
-
-									continue;
-								}
-							}
-
-							list_id_last[ dir_face ].first = -1;
-						}
-
-						// Start list x
-						list_x:
-						pos_curr_x = { pos_curr.z, pos_curr.y, pos_curr.x };
-						id_curr = chunk.id_blocks[ pos_curr_x.x ][ pos_curr_x.y ][ pos_curr_x.z ];
-
-						if( id_curr == -1 ) {
-							// Is air, skip
-							for( FaceDirection iter_face : list_face_x ) {
-								list_id_last[ iter_face ].first = -1;
-							}
-
-							continue;
-						}
-
-						block_curr = &get_block_data( id_curr );
-
-						for( auto iter_face : list_face_x ) {
-							dir_face = iter_face;
-
-							pos_adj = pos_curr_x + Directional::get_vec_dir_i( dir_face );
-							chunk_adj = &chunk;
-
-							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
-								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
-
-								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
-								chunk_adj = chunk.ptr_adj[ dir_face ];
-
-								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
-									// Chunk Aint loaded
-									list_id_last[ dir_face ].first = -1;
-
-									continue;
-								}
-							}
-
-							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
-
-							if( id_adj == -1 ) {
-								if( id_curr == list_id_last[ dir_face ].first ) {
-									// We have the same face in a row...
-									list_cnt_last[ dir_face ]++;
-								}
-								else {
-									// New face! Lets record some info...
-									if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
-										if( list_block_last[ dir_face ]->is_trans ) {
-											put_face(
-												chunk.ptr_buffer->list_vertices_trans,
-												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
-												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
-												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
-
-											float dist = 0;
-											for( int i = 0; i < 4; ++i ) {
-												dist = std::max(
-													dist,
-													glm::distance(
-														glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
-														list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
-														glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-
-														client.display_mgr.camera.pos_camera
-													)
-												);
-											}
-
-											chunk.ptr_buffer->list_sort.emplace_back(
-												std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
-											);
-										}
-										else {
-											put_face(
-												chunk.ptr_buffer->list_vertices_solid,
-												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
-												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
-												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
-										}
-									}
-
-									list_id_last[ dir_face ] = { id_curr, id_curr };
-									list_pos_last[ dir_face ] = pos_curr_x;
-									list_block_last[ dir_face ] = block_curr;
-									list_cnt_last[ dir_face ] = 1;
-								}
-
-								continue;
-							}
-							else {
-								block_adj = &get_block_data( id_adj );
-
-								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
-									block_curr->is_visible( *block_adj ) ) {
-									// A face is visible!
-
-									if( id_curr == list_id_last[ dir_face ].first ) {
-										// We have the same face in a row...
-										list_cnt_last[ dir_face ]++;
-									}
-									else {
-										// New face! Lets record some info...
-										if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
-											if( list_block_last[ dir_face ]->is_trans ) {
-												put_face(
-													chunk.ptr_buffer->list_vertices_trans,
-													list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
-													list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
-													glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-													glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
-
-												float dist = 0;
-												for( int i = 0; i < 4; ++i ) {
-													dist = std::max(
-														dist,
-														glm::distance(
-															glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
-															list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
-															glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-
-															client.display_mgr.camera.pos_camera
-														)
-													);
-												}
-
-												chunk.ptr_buffer->list_sort.emplace_back(
-													std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
-												);
-											}
-											else {
-												put_face(
-													chunk.ptr_buffer->list_vertices_solid,
-													list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
-													list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
-													glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-													glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
-											}
-										}
-
-										list_id_last[ dir_face ] = { id_curr, id_curr };
-										list_pos_last[ dir_face ] = pos_curr_x;
-										list_block_last[ dir_face ] = block_curr;
-										list_cnt_last[ dir_face ] = 1;
-									}
-
-									continue;
-								}
-							}
-
-							list_id_last[ dir_face ].first = -1;
-						}
-					}
-					// Woooo we made it through a row
-					for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
-						dir_face = ( FaceDirection ) iter_face;
-						list_id_last[ dir_face ].first = -1;
-					}
-				}
-			}
-
-			for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
-				dir_face = ( FaceDirection ) iter_face;
-				list_id_last[ dir_face ].first = -1;
-				if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
-					if( list_block_last[ dir_face ]->is_trans ) {
-						put_face(
-							chunk.ptr_buffer->list_vertices_trans,
-							list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
-							list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
-							glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-							glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
-
-						float dist = 0;
-						for( int i = 0; i < 4; ++i ) { 
-							dist = std::max(
-								dist,
-								glm::distance(
-									glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
-									list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] * 
-									glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-
-									client.display_mgr.camera.pos_camera
-								)
-							);
-						}
-
-						chunk.ptr_buffer->list_sort.emplace_back(
-							std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
-						);
-					}
-					else {
-						put_face(
-							chunk.ptr_buffer->list_vertices_solid,
-							list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
-							list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
-							glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
-							glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
-					}
-				}
-			}
-			
-			/*
-			static FaceDirection list_face_z[ ] = { FD_Up, FD_Down, FD_Left, FD_Right };
-			static FaceDirection list_face_x[ ] = { FD_Front, FD_Back };
-			static glm::vec3 list_scale_verts[ ] = {
-				{ 1, 0, 0 }, { 1, 0, 0 },	// Front / Back
-				{ 0, 0, 1 }, { 0, 0, 1 },	// Left / Right
-				{ 0, 0, 1 }, { 0, 0, 1 }	// Up / Down
-			};
-
-			static glm::vec2 list_scale_uvs[ ] = {
-				{ 1, 0 }, { 1, 0 },		// Front / Back
-				{ 1, 0 }, { 1, 0 },		// Left / Right
-				{ 0, 1 }, { 0, 1 }		// Up / Down
-			};
-			
-			glm::ivec3 pos_curr;
-			glm::ivec3 pos_curr_x;
-			glm::ivec3 pos_adj;
-			glm::ivec3 pos_min( 0, 0, 0 );
-			glm::ivec3 pos_max( Chunk::size_x - 1, Chunk::size_y - 1, Chunk::size_z - 1 );
-
-			int id_curr, id_adj;
-
-			std::array< glm::ivec3, FaceDirection::FD_Size > list_pos_last;
-			std::array< std::pair< int, int >, FaceDirection::FD_Size > list_id_last;
-			std::array< int, FaceDirection::FD_Size > list_cnt_last;
-			std::array< Block *, FaceDirection::FD_Size > list_block_last;
-
-			FaceDirection dir_face;
-
-			Block * block_curr = nullptr;
-			Block * block_adj = nullptr;
-
-			Chunk * chunk_adj;
-
-			chunk.ptr_buffer->list_indices.clear( );
-			chunk.ptr_buffer->list_vertices_solid.clear( );
-			chunk.ptr_buffer->list_vertices_trans.clear( );
-			chunk.ptr_buffer->list_sort.clear( );
-			chunk.ptr_buffer->size_solid = 0;
-			chunk.ptr_buffer->size_trans = 0;
-
-			for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
-				dir_face = ( FaceDirection ) iter_face;
-				list_id_last[ dir_face ] = { -1, -1 };
-				list_cnt_last[ dir_face ] = 0;
-				list_block_last[ dir_face ] = nullptr;
-			}
-
-			for( pos_curr.x = 0; pos_curr.x < Chunk::size_x; pos_curr.x++ ) {
-				for( pos_curr.y = 0; pos_curr.y < Chunk::size_y; pos_curr.y++ ) {
-					for( pos_curr.z = 0; pos_curr.z < Chunk::size_z; pos_curr.z++ ) {
-						id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
-
-						if( id_curr == -1 ) {
-							// Is air, skip
-							for( FaceDirection iter_face : list_face_z ) {
-								list_id_last[ iter_face ].first = -1;
-							}
-
-							goto list_x;
-						}
-
-						block_curr = &get_block_data( id_curr );
-
-						if( block_curr->is_trans ) {
-							// Is trans, skip
-							for( FaceDirection iter_face : list_face_z ) {
-								list_id_last[ iter_face ].first = -1;
-							}
-
-							goto list_x;
-						}
-
-						// Add the included faces
-						for( auto idx_face : block_curr->include_lookup ) {
-							put_face( chunk.ptr_buffer->list_vertices_solid,
-								pos_curr,
-								block_curr->color * block_curr->faces[ idx_face ].color,
-								block_curr->faces[ idx_face ] );
-						}
-
-						for( auto iter_face : list_face_z ) {
-							dir_face = iter_face;
-
-							pos_adj = pos_curr + Directional::get_vec_dir_i( dir_face );
-							chunk_adj = &chunk;
-
-							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
-								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
-
-								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
-								chunk_adj = chunk.ptr_adj[ dir_face ];
-
-								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
-									// Chunk Aint loaded
-									list_id_last[ dir_face ].first = -1;
-
-									continue;
-								}
-							}
-
-							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
-
-							if( id_adj == -1 ) {
-								if( id_curr == list_id_last[ dir_face ].first ) {
-									// We have the same face in a row...
-									list_cnt_last[ dir_face ]++;
-								}
-								else {
-									// New face! Lets record some info...
-									if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
 										put_face(
 											chunk.ptr_buffer->list_vertices_solid,
 											list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
@@ -1968,7 +1552,8 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 							else {
 								block_adj = &get_block_data( id_adj );
 
-								if( block_adj->is_trans || block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ) {
+								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
+									block_curr->is_visible( *block_adj ) ) {
 									// A face is visible!
 
 									if( id_curr == list_id_last[ dir_face ].first ) {
@@ -1999,12 +1584,12 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 							list_id_last[ dir_face ].first = -1;
 						}
 
-						// Start list x
-						list_x:
+						list_x: // Start list x
+
 						pos_curr_x = { pos_curr.z, pos_curr.y, pos_curr.x };
 						id_curr = chunk.id_blocks[ pos_curr_x.x ][ pos_curr_x.y ][ pos_curr_x.z ];
 
-						if( id_curr == -1 ) {
+						if( id_curr == -1 || id_curr == -2 ) {
 							// Is air, skip
 							for( FaceDirection iter_face : list_face_x ) {
 								list_id_last[ iter_face ].first = -1;
@@ -2015,8 +1600,7 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 						block_curr = &get_block_data( id_curr );
 
-						if( block_curr->is_trans ) {
-							// Is trans, skip
+						if( block_curr->is_trans ) { 
 							for( FaceDirection iter_face : list_face_x ) {
 								list_id_last[ iter_face ].first = -1;
 							}
@@ -2073,7 +1657,8 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 							else {
 								block_adj = &get_block_data( id_adj );
 
-								if( block_adj->is_trans || block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ) {
+								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
+									block_curr->is_visible( *block_adj ) ) {
 									// A face is visible!
 
 									if( id_curr == list_id_last[ dir_face ].first ) {
@@ -2125,116 +1710,8 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 				}
 			}
 
-			// TRANS
-			for( pos_curr.x = 0; pos_curr.x < Chunk::size_x; pos_curr.x++ ) {
-				for( pos_curr.y = 0; pos_curr.y < Chunk::size_y; pos_curr.y++ ) {
-					for( pos_curr.z = 0; pos_curr.z < Chunk::size_z; pos_curr.z++ ) {
-						id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
-
-						if( id_curr == -1 ) {
-							continue;
-						}
-
-						block_curr = &get_block_data( id_curr );
-
-						if( !block_curr->is_trans ) {
-							continue;
-						}
-
-						for( int idx_face : block_curr->include_lookup ) {
-							put_face(
-								chunk.ptr_buffer->list_vertices_trans,
-								pos_curr, block_curr->color,
-								block_curr->faces[ idx_face ]
-							);
-
-							chunk.ptr_buffer->list_sort.emplace_back(
-								std::pair< float, int > {
-								glm::distance(
-									glm::vec3( chunk.pos_gw + pos_curr ) +
-									glm::vec3( 0.5f, 0.5f, 0.5f ) +
-									block_curr->faces[ idx_face ].offset,
-									client.display_mgr.camera.pos_camera
-								),
-									chunk.ptr_buffer->list_vertices_trans.size( ) - 1
-							}
-							);
-						}
-
-						for( int i = 0; i < FaceDirection::FD_Size; i++ ) {
-							dir_face = ( FaceDirection ) i;
-
-							if( block_curr->occlude_lookup[ dir_face ].size( ) == 0 ) {
-								continue;
-							}
-
-							pos_adj = pos_curr + Directional::get_vec_dir_i( dir_face );
-							chunk_adj = &chunk;
-
-							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
-								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
-								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
-								chunk_adj = chunk.ptr_adj[ dir_face ];
-								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
-									continue;
-								}
-							}
-
-							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
-
-							if( id_adj == -1 ) {
-								put_face(
-									chunk.ptr_buffer->list_vertices_trans,
-									pos_curr, block_curr->color,
-									block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ]
-								);
-
-								chunk.ptr_buffer->list_sort.emplace_back(
-									std::pair< float, int > {
-									glm::distance(
-										glm::vec3( chunk.pos_gw + pos_curr ) +
-										glm::vec3( 0.5f, 0.5f, 0.5f ) +
-										block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ].offset,
-
-										client.display_mgr.camera.pos_camera
-									),
-										chunk.ptr_buffer->list_vertices_trans.size( ) - 1
-								}
-								);
-							}
-							else {
-								block_adj = &get_block_data( id_adj );
-
-								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
-									( block_adj->is_trans && id_adj != id_curr ) ) {
-
-									put_face(
-										chunk.ptr_buffer->list_vertices_trans,
-										pos_curr, block_curr->color,
-										block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ]
-									);
-
-									chunk.ptr_buffer->list_sort.emplace_back(
-										std::pair< float, int > {
-										glm::distance(
-											glm::vec3( chunk.pos_gw + pos_curr ) +
-											glm::vec3( 0.5f, 0.5f, 0.5f ) +
-											block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ].offset,
-
-											client.display_mgr.camera.pos_camera
-										),
-											chunk.ptr_buffer->list_vertices_trans.size( ) - 1
-									}
-									);
-								}
-							}
-						}
-					}
-				}
-			}*/
-
 			for( int unsigned i = 0; i < chunk.ptr_buffer->list_vertices_solid.size( ); i++ ) { 
-				chunk.ptr_buffer->list_indices.emplace_back(
+				chunk.ptr_buffer->list_indices_solid.emplace_back(
 					ChunkFaceIndices {
 						i * 4 + 0, i * 4 + 1, i * 4 + 2,
 						i * 4 + 2, i * 4 + 3, i * 4 + 0
@@ -2244,242 +1721,17 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 
 			chunk.ptr_buffer->size_solid = chunk.ptr_buffer->list_vertices_solid.size( );
 
-			std::sort( chunk.ptr_buffer->list_sort.begin( ), chunk.ptr_buffer->list_sort.end( ),
-				[ ] ( std::pair< float, int > const & lho, std::pair< float, int > const & rho ) {
-				return lho.first > rho.first;
-			} );
-
-			for( auto & pair_sort : chunk.ptr_buffer->list_sort ) {
-				chunk.ptr_buffer->list_vertices_solid.emplace_back( chunk.ptr_buffer->list_vertices_trans[ pair_sort.second ] );
-			}
-
-			for( int unsigned i = chunk.ptr_buffer->size_solid; i < chunk.ptr_buffer->list_vertices_solid.size( ); i++ ) {
-				chunk.ptr_buffer->list_indices.emplace_back(
-					ChunkFaceIndices {
-						i * 4 + 0, i * 4 + 1, i * 4 + 2,
-						i * 4 + 2, i * 4 + 3, i * 4 + 0
-					}
-				);
-			}
-
-			chunk.ptr_buffer->size_trans = chunk.ptr_buffer->list_vertices_solid.size( );
-
-			if( chunk.ptr_buffer->size_trans > 0 ) { 
+			if( chunk.ptr_buffer->size_solid > 0 ) { 
+				chunk.ptr_buffer->is_solid = true;
 				chunk_state( chunk, ChunkState::CS_Buffer, true );
 			}
 			else {
 				auto iter = map_render.end( );
 				put_buffer( chunk.ptr_buffer );
-				chunk.idx_solid = 0;
-				chunk.idx_trans = 0;
+				chunk.size_solid = 0;
 				std::unique_lock< std::recursive_mutex > lock( mtx_render );
 				map_render.erase( chunk.hash_lw );
 			}
-
-			/*
-			FaceDirection dir;
-			glm::ivec3 pos_lc;
-			glm::ivec3 pos_min { 0, 0, 0 };
-			glm::ivec3 pos_max = Chunk::vec_size - glm::ivec3( 1, 1, 1 );
-			glm::ivec3 pos_adj;
-			glm::ivec3 pos_gw;
-			int id_curr;
-			int id_adj;
-			Block * block_curr;
-			Block * block_adj;
-
-			Chunk * chunk_adj;
-
-			chunk.ptr_buffer->list_indices.clear( );
-			chunk.ptr_buffer->list_vertices_solid.clear( );
-			chunk.ptr_buffer->list_vertices_trans.clear( );
-			chunk.ptr_buffer->list_sort.clear( );
-			chunk.ptr_buffer->size_solid = 0;
-			chunk.ptr_buffer->size_trans = 0;
-
-			for( pos_lc.x = 0; pos_lc.x < Chunk::size_x; ++pos_lc.x ) {
-				for( pos_lc.y = 0; pos_lc.y < Chunk::size_y; ++pos_lc.y ) {
-					for( pos_lc.z = 0; pos_lc.z < Chunk::size_z; ++pos_lc.z ) {
-						id_curr = chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ];
-
-						if( id_curr == -1 ) { 
-							continue;
-						}
-
-						block_curr = &get_block_data( id_curr );
-
-						for( int idx_face : block_curr->include_lookup ) {
-							auto & face = block_curr->faces[ idx_face ];
-
-							if( block_curr->is_trans ) {
-								put_face(
-									chunk.ptr_buffer->list_vertices_trans,
-									pos_lc,
-									face.verts,
-									block_curr->color * face.color,
-									face.norms,
-									face.uvs );
-
-								chunk.ptr_buffer->list_sort.emplace_back(
-									std::pair< float, int > {
-										glm::distance( 
-											glm::vec3( chunk.pos_gw + pos_lc ) + 
-											glm::vec3( 0.5f, 0.5f, 0.5f ) + 
-											face.offset, client.display_mgr.camera.pos_camera 
-										),
-										chunk.ptr_buffer->list_vertices_trans.size( ) - 1
-									}
-								);
-							}
-							else { 
-								put_face(
-									chunk.ptr_buffer->list_vertices_solid,
-									pos_lc,
-									face.verts,
-									block_curr->color * face.color,
-									face.norms,
-									face.uvs );
-							}
-						} 
-
-						for( int i = 0; i < FaceDirection::FD_Size; ++i ) {
-							dir = ( FaceDirection ) i;
-							pos_adj = pos_lc + Directional::get_vec_dir_i( dir );
-							chunk_adj = &chunk;
-
-							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
-								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
-								chunk_adj = chunk.ptr_adj[ dir ];
-								pos_adj -= Directional::get_vec_dir_i( dir ) * Chunk::vec_size;
-							}
-
-							if( chunk_adj == nullptr || !chunk_adj->is_loaded ) { 
-								continue;
-							}
-
-							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
-							if( id_adj == -1 ) { 
-								for( int idx_face : block_curr->occlude_lookup[ dir ] ) {
-									auto & face = block_curr->faces[ idx_face ];
-
-									if( block_curr->is_trans ) {
-										put_face(
-											chunk.ptr_buffer->list_vertices_trans,
-											pos_lc,
-											face.verts,
-											block_curr->color * face.color,
-											face.norms,
-											face.uvs );
-
-										chunk.ptr_buffer->list_sort.emplace_back(
-											std::pair< float, int > {
-											glm::distance(
-												glm::vec3( chunk.pos_gw + pos_lc ) +
-												glm::vec3( 0.5f, 0.5f, 0.5f ) +
-												face.offset, client.display_mgr.camera.pos_camera
-											),
-												chunk.ptr_buffer->list_vertices_trans.size( ) - 1
-										}
-										);
-									}
-									else {
-										put_face(
-											chunk.ptr_buffer->list_vertices_solid,
-											pos_lc,
-											face.verts,
-											block_curr->color * face.color,
-											face.norms,
-											face.uvs );
-									}
-								}
-
-								continue;
-							}
-
-							block_adj = &get_block_data( id_adj );
-
-							if( block_curr->is_visible( *block_adj ) ) { 
-								for( int idx_face : block_curr->occlude_lookup[ dir ] ) {
-									auto & face = block_curr->faces[ idx_face ];
-
-									if( block_curr->is_trans ) {
-										put_face(
-											chunk.ptr_buffer->list_vertices_trans,
-											pos_lc,
-											face.verts,
-											block_curr->color * face.color,
-											face.norms,
-											face.uvs );
-
-										chunk.ptr_buffer->list_sort.emplace_back(
-											std::pair< float, int > {
-												glm::distance(
-													glm::vec3( chunk.pos_gw + pos_lc ) +
-													glm::vec3( 0.5f, 0.5f, 0.5f ) +
-													face.offset, client.display_mgr.camera.pos_camera
-												),
-													chunk.ptr_buffer->list_vertices_trans.size( ) - 1
-											}
-										);
-									}
-									else {
-										put_face(
-											chunk.ptr_buffer->list_vertices_solid,
-											pos_lc,
-											face.verts,
-											block_curr->color * face.color,
-											face.norms,
-											face.uvs );
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-
-			for( int unsigned i = 0; i < chunk.ptr_buffer->list_vertices_solid.size( ); i++ ) {
-				chunk.ptr_buffer->list_indices.emplace_back(
-					ChunkFaceIndices {
-					i * 4 + 0, i * 4 + 1, i * 4 + 2,
-					i * 4 + 2, i * 4 + 3, i * 4 + 0
-				}
-				);
-			}
-
-			chunk.ptr_buffer->size_solid = chunk.ptr_buffer->list_vertices_solid.size( );
-
-			std::sort( chunk.ptr_buffer->list_sort.begin( ), chunk.ptr_buffer->list_sort.end( ),
-				[ ] ( std::pair< float, int > const & lho, std::pair< float, int > const & rho ) {
-				return lho.first > rho.first;
-			} );
-
-			for( auto & pair_sort : chunk.ptr_buffer->list_sort ) {
-				chunk.ptr_buffer->list_vertices_solid.emplace_back( chunk.ptr_buffer->list_vertices_trans[ pair_sort.second ] );
-			}
-
-			for( int unsigned i = chunk.ptr_buffer->size_solid; i < chunk.ptr_buffer->list_vertices_solid.size( ); i++ ) {
-				chunk.ptr_buffer->list_indices.emplace_back(
-					ChunkFaceIndices {
-					i * 4 + 0, i * 4 + 1, i * 4 + 2,
-					i * 4 + 2, i * 4 + 3, i * 4 + 0
-				}
-				);
-			}
-
-			chunk.ptr_buffer->size_trans = chunk.ptr_buffer->list_vertices_solid.size( );
-
-			if( chunk.ptr_buffer->size_trans > 0 ) {
-				chunk_state( chunk, ChunkState::CS_Buffer, true );
-			}
-			else {
-				auto iter = map_render.end( );
-				put_buffer( chunk.ptr_buffer );
-				chunk.idx_solid = 0;
-				chunk.idx_trans = 0;
-				std::unique_lock< std::recursive_mutex > lock( mtx_render );
-				map_render.erase( chunk.hash_lw );
-			}*/
 
 			chunk.is_working = false;
 		} );
@@ -2492,12 +1744,424 @@ void ChunkMgr::chunk_smesh( Chunk & chunk ) {
 void ChunkMgr::chunk_tmesh( Chunk & chunk ) { 
 	chunk.is_working = true;
 
-	client.thread_mgr.task_async( 5, [ & ] ( ) {
-		chunk_state( chunk, ChunkState::CS_TMesh, false );
+	if( !chunk.ptr_buffer ) {
+		chunk.ptr_buffer = get_buffer( );
 
-		chunk_state( chunk, ChunkState::CS_Buffer, true );
+		if( chunk.ptr_buffer ) {
+			chunk.ptr_buffer->size_solid = 0;
+			chunk.ptr_buffer->size_trans = 0;
+			chunk.ptr_buffer->is_solid = false;
+			chunk.ptr_buffer->is_trans = false;
+		}
+	}
+
+	if( chunk.ptr_buffer ) {
+		int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
+		int priority = 3;
+		priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+
+		client.thread_mgr.task_async( priority, [ & ] ( ) {
+			chunk_state( chunk, ChunkState::CS_TMesh, false );
+
+			static FaceDirection list_face_z[ ] = { FD_Up, FD_Down, FD_Left, FD_Right };
+			static FaceDirection list_face_x[ ] = { FD_Front, FD_Back };
+			static glm::vec3 list_scale_verts[ ] = {
+				{ 1, 0, 0 }, { 1, 0, 0 },	// Front / Back
+				{ 0, 0, 1 }, { 0, 0, 1 },	// Left / Right
+				{ 0, 0, 1 }, { 0, 0, 1 }	// Up / Down
+			};
+
+			static glm::vec2 list_scale_uvs[ ] = {
+				{ 1, 0 }, { 1, 0 },		// Front / Back
+				{ 1, 0 }, { 1, 0 },		// Left / Right
+				{ 0, 1 }, { 0, 1 }		// Up / Down
+			};
+
+			glm::ivec3 pos_curr;
+			glm::ivec3 pos_curr_x;
+			glm::ivec3 pos_adj;
+			glm::ivec3 pos_min( 0, 0, 0 );
+			glm::ivec3 pos_max( Chunk::size_x - 1, Chunk::size_y - 1, Chunk::size_z - 1 );
+
+			int id_curr, id_adj;
+
+			std::array< glm::ivec3, FaceDirection::FD_Size > list_pos_last;
+			std::array< std::pair< int, int >, FaceDirection::FD_Size > list_id_last;
+			std::array< int, FaceDirection::FD_Size > list_cnt_last;
+			std::array< Block *, FaceDirection::FD_Size > list_block_last;
+
+			FaceDirection dir_face;
+
+			Block * block_curr = nullptr;
+			Block * block_adj = nullptr;
+
+			Chunk * chunk_adj;
+
+			chunk.ptr_buffer->list_indices_trans.clear( );
+			chunk.ptr_buffer->list_vertices_trans.clear( );
+			chunk.ptr_buffer->list_sort.clear( );
+			chunk.ptr_buffer->size_trans = 0;
+			chunk.ptr_buffer->is_trans = false;
+
+			for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
+				dir_face = ( FaceDirection ) iter_face;
+				list_id_last[ dir_face ] = { -1, -1 };
+				list_cnt_last[ dir_face ] = 0;
+				list_block_last[ dir_face ] = nullptr;
+			}
+
+			for( pos_curr.x = 0; pos_curr.x < Chunk::size_x; pos_curr.x++ ) {
+				for( pos_curr.y = 0; pos_curr.y < Chunk::size_y; pos_curr.y++ ) {
+					for( pos_curr.z = 0; pos_curr.z < Chunk::size_z; pos_curr.z++ ) {
+						id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
+
+						if( id_curr == -1 ) {
+							// Is air, skip
+							for( FaceDirection iter_face : list_face_z ) {
+								list_id_last[ iter_face ].first = -1;
+							}
+
+							goto list_x;
+						}
+
+						block_curr = &get_block_data( id_curr );
+
+						if( !block_curr->is_trans ) {
+							for( FaceDirection iter_face : list_face_z ) {
+								list_id_last[ iter_face ].first = -1;
+							}
+
+							goto list_x;
+						}
+
+						// Add the included faces
+						for( auto idx_face : block_curr->include_lookup ) {
+							put_face(
+								chunk.ptr_buffer->list_vertices_trans,
+								pos_curr,
+								block_curr->color * block_curr->faces[ idx_face ].color,
+								block_curr->faces[ idx_face ] );
+
+							float dist = 0;
+							for( int i = 0; i < 4; ++i ) {
+								dist = std::max( dist, glm::distance(
+									glm::vec3( chunk.pos_gw + pos_curr ) +
+									block_curr->faces[ idx_face ].verts[ i ],
+									client.display_mgr.camera.pos_camera ) );
+							}
+
+							chunk.ptr_buffer->list_sort.emplace_back(
+								std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
+							);
+						}
+
+						// Start List z
+						for( auto iter_face : list_face_z ) {
+							dir_face = iter_face;
+
+							pos_adj = pos_curr + Directional::get_vec_dir_i( dir_face );
+							chunk_adj = &chunk;
+
+							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
+								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
+
+								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+								chunk_adj = chunk.ptr_adj[ dir_face ];
+
+								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
+									// Chunk Aint loaded
+									list_id_last[ dir_face ].first = -1;
+
+									continue;
+								}
+							}
+
+							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+
+							if( id_adj == -1 ) {
+								if( id_curr == list_id_last[ dir_face ].first ) {
+									// We have the same face in a row...
+									list_cnt_last[ dir_face ]++;
+								}
+								else {
+									// New face! Lets record some info...
+									if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
+										put_face(
+											chunk.ptr_buffer->list_vertices_trans,
+											list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+											list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+											glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+											glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+
+										float dist = 0;
+										for( int i = 0; i < 4; ++i ) {
+											dist = std::max( dist, glm::distance(
+												glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
+												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
+												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+												client.display_mgr.camera.pos_camera ) );
+										}
+
+										chunk.ptr_buffer->list_sort.emplace_back(
+											std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
+										);
+									}
+
+									list_id_last[ dir_face ] = { id_curr, id_curr };
+									list_pos_last[ dir_face ] = pos_curr;
+									list_block_last[ dir_face ] = block_curr;
+									list_cnt_last[ dir_face ] = 1;
+								}
+
+								continue;
+							}
+							else {
+								block_adj = &get_block_data( id_adj );
+
+								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
+									block_curr->is_visible( *block_adj ) ) {
+									// A face is visible!
+
+									if( id_curr == list_id_last[ dir_face ].first ) {
+										// We have the same face in a row...
+										list_cnt_last[ dir_face ]++;
+									}
+									else {
+										// New face! Lets record some info...
+										if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
+											put_face(
+												chunk.ptr_buffer->list_vertices_trans,
+												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+
+											float dist = 0;
+											for( int i = 0; i < 4; ++i ) {
+												dist = std::max( dist, glm::distance(
+													glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
+													list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
+													glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+													client.display_mgr.camera.pos_camera ) );
+											}
+
+											chunk.ptr_buffer->list_sort.emplace_back(
+												std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
+											);
+										}
+
+										list_id_last[ dir_face ] = { id_curr, id_curr };
+										list_pos_last[ dir_face ] = pos_curr;
+										list_block_last[ dir_face ] = block_curr;
+										list_cnt_last[ dir_face ] = 1;
+									}
+
+									continue;
+								}
+							}
+
+							list_id_last[ dir_face ].first = -1;
+						}
+
+						list_x: // Start list x
+						pos_curr_x = { pos_curr.z, pos_curr.y, pos_curr.x };
+						id_curr = chunk.id_blocks[ pos_curr_x.x ][ pos_curr_x.y ][ pos_curr_x.z ];
+
+						if( id_curr == -1 ) {
+							// Is air, skip
+							for( FaceDirection iter_face : list_face_x ) {
+								list_id_last[ iter_face ].first = -1;
+							}
+
+							continue;
+						}
+
+						block_curr = &get_block_data( id_curr );
+
+						if( !block_curr->is_trans ) {
+							// Block is not trans, skip
+							for( FaceDirection iter_face : list_face_x ) {
+								list_id_last[ iter_face ].first = -1;
+							}
+
+							continue;
+						}
+
+						for( auto iter_face : list_face_x ) {
+							dir_face = iter_face;
+
+							pos_adj = pos_curr_x + Directional::get_vec_dir_i( dir_face );
+							chunk_adj = &chunk;
+
+							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
+								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
+
+								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+								chunk_adj = chunk.ptr_adj[ dir_face ];
+
+								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
+									// Chunk Aint loaded
+									list_id_last[ dir_face ].first = -1;
+
+									continue;
+								}
+							}
+
+							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+
+							if( id_adj == -1 ) {
+								if( id_curr == list_id_last[ dir_face ].first ) {
+									// We have the same face in a row...
+									list_cnt_last[ dir_face ]++;
+								}
+								else {
+									// New face! Lets record some info...
+									if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
+										put_face(
+											chunk.ptr_buffer->list_vertices_trans,
+											list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+											list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+											glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+											glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+
+										float dist = 0;
+										for( int i = 0; i < 4; ++i ) {
+											dist = std::max( dist, glm::distance(
+												glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
+												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
+												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+												client.display_mgr.camera.pos_camera ) );
+										}
+
+										chunk.ptr_buffer->list_sort.emplace_back(
+											std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
+										);
+									}
+
+									list_id_last[ dir_face ] = { id_curr, id_curr };
+									list_pos_last[ dir_face ] = pos_curr_x;
+									list_block_last[ dir_face ] = block_curr;
+									list_cnt_last[ dir_face ] = 1;
+								}
+
+								continue;
+							}
+							else {
+								block_adj = &get_block_data( id_adj );
+
+								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
+									block_curr->is_visible( *block_adj ) ) {
+									// A face is visible!
+
+									if( id_curr == list_id_last[ dir_face ].first ) {
+										// We have the same face in a row...
+										list_cnt_last[ dir_face ]++;
+									}
+									else {
+										// New face! Lets record some info...
+										if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
+											put_face(
+												chunk.ptr_buffer->list_vertices_trans,
+												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+
+											float dist = 0;
+											for( int i = 0; i < 4; ++i ) {
+												dist = std::max( dist, glm::distance(
+													glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
+													list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
+													glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+													client.display_mgr.camera.pos_camera ) );
+											}
+
+											chunk.ptr_buffer->list_sort.emplace_back(
+												std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
+											);
+										}
+
+										list_id_last[ dir_face ] = { id_curr, id_curr };
+										list_pos_last[ dir_face ] = pos_curr_x;
+										list_block_last[ dir_face ] = block_curr;
+										list_cnt_last[ dir_face ] = 1;
+									}
+
+									continue;
+								}
+							}
+
+							list_id_last[ dir_face ].first = -1;
+						}
+					}
+					// Woooo we made it through a row
+					for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
+						dir_face = ( FaceDirection ) iter_face;
+						list_id_last[ dir_face ].first = -1;
+					}
+				}
+			}
+
+			for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
+				dir_face = ( FaceDirection ) iter_face;
+				list_id_last[ dir_face ].first = -1;
+				if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
+					put_face(
+						chunk.ptr_buffer->list_vertices_trans,
+						list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+						list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
+						glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+						glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+
+					float dist = 0;
+					for( int i = 0; i < 4; ++i ) {
+						dist = std::max( dist, glm::distance(
+							glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ) +
+							list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ].verts[ i ] *
+							glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
+							client.display_mgr.camera.pos_camera ) );
+					}
+
+					chunk.ptr_buffer->list_sort.emplace_back(
+						std::pair< float, int > { dist, chunk.ptr_buffer->list_vertices_trans.size( ) - 1 }
+					);
+				}
+			}
+
+			std::sort( chunk.ptr_buffer->list_sort.begin( ), chunk.ptr_buffer->list_sort.end( ),
+				[ ] ( std::pair< float, int > const & lho, std::pair< float, int > const & rho ) {
+				return lho.first > rho.first;
+			} );
+
+			for( auto & pair_sort : chunk.ptr_buffer->list_sort ) {
+				chunk.ptr_buffer->list_indices_trans.emplace_back( ChunkFaceIndices {
+					pair_sort.second * 4 + 0, pair_sort.second * 4 + 1, pair_sort.second * 4 + 2,
+					pair_sort.second * 4 + 2, pair_sort.second * 4 + 3, pair_sort.second * 4 + 0
+				} );
+
+			}
+
+			chunk.ptr_buffer->size_trans = chunk.ptr_buffer->list_vertices_trans.size( );
+
+			if( chunk.ptr_buffer->size_trans > 0 ) {
+				chunk.ptr_buffer->is_trans = true;
+				chunk_state( chunk, ChunkState::CS_Buffer, true );
+			}
+			else {
+				//auto iter = map_render.end( );
+				put_buffer( chunk.ptr_buffer );
+				//chunk.idx_solid = 0;
+				chunk.size_trans = 0;
+				/*std::unique_lock< std::recursive_mutex > lock( mtx_render );
+				map_render.erase( chunk.hash_lw );*/
+			}
+
+			chunk.is_working = false;
+		} );
+	}
+	else { 
 		chunk.is_working = false;
-	} );
+	}
 }
 
 void ChunkMgr::chunk_buffer( Chunk & chunk ) { 
@@ -2511,21 +2175,46 @@ void ChunkMgr::chunk_buffer( Chunk & chunk ) {
 		chunk_state( chunk, ChunkState::CS_Buffer, false );
 
 		if( chunk.ptr_buffer ) {
+			if( chunk.size_solid != chunk.ptr_buffer->size_solid ||
+				chunk.size_trans != chunk.ptr_buffer->size_trans ) {
+
+				if( chunk.ptr_buffer->is_solid ) {
+					chunk.size_solid = chunk.ptr_buffer->size_solid;
+				}
+
+				if( chunk.ptr_buffer->is_trans ) {
+					chunk.size_trans = chunk.ptr_buffer->size_trans;
+				}
+			}
+
+			if( chunk.size_solid > size_prealloc / 2 ) { 
+				chunk.size_solid = size_prealloc / 2;
+			}
+
+			if( chunk.size_trans > size_prealloc / 2 ) {
+				chunk.size_trans = size_prealloc / 2;
+			}
+
 			glBindBuffer( GL_ARRAY_BUFFER, chunk.id_vbo );
-			glBufferData( GL_ARRAY_BUFFER, chunk.idx_trans * sizeof( ChunkFaceVertices ), nullptr, GL_STATIC_DRAW );
-			glBufferData( GL_ARRAY_BUFFER, chunk.ptr_buffer->size_trans * sizeof( ChunkFaceVertices ), chunk.ptr_buffer->list_vertices_solid.data( ), GL_STATIC_DRAW );
+			if( chunk.ptr_buffer->is_solid ) { 
+				glBufferSubData( GL_ARRAY_BUFFER, 0, chunk.size_solid * sizeof( ChunkFaceVertices ), chunk.ptr_buffer->list_vertices_solid.data( ) );
+			}
+			if( chunk.ptr_buffer->is_trans ) {
+				glBufferSubData( GL_ARRAY_BUFFER, size_alloc_verts / 2, chunk.size_trans * sizeof( ChunkFaceVertices ), chunk.ptr_buffer->list_vertices_trans.data( ) );
+			}
 
 			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, chunk.id_ibo );
-			glBufferData( GL_ELEMENT_ARRAY_BUFFER, chunk.idx_trans * sizeof( ChunkFaceIndices ), nullptr, GL_STATIC_DRAW );
-			glBufferData( GL_ELEMENT_ARRAY_BUFFER, chunk.ptr_buffer->size_trans * sizeof( ChunkFaceIndices ), chunk.ptr_buffer->list_indices.data( ), GL_STATIC_DRAW );
-
-			chunk.idx_solid = chunk.ptr_buffer->size_solid;
-			chunk.idx_trans = chunk.ptr_buffer->size_trans;
+			if( chunk.ptr_buffer->is_solid ) {
+				glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, chunk.size_solid * sizeof( ChunkFaceIndices ), chunk.ptr_buffer->list_indices_solid.data( ) );
+			}
+			if( chunk.ptr_buffer->is_trans ) {
+				glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, size_alloc_inds / 2, chunk.size_trans * sizeof( ChunkFaceIndices ), chunk.ptr_buffer->list_indices_trans.data( ) );
+			}
 
 			put_buffer( chunk.ptr_buffer );
 		}
 
-		if( chunk.idx_trans != 0 ) {
+		if( chunk.size_solid != 0 ) {
 			std::lock_guard< std::recursive_mutex > lock( mtx_render );
 			map_render.insert( { chunk.hash_lw, chunk } );
 		}
