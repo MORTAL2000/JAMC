@@ -42,7 +42,7 @@ private:
 
 	std::string const path_shaders;
 	std::vector< ShaderLoader > list_shaders;
-	std::unordered_map< std::string, int > map_shaders;
+	std::unordered_map< std::string, GLuint > map_shaders;
 
 	GLuint id_copy;
 
@@ -95,7 +95,10 @@ public:
 	void bind_fonts( );
 	void bind_materials( );
 
+	ShaderLoader const * get_program( std::string const & name );
+
 	void bind_program( std::string const & name );
+	void bind_program( GLuint id_prog );
 	void unbind_program( );
 
 	MultiTex * get_texture( std::string const & name_tex );

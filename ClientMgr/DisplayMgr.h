@@ -7,7 +7,6 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "TimeMgr.h"
 #include "Chunk.h"
-#include "BlockSelector.h"
 
 #include <Windows.h>
 #include <sstream>
@@ -65,7 +64,6 @@ public:
 	bool is_limiter;
 
 	Camera camera;
-	BlockSelector block_selector;
 
 	std::ostringstream out;
 

@@ -9,8 +9,206 @@ BlockSelector::~BlockSelector( ) {
 	
 }
 
+void BlockSelector::clear_mesh( ) { 
+	for( auto & handle : handles ) { 
+		handle.clear( );
+	}
+}
+
+void BlockSelector::release_mesh( ) { 
+	for( auto & handle : handles ) {
+		handle.release( );
+	}
+}
+
+void BlockSelector::make_mesh( ) { 
+	std::cout << "Block select errors1: " << checkGlErrors( ) << std::endl;
+
+	handles[ 0 ].push_set( SharedMesh::SMGSet {
+		SharedMesh::TypeGeometry::TG_Triangles,
+		glm::mat4( 1.0f ),
+		client.texture_mgr.get_program( "Basic" )->id_prog,
+		client.texture_mgr.id_materials,
+		0, 0, 0, 0,
+		{ 0, 1, 2, 2, 3, 0 }
+	} );
+
+	float size = 50;
+
+	for( GLuint i = 0; i < 10; ++i ) {
+		handles[ 0 ].buffer_data( SharedMesh::Vertex {
+			{ i * size, i * size, 0 },
+			{ 1, 1, 1, 1 },
+			{ 0, 0, 1 },
+			{ 0, 0, 0 }
+		} );
+
+		handles[ 0 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size, i * size, 0 },
+			{ 1, 1, 1, 1 },
+			{ 0, 0, 1 },
+			{ 1, 0, 0 }
+		} );
+
+		handles[ 0 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size, i * size + size, 0 },
+			{ 1, 1, 1, 1 },
+			{ 0, 0, 1 },
+			{ 1, 1, 0 }
+		} );
+
+		handles[ 0 ].buffer_data( SharedMesh::Vertex {
+			{ i * size, i * size + size, 0 },
+			{ 1, 1, 1, 1 },
+			{ 0, 0, 1 },
+			{ 0, 1, 0 }
+		} );
+	}
+
+	handles[ 0 ].finalize_set( );
+
+	std::cout << "Block select errors2: " << checkGlErrors( ) << std::endl;
+
+	handles[ 1 ].push_set( SharedMesh::SMGSet {
+		SharedMesh::TypeGeometry::TG_Triangles,
+		glm::translate( glm::mat4( 1.0f ), glm::vec3( size, 0, 0 ) ),
+		client.texture_mgr.get_program( "Basic" )->id_prog,
+		client.texture_mgr.id_materials,
+		0, 0, 0, 0,
+		{ 0, 1, 2, 2, 3, 0 }
+	} );
+
+	for( GLuint i = 0; i < 10; ++i ) {
+		handles[ 1 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size, i * size, 0 },
+			{ 1, 0, 0, 1 },
+			{ 0, 0, 1 },
+			{ 0, 0, 0 }
+		} );
+
+		handles[ 1 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size + size, i * size, 0 },
+			{ 1, 0, 0, 1 },
+			{ 0, 0, 1 },
+			{ 1, 0, 0 }
+		} );
+
+		handles[ 1 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size + size, i * size + size, 0 },
+			{ 1, 0, 0, 1 },
+			{ 0, 0, 1 },
+			{ 1, 1, 0 }
+		} );
+
+		handles[ 1 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size, i * size + size, 0 },
+			{ 1, 0, 0, 1 },
+			{ 0, 0, 1 },
+			{ 0, 1, 0 }
+		} );
+	}
+
+	handles[ 1 ].finalize_set( );
+
+	handles[ 1 ].push_set( SharedMesh::SMGSet {
+		SharedMesh::TypeGeometry::TG_Triangles,
+		glm::translate( glm::mat4( 1.0f ), glm::vec3( size * 2, 0, 0 ) ),
+		client.texture_mgr.get_program( "Basic" )->id_prog,
+		client.texture_mgr.id_materials,
+		0, 0, 0, 0,
+		{ 0, 1, 2, 2, 3, 0 }
+	} );
+
+	for( GLuint i = 0; i < 10; ++i ) {
+		handles[ 1 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size + size, i * size, 0 },
+			{ 0, 0, 1, 1 },
+			{ 0, 0, 1 },
+			{ 0, 0, 0 }
+		} );
+
+		handles[ 1 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size + size + size, i * size, 0 },
+			{ 0, 0, 1, 1 },
+			{ 0, 0, 1 },
+			{ 1, 0, 0 }
+		} );
+
+		handles[ 1 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size + size + size, i * size + size, 0 },
+			{ 0, 0, 1, 1 },
+			{ 0, 0, 1 },
+			{ 1, 1, 0 }
+		} );
+
+		handles[ 1 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size + size, i * size + size, 0 },
+			{ 0, 0, 1, 1 },
+			{ 0, 0, 1 },
+			{ 0, 1, 0 }
+		} );
+	}
+
+	handles[ 1 ].finalize_set( );
+
+	handles[ 0 ].push_set( SharedMesh::SMGSet {
+		SharedMesh::TypeGeometry::TG_Triangles,
+		glm::translate( glm::mat4( 1.0f ), glm::vec3( size * 3, 0, 0 ) ),
+		client.texture_mgr.get_program( "Basic" )->id_prog,
+		client.texture_mgr.id_materials,
+		0, 0, 0, 0,
+		{ 0, 1, 2, 2, 3, 0 }
+	} );
+
+	for( GLuint i = 0; i < 10; ++i ) {
+		handles[ 0 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size + size + size, i * size, 0 },
+			{ 0, 1, 0, 1 },
+			{ 0, 0, 1 },
+			{ 0, 0, 0 }
+		} );
+
+		handles[ 0 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size + size + size + size, i * size, 0 },
+			{ 0, 1, 0, 1 },
+			{ 0, 0, 1 },
+			{ 1, 0, 0 }
+		} );
+
+		handles[ 0 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size + size + size + size, i * size + size, 0 },
+			{ 0, 1, 0, 1 },
+			{ 0, 0, 1 },
+			{ 1, 1, 0 }
+		} );
+
+		handles[ 0 ].buffer_data( SharedMesh::Vertex {
+			{ i * size + size + size + size, i * size + size, 0 },
+			{ 0, 1, 0, 1 },
+			{ 0, 0, 1 },
+			{ 0, 1, 0 }
+		} );
+	}
+
+	handles[ 0 ].finalize_set( );
+
+	std::cout << "Block select errors3: " << checkGlErrors( ) << std::endl;
+}
+
 void BlockSelector::init( ) {
 	vbo.init( );
+
+
+	std::cout << "Block select errors0: " << checkGlErrors( ) << std::endl;
+
+	shared_mesh.init( 8192, 100, 12288, 100 );
+	shared_mesh.get_handle( handles[ 0 ] );
+	shared_mesh.get_handle( handles[ 1 ] );
+
+	make_mesh( );
+
+	//shared_mesh.unmap( );
+
 	id_block = 0;
 	is_dirty = true;
 }
@@ -117,12 +315,22 @@ void BlockSelector::render( ) {
 	glUniformMatrix4fv( prog_model, 1, GL_FALSE, glm::value_ptr( mat_translate * mat_rotate * mat_scale ) );
 	vbo.render_range( client, 0, 1 );
 
+	//handles[ 0 ].render( client );
+	//handles[ 1 ].render( client );
+	shared_mesh.render( client );
+
 	glEnable( GL_CULL_FACE );
 }
 
 void BlockSelector::mesh( ) {
 	if( !is_dirty ) {
 		return;
+	}
+
+	static bool is_test = true;
+	if( is_test == true ) { 
+		
+		is_test = false;
 	}
 
 	Block * block;

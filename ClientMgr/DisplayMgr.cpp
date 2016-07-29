@@ -20,7 +20,6 @@ Camera::Camera( ) :
 
 DisplayMgr::DisplayMgr( Client & client ) :
 	Manager( client ),
-	block_selector( client ),
 	is_vsync( false ),
 	is_limiter( true ) { }
 
@@ -54,8 +53,6 @@ void DisplayMgr::init( ) {
 	camera.mat_rotation = glm::mat4( 1.0f );
 	camera.mat_rotation = glm::rotate( glm::mat4( 1.0f ), glm::radians( 180.0f ), glm::vec3( 0, 1, 0 ) );
 
-	block_selector.init( );
-
 	printTabbedLine( 0, "...Init DisplayMgr" );
 	std::cout << std::endl;
 }
@@ -87,8 +84,6 @@ void DisplayMgr::update( ) {
 	camera.vec_front = Directional::get_fwd( camera.rot_camera );
 	camera.vec_left = Directional::get_left( camera.rot_camera );
 	camera.vec_up = Directional::get_up_aa( camera.rot_camera );
-
-	block_selector.update( );
 
 	out.str( "" );
 	out << "Camera pos: " << Directional::print_vec( camera.pos_camera );

@@ -114,12 +114,12 @@ void Client::init( ) {
 	resource_mgr.init( );
 	thread_mgr.init( );
 	display_mgr.init( );
-	gui_mgr.init( );
 
 	// Init things that do not depend on opengl
 	time_mgr.init( );
 	input_mgr.init( );
 	texture_mgr.init( );
+	gui_mgr.init( );
 	chunk_mgr.init( );
 	entity_mgr.init( );
 
@@ -173,13 +173,6 @@ void Client::render( ) {
 	render_output( );
 	client.time_mgr.end_record( RecordStrings::RENDER_DRAW );
 	client.time_mgr.push_record( RecordStrings::RENDER_DRAW );
-
-	/*client.time_mgr.begin_record( RecordStrings::RENDER_SWAP );
-
-	display_mgr.swap_buffers( );
-
-	client.time_mgr.end_record( RecordStrings::RENDER_SWAP );
-	client.time_mgr.push_record( RecordStrings::RENDER_SWAP );*/
 }
 
 void Client::render_output( ) {
@@ -194,7 +187,6 @@ void Client::render_output( ) {
 
 	gui_mgr.render( );
 	time_mgr.render( );
-	display_mgr.block_selector.render( );
 
 	glEnable( GL_LIGHTING );
 

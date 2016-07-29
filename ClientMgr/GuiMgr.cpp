@@ -4,7 +4,8 @@
 #include "glm/gtc/type_ptr.hpp"
 
 GuiMgr::GuiMgr( Client & client ) :
-	Manager( client ) { }
+	Manager( client ),
+	block_selector( client ) { }
 
 GuiMgr::~GuiMgr( ) { }
 
@@ -14,6 +15,8 @@ void GuiMgr::init( ) {
 	list_order.reserve( size_pages );
 	client.resource_mgr.reg_pool< PCDTextField >( 1000 );
 	client.resource_mgr.reg_pool< PageComp >( 1000 );
+
+	block_selector.init( );
 
 	add_page( std::string( "Console" ),
 		PageFuncs::alloc_console,
@@ -29,6 +32,8 @@ void GuiMgr::init( ) {
 }
 
 void GuiMgr::update( ) {
+	block_selector.update( );
+
 	if( is_visible && client.input_mgr.is_cursor_vis( ) ) {
 		if( client.input_mgr.is_mouse_down( 0 ) ) {
 			on_down( 0 );
@@ -47,6 +52,8 @@ void GuiMgr::update( ) {
 }
 
 void GuiMgr::render( ) {
+	block_selector.render( );
+
 	client.texture_mgr.bind_program( "Basic" );
 	static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
 
@@ -467,7 +474,7 @@ void GuiMgr::process_input( ) {
 		}
 		else if( token == "sphere" ) { 
 			int r = 0;
-			int id = client.display_mgr.block_selector.get_id_block( );
+			int id = block_selector.get_id_block( );
 			auto & pos_camera = client.display_mgr.camera.pos_camera;
 			glm::ivec3 vec_pos( floor( pos_camera.x ), floor( pos_camera.y ), floor( pos_camera.z ) );
 			std::vector< std::string > list_delim { "r:", "p:", "id:" };
@@ -534,7 +541,7 @@ void GuiMgr::process_input( ) {
 			}
 		}
 		else if( token == "rectangle" ) {
-			int id = client.display_mgr.block_selector.get_id_block( );
+			int id = block_selector.get_id_block( );
 			auto & pos_camera = client.display_mgr.camera.pos_camera;
 			glm::ivec3 vec_pos( floor( pos_camera.x ), floor( pos_camera.y ), floor( pos_camera.z ) );
 			glm::ivec3 vec_dim( 0, 0, 0 );
@@ -601,7 +608,7 @@ void GuiMgr::process_input( ) {
 			}
 		}
 		else if( token == "ellipsoid" ) {
-			int id = client.display_mgr.block_selector.get_id_block( );
+			int id = block_selector.get_id_block( );
 			auto & pos_camera = client.display_mgr.camera.pos_camera;
 			glm::ivec3 vec_pos( floor( pos_camera.x ), floor( pos_camera.y ), floor( pos_camera.z ) );
 			glm::ivec3 vec_dim( 0, 0, 0 );
@@ -843,6 +850,17 @@ void GuiMgr::process_input( ) {
 			out.str( "" );
 			out << checkGlErrors( );
 			client.gui_mgr.print_to_console( out.str( ) );
+		}
+		else if( token == "clearmesh" ) { 
+			block_selector.clear_mesh( );
+		}
+		else if( token == "releasemesh" ) {
+			block_selector.release_mesh( );
+		}
+		else if( token == "makemesh" ) {
+			client.thread_mgr.task_async( 10, [ & ] ( ) {
+				block_selector.make_mesh( );
+			} );
 		}
 		else {
 			out.str( "" );

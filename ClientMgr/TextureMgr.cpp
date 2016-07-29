@@ -27,7 +27,9 @@ void TextureMgr::init( ) {
 	printTabbedLine( 1, "Creating shaders and loading data..." );
 
 	loader_add( "Basic" );
+	loader_add( "SMBasic" );
 	loader_add( "Terrain" );
+	loader_add( "SMTerrain" );
 	loader_add( "Selector" );
 	loader_add( "Entity" );
 	loader_add( "ShadowMap" );
@@ -57,7 +59,7 @@ void TextureMgr::init( ) {
 
 	std::cout << std::endl;
 	printTabbedLine( 1, "Linking Uniform Buffer objects..." );
-	for( auto & shader : { "Basic", "Terrain", "Entity", "Selector" } ) {
+	for( auto & shader : { "Basic", "SMBasic", "Terrain", "SMTerrain", "Entity", "Selector" } ) {
 		bind_program( shader );
 		GLuint uniform_block_index = glGetUniformBlockIndex( id_prog, "mvp_matrices" );
 		glUniformBlockBinding( id_prog, uniform_block_index, 0 );
@@ -71,7 +73,7 @@ void TextureMgr::init( ) {
 
 	glActiveTexture( GL_TEXTURE0 );
 
-	for( auto & shader : { "Basic", "Terrain", "Selector", "Entity" } ) { 
+	for( auto & shader : { "Basic", "SMBasic", "Terrain", "SMTerrain", "Selector", "Entity" } ) { 
 		bind_program( shader );
 		GLuint prog_sampler = glGetUniformLocation( id_prog, "frag_sampler" );
 		glUniform1i( prog_sampler, 0 );
@@ -106,6 +108,15 @@ void TextureMgr::bind_program( std::string const & name ) {
 	}
 
 	id_prog = loader.id_prog;
+	glUseProgram( id_prog );
+}
+
+void TextureMgr::bind_program( GLuint id_prog ) { 
+	if( id_prog == this->id_prog ) {
+		return;
+	}
+
+	this->id_prog = id_prog;
 	glUseProgram( id_prog );
 }
 
@@ -654,6 +665,15 @@ void TextureMgr::bind_materials( ) {
 		glActiveTexture( GL_TEXTURE0 );
 		glBindTexture( GL_TEXTURE_2D, id_texture );
 	}
+}
+
+ShaderLoader const * TextureMgr::get_program( std::string const & name ) {
+	auto & iter_program = map_shaders.find( name );
+	if( iter_program != map_shaders.end( ) ) { 
+		return &list_shaders[ iter_program->second ];
+	}
+
+	return nullptr;
 }
 
 face_uvs & TextureMgr::get_uvs_skybox( FaceDirection dir_face ) {

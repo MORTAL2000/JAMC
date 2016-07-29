@@ -10,7 +10,7 @@ SpawnBlock::SpawnBlock( ) :
 				return ErrorEntity::EE_Failed;
 			}
 
-			entity.id = client.display_mgr.block_selector.get_id_block( );
+			entity.id = client.gui_mgr.block_selector.get_id_block( );
 			entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
 
 			auto & ec_state = entity.h_state.get( );

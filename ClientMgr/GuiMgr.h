@@ -4,6 +4,7 @@
 #include "Manager.h"
 
 #include "Page.h"
+#include "BlockSelector.h"
 
 #include <vector>
 #include <unordered_map>
@@ -30,6 +31,8 @@ private:
 	void on_up( int button );
 
 public:
+	BlockSelector block_selector;
+
 	GuiMgr( Client & client );
 	~GuiMgr( );
 	

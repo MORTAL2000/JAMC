@@ -2,16 +2,19 @@
 #include "Globals.h"
 #include "ChunkMgr.h"
 #include "VBO.h"
+#include "SharedMesh.h"
 
 class BlockSelector {
 private:
-	static int const size_max = 75;
-	static int const size_min = 40;
-	static int const num_hist = 6;
+	static int constexpr size_max = 75;
+	static int constexpr size_min = 40;
+	static int constexpr num_hist = 6;
 	Client & client;
 	int id_temp;
 	int id_block;
 	VBO vbo;
+	SharedMesh shared_mesh;
+	SharedMesh::SMHandle handles[ 2 ];
 
 	glm::mat4 mat_translate;
 	glm::mat4 mat_rotate;
@@ -24,6 +27,10 @@ private:
 public:
 	BlockSelector( Client & client );
 	~BlockSelector( );
+
+	void clear_mesh( );
+	void release_mesh( );
+	void make_mesh( );
 
 	void init( );
 	void set_dirty( );

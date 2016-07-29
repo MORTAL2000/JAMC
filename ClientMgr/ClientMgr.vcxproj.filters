@@ -91,6 +91,21 @@
     <Filter Include="Source Files\Managers\EntityMgr\Entities">
       <UniqueIdentifier>{a7437bd5-51ef-4110-b7ea-92784308801e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\Shared Mesh">
+      <UniqueIdentifier>{2db71d97-c7c6-4259-8bf4-47cf23b0636d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shadow Map">
+      <UniqueIdentifier>{3fe15e68-f6d2-4d64-b1a1-d3a00869da96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Mesh">
+      <UniqueIdentifier>{5d0fe06e-8913-496f-b7ec-9d7abb2b940b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Xml">
+      <UniqueIdentifier>{285e7ac7-a4c2-4a45-abdc-a3c5b69b6f6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Xml\Block Descriptor">
+      <UniqueIdentifier>{64dfc2d0-f300-4f34-80a2-91be85dd6c9c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -177,9 +192,6 @@
     <ClCompile Include="VBO.cpp">
       <Filter>Source Files\Objects</Filter>
     </ClCompile>
-    <ClCompile Include="BlockSelector.cpp">
-      <Filter>Source Files\Managers\DisplayMgr</Filter>
-    </ClCompile>
     <ClCompile Include="Player.cpp">
       <Filter>Source Files\Managers\EntityMgr\Entities</Filter>
     </ClCompile>
@@ -195,8 +207,11 @@
     <ClCompile Include="SpawnBlock.cpp">
       <Filter>Source Files\Managers\EntityMgr\Entities</Filter>
     </ClCompile>
+    <ClCompile Include="BlockSelector.cpp">
+      <Filter>Source Files\Managers\GuiMgr</Filter>
+    </ClCompile>
     <ClCompile Include="SharedMesh.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Objects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -281,9 +296,6 @@
     <ClInclude Include="VBO.h">
       <Filter>Header Files\Objects</Filter>
     </ClInclude>
-    <ClInclude Include="BlockSelector.h">
-      <Filter>Header Files\Managers\DisplayMgr</Filter>
-    </ClInclude>
     <ClInclude Include="Player.h">
       <Filter>Header Files\Managers\EntityMgr\Entities</Filter>
     </ClInclude>
@@ -299,45 +311,60 @@
     <ClInclude Include="SpawnBlock.h">
       <Filter>Header Files\Managers\EntityMgr\Entities</Filter>
     </ClInclude>
+    <ClInclude Include="BlockSelector.h">
+      <Filter>Header Files\Managers\GuiMgr</Filter>
+    </ClInclude>
     <ClInclude Include="SharedMesh.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Objects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\Terrain.vert">
-      <Filter>Resource Files</Filter>
+    <None Include="Shaders\SMBasic.frag">
+      <Filter>Resource Files\Shared Mesh</Filter>
     </None>
-    <None Include="Shaders\Terrain.frag">
-      <Filter>Resource Files</Filter>
+    <None Include="Shaders\SMBasic.vert">
+      <Filter>Resource Files\Shared Mesh</Filter>
     </None>
-    <None Include="Shaders\Selector.vert">
-      <Filter>Resource Files</Filter>
+    <None Include="Shaders\SMTerrain.frag">
+      <Filter>Resource Files\Shared Mesh</Filter>
     </None>
-    <None Include="Shaders\Selector.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Shaders\Entity.vert">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Shaders\Entity.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Shaders\ShadowMap.frag">
-      <Filter>Resource Files</Filter>
+    <None Include="Shaders\SMTerrain.vert">
+      <Filter>Resource Files\Shared Mesh</Filter>
     </None>
     <None Include="Shaders\ShadowMap.vert">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Shadow Map</Filter>
+    </None>
+    <None Include="Shaders\ShadowMap.frag">
+      <Filter>Resource Files\Shadow Map</Filter>
+    </None>
+    <None Include="Shaders\Entity.frag">
+      <Filter>Resource Files\Mesh</Filter>
+    </None>
+    <None Include="Shaders\Entity.vert">
+      <Filter>Resource Files\Mesh</Filter>
+    </None>
+    <None Include="Shaders\Selector.frag">
+      <Filter>Resource Files\Mesh</Filter>
+    </None>
+    <None Include="Shaders\Selector.vert">
+      <Filter>Resource Files\Mesh</Filter>
+    </None>
+    <None Include="Shaders\Terrain.frag">
+      <Filter>Resource Files\Mesh</Filter>
+    </None>
+    <None Include="Shaders\Terrain.vert">
+      <Filter>Resource Files\Mesh</Filter>
     </None>
     <None Include="Shaders\Basic.frag">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Mesh</Filter>
     </None>
     <None Include="Shaders\Basic.vert">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Mesh</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Blocks\Default.xml">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Xml\Block Descriptor</Filter>
     </Xml>
   </ItemGroup>
 </Project>

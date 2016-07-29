@@ -2658,8 +2658,6 @@ void ChunkMgr::load_block_data( ) {
 			dim_dx /= dim;
 			int num_x, num_y;*/
 			
-			std::cout << "Face uvs: " << std::endl;
-
 			for( auto & uv : face.uvs ) {
 				/*num_x = std::floor( uv.x / dim_dx.x );
 				num_y = std::floor( uv.y / dim_dx.y );

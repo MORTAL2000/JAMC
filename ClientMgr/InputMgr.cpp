@@ -161,7 +161,7 @@ void InputMgr::process_input( ) {
 				for( int i = 0; i < num_steps; i++ ) {
 					pos_gw += pos_step;
 					if( client.chunk_mgr.get_block( pos_gw + pos_step ) != -1 ) {
-						client.chunk_mgr.set_sphere( pos_gw, 100, client.display_mgr.block_selector.get_id_block( ) );
+						client.chunk_mgr.set_sphere( pos_gw, 100, client.gui_mgr.block_selector.get_id_block( ) );
 						break;
 					}
 				}
@@ -180,7 +180,7 @@ void InputMgr::process_input( ) {
 				for( int i = 0; i < num_steps; i++ ) {
 					pos_gw += pos_step;
 					if( client.chunk_mgr.get_block( pos_gw + pos_step ) != -1 ) {
-						client.chunk_mgr.set_rect( pos_gw, glm::vec3( 1, 80, 1 ), client.display_mgr.block_selector.get_id_block( ) );
+						client.chunk_mgr.set_rect( pos_gw, glm::vec3( 1, 80, 1 ), client.gui_mgr.block_selector.get_id_block( ) );
 						break;
 					}
 				}
@@ -301,7 +301,7 @@ void InputMgr::process_input( ) {
 				for( int i = 0; i < num_steps; i++ ) {
 					pos_gw += pos_step;
 					if( client.chunk_mgr.get_block( pos_gw + pos_step ) != -1 ) {
-						client.chunk_mgr.set_block( pos_gw, client.display_mgr.block_selector.get_id_block( ) );
+						client.chunk_mgr.set_block( pos_gw, client.gui_mgr.block_selector.get_id_block( ) );
 						break;
 					}
 				}
