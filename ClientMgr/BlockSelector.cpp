@@ -9,19 +9,7 @@ BlockSelector::~BlockSelector( ) {
 	
 }
 
-void BlockSelector::clear_mesh( ) { 
-	for( auto & handle : handles ) { 
-		handle.clear( );
-	}
-}
-
-void BlockSelector::release_mesh( ) { 
-	for( auto & handle : handles ) {
-		handle.release( );
-	}
-}
-
-void BlockSelector::make_mesh( ) { 
+/*void BlockSelector::make_mesh( ) { 
 	std::cout << "Block select errors1: " << checkGlErrors( ) << std::endl;
 
 	handles[ 0 ].push_set( SharedMesh::SMGSet {
@@ -193,7 +181,7 @@ void BlockSelector::make_mesh( ) {
 	handles[ 0 ].finalize_set( );
 
 	std::cout << "Block select errors3: " << checkGlErrors( ) << std::endl;
-}
+}*/
 
 void BlockSelector::init( ) {
 	vbo.init( );
@@ -201,11 +189,11 @@ void BlockSelector::init( ) {
 
 	std::cout << "Block select errors0: " << checkGlErrors( ) << std::endl;
 
-	shared_mesh.init( 8192, 100, 12288, 100 );
-	shared_mesh.get_handle( handles[ 0 ] );
-	shared_mesh.get_handle( handles[ 1 ] );
+	//shared_mesh.init( 8192, 100, 12288, 100 );
+	//shared_mesh.get_handle( handles[ 0 ] );
+	//shared_mesh.get_handle( handles[ 1 ] );
 
-	make_mesh( );
+	//make_mesh( );
 
 	//shared_mesh.unmap( );
 
@@ -317,7 +305,7 @@ void BlockSelector::render( ) {
 
 	//handles[ 0 ].render( client );
 	//handles[ 1 ].render( client );
-	shared_mesh.render( client );
+	//shared_mesh.render( client );
 
 	glEnable( GL_CULL_FACE );
 }

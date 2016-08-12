@@ -13,8 +13,8 @@ private:
 	int id_temp;
 	int id_block;
 	VBO vbo;
-	SharedMesh shared_mesh;
-	SharedMesh::SMHandle handles[ 2 ];
+	//SharedMesh shared_mesh;
+	//SharedMesh::SMHandle handles[ 2 ];
 
 	glm::mat4 mat_translate;
 	glm::mat4 mat_rotate;
@@ -28,9 +28,9 @@ public:
 	BlockSelector( Client & client );
 	~BlockSelector( );
 
-	void clear_mesh( );
-	void release_mesh( );
-	void make_mesh( );
+	//void clear_mesh( );
+	//void release_mesh( );
+	//void make_mesh( );
 
 	void init( );
 	void set_dirty( );

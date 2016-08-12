@@ -128,7 +128,10 @@ void VBO::render( Client & client ) {
 
 	while( iter_set != list_sets.end( ) ) {
 		client.texture_mgr.bind_program( iter_set->str_prog );
-		client.texture_mgr.bind_texture( 0, iter_set->id_tex );
+		if( iter_set->id_tex == client.texture_mgr.get_texture_id( "Blocks" ) )
+			client.texture_mgr.bind_texture_array( 0, iter_set->id_tex );
+		else
+			client.texture_mgr.bind_texture( 0, iter_set->id_tex );
 
 		glDrawElements( 
 			GeomGLTypeLookup[ iter_set->type ], iter_set->len_inds, 
@@ -150,7 +153,10 @@ void VBO::render_range( Client & client, GLuint index, GLuint length ) {
 
 	while( iter_set < list_sets.end( ) && curr_length < length ) {
 		client.texture_mgr.bind_program( iter_set->str_prog );
-		client.texture_mgr.bind_texture( 0, iter_set->id_tex );
+		if( iter_set->id_tex == client.texture_mgr.get_texture_id( "Blocks" ) )
+			client.texture_mgr.bind_texture_array( 0, iter_set->id_tex );
+		else
+			client.texture_mgr.bind_texture( 0, iter_set->id_tex );
 
 		glDrawElements(
 			GeomGLTypeLookup[ iter_set->type ], iter_set->len_inds,

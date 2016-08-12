@@ -6,7 +6,6 @@
 #include "Block.h"
 #include "Chunk.h"
 #include "ResPool.h" 
-#include "VBO.h"
 
 #include <fstream>
 #include <unordered_map>
@@ -100,7 +99,11 @@ class ChunkMgr :
 	public Manager {
 
 private:
-	VBO vbo;
+	GLuint num_triangles;
+	GLuint num_cmds;
+
+	//VBO vbo;
+	SharedMesh shared_mesh;
 
 	static int const dist_sun = 1000;
 	bool is_sun_pause;
@@ -138,10 +141,10 @@ private:
 	std::unordered_map< int, Chunk & > map_render;
 
 	// Mesh pool data
-	static int const size_pool_buff = 128;
-	std::mutex mtx_pool_buff;
-	std::array< ChunkBuffer, size_pool_buff > list_pool_buff;
-	std::vector< ChunkBuffer * > list_avail_buff;
+	//static int const size_pool_buff = 128;
+	//std::mutex mtx_pool_buff;
+	//std::array< ChunkBuffer, size_pool_buff > list_pool_buff;
+	//std::vector< ChunkBuffer * > list_avail_buff;
 
 	std::vector< Chunk * > list_render;
 
@@ -168,8 +171,8 @@ private:
 	void proc_set_state( SetState & state );
 
 	// Mesh functions
-	ChunkBuffer * get_buffer( );
-	void put_buffer( ChunkBuffer *& buffer );
+	//ChunkBuffer * get_buffer( );
+	//void put_buffer( ChunkBuffer *& buffer );
 
 	void chunk_state( Chunk & chunk, ChunkState const state, bool flag );
 	void chunk_state_clear( Chunk & chunk );
@@ -183,10 +186,6 @@ private:
 	void render_debug( );
 
 	void chunk_update( Chunk & chunk );
-	void chunk_render( Chunk & chunk );
-	void chunk_render_shadowmap( Chunk & chunk );
-
-	void chunk_vbo( Chunk & chunk );
 
 	void chunk_add( glm::ivec3 const & pos_lw );
 	void chunk_shutdown( Chunk & chunk );
@@ -198,9 +197,7 @@ private:
 	void chunk_load( Chunk & chunk );
 	void chunk_gen( Chunk & chunk );
 
-	void chunk_smesh( Chunk & chunk );
-	void chunk_tmesh( Chunk & chunk );
-	void chunk_buffer( Chunk & chunk );
+	void chunk_mesh( Chunk & chunk );
 
 	void chunk_save( Chunk & chunk );
 	void chunk_remove( Chunk & chunk );
@@ -279,17 +276,30 @@ public:
 
 // Change to block pointer and face
 
-/*extern void put_face( 
+extern inline void put_face(
+	SharedMesh::SMHandle & handle, glm::ivec3 const & pos,
+	glm::vec4 const & color, Face const & face );
+
+extern inline void put_face(
+	SharedMesh::SMHandle & handle, glm::ivec3 const & pos,
+	glm::vec4 const & color, Face const & face,
+	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs );
+
+/*
+extern void put_face( 
 	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
 	FaceVerts const & verts, glm::vec4 const & color, 
-	glm::vec3 const & normal, FaceUvs const & uvs );*/
+	glm::vec3 const & normal, FaceUvs const & uvs );
+*/
 
 /*
 extern void put_face(
 	std::vector< ChunkFaceVertices > & buffer, glm::ivec3 const & pos,
 	FaceVerts const & verts, glm::vec4 const & color,
-	FaceNorms const & normal, FaceUvs const & uvs );*/
+	FaceNorms const & normal, FaceUvs const & uvs );
+*/
 
+/*
 extern inline void put_face(
 	std::vector< ChunkFaceVertices > & buffer, glm::ivec3 const & pos,
 	glm::vec4 const & color, Face const & face );
@@ -298,9 +308,12 @@ extern inline void put_face(
 	std::vector< ChunkFaceVertices > & buffer, glm::ivec3 const & pos, 
 	glm::vec4 const & color, Face const & face,
 	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs );
+*/
 
-/*extern void put_face(
+/*
+extern void put_face(
 	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
 	FaceVerts const & verts, glm::ivec3 const & scale_verts,
 	glm::vec4 const & color, glm::vec3 const & normal,
-	FaceUvs const & uvs, glm::ivec2 const & scale_uvs );*/
+	FaceUvs const & uvs, glm::ivec2 const & scale_uvs );
+*/

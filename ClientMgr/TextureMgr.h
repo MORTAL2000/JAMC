@@ -96,6 +96,7 @@ public:
 	void bind_materials( );
 
 	ShaderLoader const * get_program( std::string const & name );
+	GLuint const get_program_id( std::string const & name );
 
 	void bind_program( std::string const & name );
 	void bind_program( GLuint id_prog );
@@ -106,6 +107,7 @@ public:
 	GLuint get_texture_layer( std::string const & name_tex, std::string const & name_subtex );
 
 	void bind_texture( GLuint const id_active, GLuint const id_texture );
+	void bind_texture_array( GLuint const id_active, GLuint const id_texture );
 
 	face_uvs & get_uvs_skybox( FaceDirection dir_face );
 	face_uvs & get_uvs_sun( );

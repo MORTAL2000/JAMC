@@ -3,12 +3,13 @@
 #include "Globals.h"
 
 #include "Directional.h"
+#include "SharedMesh.h"
 
 #include <array>
 #include <mutex>
 #include <vector>
 
-struct ChunkVert { 
+struct ChunkVert {
 	GLfloat vert[ 3 ];
 	GLfloat color[ 4 ];
 	GLfloat norm[ 3 ];
@@ -16,25 +17,26 @@ struct ChunkVert {
 	//GLfloat padding[ 4 ];
 };
 
-struct ChunkFaceIndices { 
+struct ChunkFaceIndices {
 	GLuint indicies[ 6 ];
 };
 
-struct ChunkFaceVertices { 
+struct ChunkFaceVertices {
 	ChunkVert verts[ 4 ];
 };
 
-struct ChunkBuffer {
-	int size_solid, size_trans;
-	std::vector< ChunkFaceIndices > list_indices_solid;
-	std::vector< ChunkFaceIndices > list_indices_trans;
-	std::vector< ChunkFaceVertices > list_vertices_solid;
-	std::vector< ChunkFaceVertices > list_vertices_trans;
-	std::vector< std::pair< float, GLuint > > list_sort;
-	bool is_solid, is_trans;
+struct ChunkFaceSort { 
+	GLfloat sort;
+	GLfloat pos[ 3 ];
+	GLfloat color[ 4 ];
+	FaceDirection face;
 };
 
-enum ChunkState { 
+struct ChunkBuffer {
+	std::vector< ChunkFaceVertices > list_faces_trans;
+};
+
+enum ChunkState {
 	CS_Init,
 	CS_Read,
 	CS_Load,
@@ -42,7 +44,7 @@ enum ChunkState {
 	CS_Gen,
 	CS_SMesh,
 	CS_TMesh,
-	CS_Buffer,
+	//CS_Buffer,
 	CS_Save,
 	CS_Remove,
 	CS_Size
@@ -76,10 +78,12 @@ public:
 	std::mutex mtx_adj;
 	std::array< Chunk *, FD_Size > ptr_adj;
 
-	GLuint id_vao, id_vbo, id_ibo;
+	bool toggle_solid = false, toggle_trans = false;
+	bool active_solid = false, active_trans = false;
+	SharedMesh::SMHandle handles_solid[ 2 ];
+	SharedMesh::SMHandle handles_trans[ 2 ];
 
-	int size_solid, size_trans;
-	ChunkBuffer * ptr_buffer = nullptr;
+	//ChunkBuffer * ptr_buffer = nullptr;
 	ChunkFile * ptr_file;
 	ChunkNoise * ptr_noise;
 

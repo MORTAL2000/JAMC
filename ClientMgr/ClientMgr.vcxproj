@@ -240,6 +240,10 @@
     <None Include="Shaders\ShadowMap.vert" />
     <None Include="Shaders\SMBasic.frag" />
     <None Include="Shaders\SMBasic.vert" />
+    <None Include="Shaders\SMShadowMapSolid.frag" />
+    <None Include="Shaders\SMShadowMapSolid.vert" />
+    <None Include="Shaders\SMShadowMapTrans.frag" />
+    <None Include="Shaders\SMShadowMapTrans.vert" />
     <None Include="Shaders\SMTerrain.frag" />
     <None Include="Shaders\SMTerrain.vert" />
     <None Include="Shaders\Terrain.frag" />

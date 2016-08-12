@@ -851,7 +851,7 @@ void GuiMgr::process_input( ) {
 			out << checkGlErrors( );
 			client.gui_mgr.print_to_console( out.str( ) );
 		}
-		else if( token == "clearmesh" ) { 
+		/*else if( token == "clearmesh" ) { 
 			block_selector.clear_mesh( );
 		}
 		else if( token == "releasemesh" ) {
@@ -861,7 +861,7 @@ void GuiMgr::process_input( ) {
 			client.thread_mgr.task_async( 10, [ & ] ( ) {
 				block_selector.make_mesh( );
 			} );
-		}
+		}*/
 		else {
 			out.str( "" );
 			out << "Command: '" << token << "' is not a valid command.";

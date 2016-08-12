@@ -33,6 +33,8 @@ void TextureMgr::init( ) {
 	loader_add( "Selector" );
 	loader_add( "Entity" );
 	loader_add( "ShadowMap" );
+	loader_add( "SMShadowMapSolid" );
+	loader_add( "SMShadowMapTrans" );
 
 	std::cout << std::endl;
 	printTabbedLine( 1, "Creating Textures..." );
@@ -65,7 +67,7 @@ void TextureMgr::init( ) {
 		glUniformBlockBinding( id_prog, uniform_block_index, 0 );
 	}
 
-	for( auto & shader : { "Terrain", "Entity", "Selector" } ) {
+	for( auto & shader : { "Terrain", "SMTerrain", "Entity", "Selector" } ) {
 		bind_program( shader );
 		GLuint uniform_block_index = glGetUniformBlockIndex( id_prog, "light_data" );
 		glUniformBlockBinding( id_prog, uniform_block_index, 1 );
@@ -127,27 +129,33 @@ void TextureMgr::unbind_program( ) {
 
 MultiTex * TextureMgr::get_texture( std::string const & name_tex ) {
 	auto iter = map_multitex.find( name_tex );
-	if( iter == map_multitex.end( ) ) return nullptr;
+	if( iter == map_multitex.end( ) ) {
+		std::cout << "Cant find multitex: " << name_tex << "!" << std::endl;
+		return nullptr;
+	}
 	return iter->second;
 	return nullptr;
 }
 
 GLuint TextureMgr::get_texture_id( std::string const & name_tex ) {
 	auto iter = map_multitex.find( name_tex );
-	if( iter == map_multitex.end( ) ) return 0;
+	if( iter == map_multitex.end( ) ) {
+		std::cout << "Cant find multitex: " << name_tex << "!" << std::endl;
+		return 0;
+	}
 	return iter->second->id_tex;
 }
 
 GLuint TextureMgr::get_texture_layer( std::string const & name_tex, std::string const & name_subtex ) {
 	auto iter_multitex = map_multitex.find( name_tex );
 	if( iter_multitex == map_multitex.end( ) ) {
-		std::cout << "Cant find multitex!" << std::endl;
+		std::cout << "Cant find multitex: " << name_tex << " " << name_subtex << "!" << std::endl;
 		return 0;
 	}
 
 	auto iter_subtex = iter_multitex->second->map_tex_lookup.find( name_subtex );
 	if( iter_subtex == iter_multitex->second->map_tex_lookup.end( ) ) {
-		std::cout << "Cant find subtex of multitex " << iter_multitex->second->name << std::endl;
+		std::cout << "Cant find subtex: " << name_tex << " " << name_subtex << "!" << std::endl;
 		return 0;
 	}
 	return iter_subtex->second;
@@ -162,6 +170,18 @@ void TextureMgr::bind_texture( GLuint const id_active, GLuint const id_texture )
 	if( this->id_texture != id_texture ) {
 		this->id_texture = id_texture;
 		glBindTexture( GL_TEXTURE_2D, id_texture );
+	}
+}
+
+void TextureMgr::bind_texture_array( GLuint const id_active, GLuint const id_texture ) {
+	if( this->id_active != id_active ) {
+		this->id_active = id_active;
+		glActiveTexture( GL_TEXTURE0 + id_active );
+	}
+
+	if( this->id_texture != id_texture ) {
+		this->id_texture = id_texture;
+		glBindTexture( GL_TEXTURE_2D_ARRAY, id_texture );
 	}
 }
 
@@ -531,6 +551,7 @@ void TextureMgr::load_materials( ) {
 }
 
 void TextureMgr::update( ) {
+	std::cout << "Tex in: " << checkGlErrors( ) << std::endl;
 	glBindBuffer( GL_UNIFORM_BUFFER, id_ubo_mvp );
 	auto & matrices = client.display_mgr.camera.mvp_matrices;
 	matrices.time_game = client.time_mgr.get_time( TimeStrings::GAME );
@@ -540,6 +561,7 @@ void TextureMgr::update( ) {
 	auto & light_data = client.chunk_mgr.get_light_data( );
 
 	glBufferSubData( GL_UNIFORM_BUFFER, 0, sizeof( LightData ), &light_data );
+	std::cout << "Tex out: " << checkGlErrors( ) << std::endl;
 	/*
 	int index = 0;
 	glBufferSubData( GL_UNIFORM_BUFFER, index, sizeof( LightData::SunData ), &light_data.sun_data );
@@ -674,6 +696,16 @@ ShaderLoader const * TextureMgr::get_program( std::string const & name ) {
 	}
 
 	return nullptr;
+}
+
+GLuint const TextureMgr::get_program_id( std::string const & name ) {
+	auto & iter_program = map_shaders.find( name );
+	if( iter_program != map_shaders.end( ) ) {
+		return list_shaders[ iter_program->second ].id_prog;
+	}
+	else { 
+		return 0;
+	}
 }
 
 face_uvs & TextureMgr::get_uvs_skybox( FaceDirection dir_face ) {

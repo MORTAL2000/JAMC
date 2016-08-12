@@ -79,6 +79,7 @@ void Client::thread_main_loop( ) {
 			time_mgr.get_record_curr( RecordStrings::UPDATE ) -
 			time_mgr.get_record_curr( RecordStrings::RENDER ) -
 			0.25f;
+		if( time_main < 1.0f ) time_main = 1.0f;
 		//if( time_main < 0.5f ) time_main = 0.5f;
 		thread_mgr.loop_main( time_main );
 
@@ -181,7 +182,7 @@ void Client::render_output( ) {
 
 	display_mgr.set_ortho( );
 
-	display_mgr.draw_key( 30 );
+	//display_mgr.draw_key( 30 );
 	
 	glEnable( GL_TEXTURE_2D );
 

@@ -361,6 +361,18 @@
     <None Include="Shaders\Basic.vert">
       <Filter>Resource Files\Mesh</Filter>
     </None>
+    <None Include="Shaders\SMShadowMapSolid.frag">
+      <Filter>Resource Files\Shadow Map</Filter>
+    </None>
+    <None Include="Shaders\SMShadowMapSolid.vert">
+      <Filter>Resource Files\Shadow Map</Filter>
+    </None>
+    <None Include="Shaders\SMShadowMapTrans.frag">
+      <Filter>Resource Files\Shadow Map</Filter>
+    </None>
+    <None Include="Shaders\SMShadowMapTrans.vert">
+      <Filter>Resource Files\Shadow Map</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Blocks\Default.xml">

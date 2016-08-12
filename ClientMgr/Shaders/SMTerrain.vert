@@ -28,8 +28,8 @@ layout( location = 2 ) in vec3 norm;
 layout( location = 3 ) in vec3 uv;
 layout( location = 4 ) in uint id;
 layout( location = 5 ) in mat4 mat_model;
+layout( location = 9 ) in mat3 mat_norm;
 
-uniform mat3 mat_norm;
 uniform mat4 mat_light[ 3 ];
 
 out vec4 frag_diffuse;
@@ -50,9 +50,9 @@ void main() {
 	grad_diffuse = clamp( dot( frag_norm, diff_sun ), 0.0, 1.0 );
 	frag_diffuse = diffuse * vec4( grad_diffuse, grad_diffuse, grad_diffuse, 1.0 );
 
-	frag_vert_light[ 0 ] = mat_light[ 0 ] * mat_model * vec4( vert.xyz, 1.0 );
-	frag_vert_light[ 1 ] = mat_light[ 1 ] * mat_model * vec4( vert.xyz, 1.0 );
-	frag_vert_light[ 2 ] = mat_light[ 2 ] * mat_model * vec4( vert.xyz, 1.0 );
+	//frag_vert_light[ 0 ] = mat_light[ 0 ] * mat_model * vec4( vert.xyz, 1.0 );
+	//frag_vert_light[ 1 ] = mat_light[ 1 ] * mat_model * vec4( vert.xyz, 1.0 );
+	//frag_vert_light[ 2 ] = mat_light[ 2 ] * mat_model * vec4( vert.xyz, 1.0 );
 
 	gl_Position = mat_perspective * mat_view * vert_model;
 	frag_color = color;

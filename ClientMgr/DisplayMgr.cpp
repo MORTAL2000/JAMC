@@ -284,7 +284,7 @@ void DisplayMgr::init_gl( ) {
 	//glEnableClientState( GL_NORMAL_ARRAY );
 	//glEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-	glEnable( GL_COLOR_MATERIAL );
+	//glEnable( GL_COLOR_MATERIAL );
 
 	glEnable( GL_LIGHTING );
 	//glEnable( GL_LIGHT1 );
@@ -334,6 +334,7 @@ void DisplayMgr::toggle_limiter( ) {
 	is_limiter = !is_limiter;
 }
 
+/*
 void DisplayMgr::draw_string( glm::ivec2 const & pos, std::string const & string, glm::vec4 & color, int const size ) {
 	glPushMatrix( );
 
@@ -350,6 +351,7 @@ void DisplayMgr::draw_string( glm::ivec2 const & pos, std::string const & string
 
 	glPopMatrix( );
 }
+*/
 
 /*
 void DisplayMgr::draw_string( Vect3< int > const & pos, std::string & string, glm::vec4 & color, int const size ) {
@@ -377,6 +379,7 @@ void DisplayMgr::draw_string( Vect3< int > const & pos, std::string & string, gl
 }
 */
 
+/*
 void DisplayMgr::draw_key( int const size ) {
 	glPushMatrix( );
 
@@ -536,6 +539,7 @@ void DisplayMgr::draw_record_graph( glm::ivec2 & pos_graph, glm::ivec2 & dim_gra
 void DisplayMgr::draw_record_graph( glm::ivec2 & pos_graph, glm::ivec2 & dim_graph, std::string const & name_record, float time_ref ) {
 	draw_record_graph( pos_graph, dim_graph, name_record, time_ref, 0 );
 }
+*/
 
 void DisplayMgr::clear_buffers( ) {
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
