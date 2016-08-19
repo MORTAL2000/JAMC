@@ -50,9 +50,9 @@ void main() {
 	grad_diffuse = clamp( dot( frag_norm, diff_sun ), 0.0, 1.0 );
 	frag_diffuse = diffuse * vec4( grad_diffuse, grad_diffuse, grad_diffuse, 1.0 );
 
-	//frag_vert_light[ 0 ] = mat_light[ 0 ] * mat_model * vec4( vert.xyz, 1.0 );
-	//frag_vert_light[ 1 ] = mat_light[ 1 ] * mat_model * vec4( vert.xyz, 1.0 );
-	//frag_vert_light[ 2 ] = mat_light[ 2 ] * mat_model * vec4( vert.xyz, 1.0 );
+	frag_vert_light[ 0 ] = mat_light[ 0 ] * mat_model * vec4( vert.xyz, 1.0 );
+	frag_vert_light[ 1 ] = mat_light[ 1 ] * mat_model * vec4( vert.xyz, 1.0 );
+	frag_vert_light[ 2 ] = mat_light[ 2 ] * mat_model * vec4( vert.xyz, 1.0 );
 
 	gl_Position = mat_perspective * mat_view * vert_model;
 	frag_color = color;

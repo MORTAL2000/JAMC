@@ -94,7 +94,7 @@ void ChunkMgr::init( ) {
 	std::cout << std::endl;
 	printTabbedLine( 1, "Init Light..." );
 	init_light( );
-	/*
+
 	std::cout << std::endl;
 	printTabbedLine( 1, "Creating FBO..." );
 	glGenFramebuffers( 1, &id_depth_fbo );
@@ -130,9 +130,9 @@ void ChunkMgr::init( ) {
 
 	idx_sampler = glGetUniformLocation( client.texture_mgr.get_program_id( "SMShadowMapTrans" ), "frag_sampler" );
 	glUniform1i( idx_sampler, 0 );
-	*/
+	
 	client.texture_mgr.bind_program( "SMTerrain" );
-	GLuint idx_sampler = glGetUniformLocation( client.texture_mgr.id_prog, "frag_shadow" );
+	idx_sampler = glGetUniformLocation( client.texture_mgr.id_prog, "frag_shadow" );
 	GLint id_shadow[] = { 1, 2, 3 };
 	glUniform1iv( idx_sampler, num_cascade, &id_shadow[ 0 ] );
 
@@ -322,7 +322,8 @@ void ChunkMgr::render( ) {
 	render_skybox( );
 	render_exlude( );
 	render_sort( );
-	//render_pass_shadow( );
+	render_build( );
+	render_pass_shadow( );
 	render_pass_norm( );
 	render_debug( );
 }
@@ -405,6 +406,33 @@ void ChunkMgr::render_sort( ) {
 
 	client.time_mgr.end_record( RecordStrings::RENDER_SORT );
 	client.time_mgr.push_record( RecordStrings::RENDER_SORT );
+}
+
+void ChunkMgr::render_build( ) {
+	idx_solid = 0;
+	idx_trans = 0;
+
+	num_cmds = 0;
+	num_triangles = 0;
+
+	shared_mesh.clear_commands( );
+
+	for( auto chunk : list_render ) {
+		chunk->handle_solid.submit_commands( );
+	}
+
+	idx_solid = shared_mesh.size_commands( );
+
+	for( auto chunk : list_render ) {
+		chunk->handle_trans.submit_commands( );
+	}
+
+	idx_trans = shared_mesh.size_commands( );
+
+	shared_mesh.buffer_commands( );
+
+	num_cmds += shared_mesh.size_commands( );
+	num_triangles += shared_mesh.num_primitives( );
 }
 
 static glm::mat4 mat_model;
@@ -531,30 +559,16 @@ void ChunkMgr::render_pass_shadow( ) {
 
 			client.texture_mgr.bind_texture_array( 0, id_blocks );
 
-			//glDisable( GL_BLEND );
-
-			shared_mesh.clear_commands( );
-
-			for( auto chunk : list_render ) {
-				//chunk->handle_solid.submit_commands( );
-			}
-
-			shared_mesh.buffer_commands( );
-			shared_mesh.render( client );
-
-			//glEnable( GL_BLEND );
+			glDisable( GL_BLEND );
+			shared_mesh.render_range( client, 0, idx_solid );
+			glEnable( GL_BLEND );
 
 			client.texture_mgr.bind_program( "SMShadowMapTrans" );
 			glUniformMatrix4fv( idx_mat_light_trans, 1, GL_FALSE, glm::value_ptr( mat_proj_light[ i ] ) );
 
-			shared_mesh.clear_commands( );
-
-			for( auto chunk : list_render ) {
-				//chunk->handles_trans[ chunk->active_trans ].submit_commands( );
-			}
-
-			shared_mesh.buffer_commands( );
-			shared_mesh.render( client );
+			glDisable( GL_CULL_FACE );
+			shared_mesh.render_range( client, idx_solid, idx_trans - idx_solid );
+			glEnable( GL_CULL_FACE );
 		}
 
 		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -585,32 +599,13 @@ void ChunkMgr::render_pass_norm( ) {
 
 	client.display_mgr.resize_window( client.display_mgr.get_window ( ) );
 
-	
-	num_cmds = 0;
-	num_triangles = 0;
+	glDisable( GL_BLEND );
+	shared_mesh.render_range( client, 0, idx_solid );
+	glEnable( GL_BLEND );
 
-	shared_mesh.clear_commands( );
-
-	for( auto chunk : list_render ) {
-		chunk->handle_solid.submit_commands( );
-	}
-
-	shared_mesh.buffer_commands( );
-	shared_mesh.render( client );
-
-	num_cmds += shared_mesh.size_commands( );
-	num_triangles += shared_mesh.num_primitives( );
-	
-
-	/*shared_mesh.clear_commands( );
-	for( auto chunk : list_render ) {
-		chunk->handles_trans[ chunk->active_trans ].submit_commands( );
-	}
-	shared_mesh.buffer_commands( );
-	shared_mesh.render( client );
-
-	num_cmds += shared_mesh.size_commands( );
-	num_triangles += shared_mesh.num_primitives( );*/
+	glDisable( GL_CULL_FACE );
+	shared_mesh.render_range( client, idx_solid, idx_trans - idx_solid );
+	glEnable( GL_CULL_FACE );
 }
 
 void ChunkMgr::render_debug( ) {
@@ -1356,7 +1351,18 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 	chunk.is_working = true;
 
-	if( !chunk.handle_solid_temp.request_buffer( ) ) {
+	if( ( chunk.states[ ChunkState::CS_SMesh ] && !chunk.handle_solid_temp.request_buffer( ) ) &&
+		( chunk.states[ ChunkState::CS_TMesh ] && !chunk.handle_trans_temp.request_buffer( ) ) ) {
+		chunk.is_working = false;
+		return;
+	}
+	else if( ( chunk.states[ ChunkState::CS_SMesh ] && !chunk.handle_solid_temp.request_buffer( ) ) &&
+		!chunk.states[ ChunkState::CS_TMesh ] ) {
+		chunk.is_working = false;
+		return;
+	}
+	else if( ( chunk.states[ ChunkState::CS_TMesh ] && !chunk.handle_trans_temp.request_buffer( ) ) &&
+		!chunk.states[ ChunkState::CS_SMesh ] ) {
 		chunk.is_working = false;
 		return;
 	}
@@ -1399,12 +1405,12 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 
 		Chunk * chunk_adj;
 
-		chunk.handle_solid_temp.clear( );
-		chunk.handle_solid_temp.ptr_buffer->list_verts.clear( );
-		chunk.handle_solid_temp.ptr_buffer->list_inds.clear( );
-
-		if( true /*chunk.states[ ChunkState::CS_SMesh ]*/ ) {
+		if( chunk.states[ ChunkState::CS_SMesh ] && chunk.handle_solid_temp.ptr_buffer ) {
 			chunk_state( chunk, ChunkState::CS_SMesh, false );
+
+			chunk.handle_solid_temp.clear( );
+			chunk.handle_solid_temp.ptr_buffer->list_verts.clear( );
+			chunk.handle_solid_temp.ptr_buffer->list_inds.clear( );
 
 			chunk.handle_solid_temp.push_set( SharedMesh::SMGSet(
 				SharedMesh::TypeGeometry::TG_Triangles,
@@ -1662,12 +1668,21 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			}
 
 			chunk.handle_solid_temp.finalize_set( );
+
+			if( !chunk.handle_solid_temp.get_size_ibo( ) ) {
+				chunk.handle_solid_temp.clear( );
+				chunk.handle_solid_temp.release_buffer( );
+			}
 		}
 		
-		if( true /*chunk.states[ ChunkState::CS_TMesh ]*/ ) { 
+		if( chunk.states[ ChunkState::CS_TMesh ] && chunk.handle_trans_temp.ptr_buffer ) { 
 			chunk_state( chunk, ChunkState::CS_TMesh, false );
 
-			chunk.handle_solid_temp.push_set( SharedMesh::SMGSet(
+			chunk.handle_trans_temp.clear( );
+			chunk.handle_trans_temp.ptr_buffer->list_verts.clear( );
+			chunk.handle_trans_temp.ptr_buffer->list_inds.clear( );
+
+			chunk.handle_trans_temp.push_set( SharedMesh::SMGSet(
 				SharedMesh::TypeGeometry::TG_Triangles,
 				glm::translate( glm::mat4( 1.0f ), glm::vec3( chunk.pos_gw ) ),
 				client.texture_mgr.get_program_id( "SMTerrain" ),
@@ -1708,7 +1723,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 						// Add the included faces
 						for( auto idx_face : block_curr->include_lookup ) {
 							put_face(
-								chunk.handle_solid_temp,
+								chunk.handle_trans_temp,
 								pos_curr,
 								block_curr->color * block_curr->faces[ idx_face ].color,
 								block_curr->faces[ idx_face ] );
@@ -1746,7 +1761,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 									// New face! Lets record some info...
 									if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
 										put_face(
-											chunk.handle_solid_temp,
+											chunk.handle_trans_temp,
 											list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
 											list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 											glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
@@ -1776,7 +1791,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 										// New face! Lets record some info...
 										if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
 											put_face(
-												chunk.handle_solid_temp,
+												chunk.handle_trans_temp,
 												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
 												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
@@ -1851,7 +1866,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 									// New face! Lets record some info...
 									if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
 										put_face(
-											chunk.handle_solid_temp,
+											chunk.handle_trans_temp,
 											list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
 											list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 											glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
@@ -1881,7 +1896,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 										// New face! Lets record some info...
 										if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
 											put_face(
-												chunk.handle_solid_temp,
+												chunk.handle_trans_temp,
 												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
 												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
@@ -1914,7 +1929,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 				list_id_last[ dir_face ].first = -1;
 				if( list_cnt_last[ dir_face ] && list_block_last[ dir_face ]->occlude_lookup[ dir_face ].size( ) != 0 ) {
 					put_face(
-						chunk.handle_solid_temp,
+						chunk.handle_trans_temp,
 						list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
 						list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 						glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
@@ -1922,31 +1937,39 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 				}
 			}
 
-			chunk.handle_solid_temp.finalize_set( );
+			chunk.handle_trans_temp.finalize_set( );
+
+			if( !chunk.handle_trans_temp.get_size_ibo( ) ) {
+				chunk.handle_trans_temp.clear( );
+				chunk.handle_trans_temp.release_buffer( );
+			}
 		}
 
-		if( chunk.handle_solid_temp.get_size_ibo( ) ) {
-			{
-				std::unique_lock< std::recursive_mutex > lock( mtx_render );
-				map_render.insert( { chunk.hash_lw, chunk } );
-			}
+		if( chunk.handle_solid_temp.get_size_ibo( ) ||
+			chunk.handle_trans_temp.get_size_ibo( ) ) {
 
 			chunk_state( chunk, ChunkState::CS_Buffer, true );
+
+			std::unique_lock< std::recursive_mutex > lock( mtx_render );
+			map_render.insert( { chunk.hash_lw, chunk } );
 		}
-		else {
+		else {			
 			chunk.handle_solid.clear( );
 			chunk.handle_solid.release_buffer( );
 
 			chunk.handle_solid_temp.clear( );
 			chunk.handle_solid_temp.release_buffer( );
 
+			chunk.handle_trans.clear( );
+			chunk.handle_trans.release_buffer( );
 
-			{
-				std::unique_lock< std::recursive_mutex > lock( mtx_render );
-				map_render.erase( chunk.hash_lw );
-			}
+			chunk.handle_trans_temp.clear( );
+			chunk.handle_trans_temp.release_buffer( );
 
 			chunk_state( chunk, ChunkState::CS_Buffer, false );
+
+			std::unique_lock< std::recursive_mutex > lock( mtx_render );
+			map_render.erase( chunk.hash_lw );
 		}
 
 		chunk.is_working = false;
@@ -1958,12 +1981,23 @@ void ChunkMgr::chunk_buffer( Chunk & chunk ) {
 
 	chunk_state( chunk, ChunkState::CS_Buffer, false );
 
-	chunk.handle_solid_temp.submit_buffer( );
-	chunk.handle_solid_temp.release_buffer( );
+	if( chunk.handle_solid_temp.get_size_ibo( ) ) {
+		chunk.handle_solid_temp.submit_buffer( );
+		chunk.handle_solid_temp.release_buffer( );
 
-	chunk.handle_solid.swap_handle( chunk.handle_solid_temp );
+		chunk.handle_solid.swap_handle( chunk.handle_solid_temp );
 
-	chunk.handle_solid_temp.clear( );
+		chunk.handle_solid_temp.clear( );
+	}
+
+	if( chunk.handle_trans_temp.get_size_ibo( ) ) { 
+		chunk.handle_trans_temp.submit_buffer( );
+		chunk.handle_trans_temp.release_buffer( );
+
+		chunk.handle_trans.swap_handle( chunk.handle_trans_temp );
+
+		chunk.handle_trans_temp.clear( );
+	}
 
 	chunk.is_working = false;
 }
@@ -2111,6 +2145,9 @@ void ChunkMgr::chunk_remove( Chunk & chunk ) {
 
 		shared_mesh.release_handle( chunk.handle_solid );
 		shared_mesh.release_handle( chunk.handle_solid_temp );
+
+		shared_mesh.release_handle( chunk.handle_trans );
+		shared_mesh.release_handle( chunk.handle_trans_temp );
 
 		chunk_state_clear( chunk );
 

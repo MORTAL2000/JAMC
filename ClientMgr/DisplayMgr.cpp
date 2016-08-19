@@ -542,6 +542,7 @@ void DisplayMgr::draw_record_graph( glm::ivec2 & pos_graph, glm::ivec2 & dim_gra
 */
 
 void DisplayMgr::clear_buffers( ) {
+	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	glLoadIdentity( );
 	glColor4f( 0.0f, 0.0f, 0.0f, 1.0f );

@@ -604,6 +604,8 @@ void SharedMesh::clear_commands( ) {
 	list_mats_model.clear( );
 	list_mats_norm.clear( );
 	list_commands.clear( );
+
+	num_commands = 0;
 }
 
 void SharedMesh::push_command( glm::mat4 & mat_model, glm::mat3 & mat_norm, SMCommand & command ) {
@@ -614,12 +616,12 @@ void SharedMesh::push_command( glm::mat4 & mat_model, glm::mat3 & mat_norm, SMCo
 
 	command.base_instance = list_commands.size( );
 	list_commands.emplace_back( command );
+
+	num_commands++;
 }
 
 void SharedMesh::buffer_commands( ) { 
 	std::lock_guard< std::mutex > lock( mtx_cmds );
-
-	num_commands = list_commands.size( );
 
 	glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 	glBufferData( GL_DRAW_INDIRECT_BUFFER, num_commands * sizeof( SMCommand ), list_commands.data( ), GL_STATIC_DRAW );

@@ -135,8 +135,8 @@ float shadow_calc( vec4 vert_light[ 3 ] ) {
 float size_torch = 25.0;
 
 void main() {
-	//float shadow = shadow_calc( frag_vert_light );
-	float shadow = 0.0;
+	float shadow = shadow_calc( frag_vert_light );
+	//float shadow = 0.0;
 
 	out_color = ambient;
 	out_color += vec4( vec3( frag_diffuse.xyz ) * ( 1.0 - shadow ), 0.0 );
@@ -144,7 +144,7 @@ void main() {
 	diff_emitter = vec3( pos_camera - vert_model );
 	len_emitter = length( diff_emitter );
 
-	/*if( len_emitter <= size_torch ) {
+	if( len_emitter <= size_torch ) {
 		norm_emitter = normalize( diff_emitter );
 		grad_emitter = 
 			clamp( dot( frag_norm, norm_emitter ), 0.0, 1.0 ) * 
@@ -165,7 +165,7 @@ void main() {
 				clamp( 1.0 - len_emitter / list_radius[ i ].x, 0.0, 1.0 );
 			out_color += list_color[ i ] * vec4( grad_emitter, grad_emitter, grad_emitter, 1.0 );
 		}
-	}*/
+	}
 
 	out_color = texture( frag_sampler, frag_uv ) * out_color * frag_color;
 }

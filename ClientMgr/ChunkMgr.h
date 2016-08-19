@@ -155,6 +155,9 @@ public:
 	static const GLuint num_cascade = 3;
 
 private:
+	GLuint idx_solid;
+	GLuint idx_trans;
+
 	GLuint const SHADOW_WIDTH;
 	GLuint const SHADOW_HEIGHT;
 	GLfloat const near_plane;
@@ -178,6 +181,7 @@ private:
 	void render_skybox( );
 	void render_exlude( );
 	void render_sort( );
+	void render_build( );
 	void render_pass_shadow( );
 	void render_pass_norm( );
 	void render_debug( );
