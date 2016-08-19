@@ -551,7 +551,7 @@ void TextureMgr::load_materials( ) {
 }
 
 void TextureMgr::update( ) {
-	std::cout << "Tex in: " << checkGlErrors( ) << std::endl;
+	//std::cout << "Tex in: " << checkGlErrors( ) << std::endl;
 	glBindBuffer( GL_UNIFORM_BUFFER, id_ubo_mvp );
 	auto & matrices = client.display_mgr.camera.mvp_matrices;
 	matrices.time_game = client.time_mgr.get_time( TimeStrings::GAME );
@@ -561,7 +561,7 @@ void TextureMgr::update( ) {
 	auto & light_data = client.chunk_mgr.get_light_data( );
 
 	glBufferSubData( GL_UNIFORM_BUFFER, 0, sizeof( LightData ), &light_data );
-	std::cout << "Tex out: " << checkGlErrors( ) << std::endl;
+//	std::cout << "Tex out: " << checkGlErrors( ) << std::endl;
 	/*
 	int index = 0;
 	glBufferSubData( GL_UNIFORM_BUFFER, index, sizeof( LightData::SunData ), &light_data.sun_data );

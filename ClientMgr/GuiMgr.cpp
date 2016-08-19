@@ -169,15 +169,27 @@ void GuiMgr::print_to_console( std::string const & str_print ) {
 	auto & page = get_page( str_console );
 	auto & data_console = page.get_data< PCDConsole >( str_console );
 
+	std::string token;
+	int pos_s, pos_e;
+	pos_s = 0;
+	pos_e = 0;
+
 	std::unique_lock< std::mutex > lock( mtx_console );
-	if( data_console.size < PCDConsole::size_max ) {
-		data_console.list_strings[ ( data_console.index + data_console.size ) % PCDConsole::size_max ] = str_print;
-		data_console.size++;
-	}
-	else {
-		data_console.list_strings[ ( data_console.index + data_console.size ) % PCDConsole::size_max ] = str_print;
-		data_console.index++;
-		if( data_console.index >= PCDConsole::size_max ) data_console.index -= PCDConsole::size_max;
+
+	while( pos_e != std::string::npos ) {
+		pos_e = str_print.find( '\n', pos_s );
+		token = str_print.substr( pos_s, pos_e - pos_s );
+		pos_s = pos_e + 1;
+
+		if( data_console.size < PCDConsole::size_max ) {
+			data_console.list_strings[ ( data_console.index + data_console.size ) % PCDConsole::size_max ] = token;
+			data_console.size++;
+		}
+		else {
+			data_console.list_strings[ ( data_console.index + data_console.size ) % PCDConsole::size_max ] = token;
+			data_console.index++;
+			if( data_console.index >= PCDConsole::size_max ) data_console.index -= PCDConsole::size_max;
+		}
 	}
 
 	data_console.is_dirty = true;
@@ -850,6 +862,9 @@ void GuiMgr::process_input( ) {
 			out.str( "" );
 			out << checkGlErrors( );
 			client.gui_mgr.print_to_console( out.str( ) );
+		}
+		else if( token == "printchunkmesh" ) {
+			client.chunk_mgr.print_center_chunk_mesh( );
 		}
 		/*else if( token == "clearmesh" ) { 
 			block_selector.clear_mesh( );

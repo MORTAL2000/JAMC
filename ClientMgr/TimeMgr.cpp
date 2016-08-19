@@ -48,8 +48,6 @@ RecordStrings::CHUNK_BUFFER = "CBuff",
 RecordStrings::CHUNK_SAVE = "CSave",
 RecordStrings::CHUNK_REMOVE = "CRem",
 
-RecordStrings::MESH_SYNC = "MSync",
-
 RecordStrings::TASK_MAIN = "TMain";
 
 // *** Time Manager ***
@@ -64,7 +62,6 @@ void TimeMgr::init() {
 	list_render.push_back( &RecordStrings::FRAME );
 	list_render.push_back( &RecordStrings::UPDATE );
 	list_render.push_back( &RecordStrings::TASK_MAIN );
-	list_render.push_back( &RecordStrings::MESH_SYNC );
 	list_render.push_back( &RecordStrings::UPDATE_MAP );
 	list_render.push_back( &RecordStrings::UPDATE_TIME );
 	list_render.push_back( &RecordStrings::UPDATE_GUI );

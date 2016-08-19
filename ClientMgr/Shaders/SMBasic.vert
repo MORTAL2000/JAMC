@@ -15,6 +15,7 @@ layout( location = 2 ) in vec3 norm;
 layout( location = 3 ) in vec3 uv;
 layout( location = 4 ) in uint id;
 layout( location = 5 ) in mat4 mat_model;
+layout( location = 9 ) in mat3 mat_norm;
 
 out vec3 frag_uvs;
 out vec4 frag_color;

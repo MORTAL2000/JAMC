@@ -127,6 +127,50 @@ void Client::init( ) {
 	// Sets pointer to thing
 	SetWindowLongPtr( display_mgr.get_HWND(), GWLP_USERDATA, ( LONG_PTR )this );
 
+	mesh.init( 12, 100, 9, 100, 64, 40, 60 );
+	mesh.request_handle( handles[ 0 ] );
+
+	auto & handle = handles[ 0 ];
+
+	handle.request_buffer( );
+
+	handle.push_set( SharedMesh::SMGSet(
+		SharedMesh::TypeGeometry::TG_Triangles,
+		glm::translate( glm::mat4( 1.0f ), glm::vec3( 100, 100, 0 ) ),
+		client.texture_mgr.get_program_id( "SMBasic" ),
+		client.texture_mgr.id_materials
+	) );
+
+	handle.push_verts( {
+		{ { 0, 0, 0 }, { 1, 0, 0, 1 }, { 0, 0, 1 }, { 0, 0, 0 } },
+		{ { 100, 0, 0 }, { 1, 0, 0, 1 }, { 0, 0, 1 }, { 0, 1, 0 } },
+		{ { 100, 100, 0 }, { 1, 0, 0, 1 }, { 0, 0, 1 }, { 1, 1, 0 } },
+		{ { 0, 100, 0 }, { 1, 0, 0, 1 }, { 0, 0, 1 }, { 0, 1, 0 } }
+	} );
+
+	handle.push_inds( {
+		0, 1, 2,
+		2, 3, 0
+	} );
+
+	handle.finalize_set( );
+
+	auto & handle2 = handles[ 1 ];
+
+	mesh.request_handle( handle2 );
+
+	handle.swap_handle( handle2 );
+
+	handle.clear( );
+
+	handle2.submit_buffer( );
+
+	handle2.release_buffer( );
+
+	handle2.submit_commands( );
+
+	mesh.buffer_commands( );
+
 	thread_main_loop( );
 }
 
@@ -185,6 +229,15 @@ void Client::render_output( ) {
 	//display_mgr.draw_key( 30 );
 	
 	glEnable( GL_TEXTURE_2D );
+
+	glDisable( GL_CULL_FACE );
+
+	client.texture_mgr.bind_program( "SMBasic" );
+	client.texture_mgr.bind_texture( 0, client.texture_mgr.id_materials );
+
+	mesh.render( *this );
+
+	glEnable( GL_CULL_FACE );
 
 	gui_mgr.render( );
 	time_mgr.render( );

@@ -54,7 +54,6 @@ struct RecordStrings {
 		CHUNK_BUFFER,
 		CHUNK_SAVE,
 		CHUNK_REMOVE,
-		MESH_SYNC,
 		TASK_MAIN;
 };
 

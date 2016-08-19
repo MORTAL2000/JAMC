@@ -102,7 +102,7 @@ private:
 	GLuint num_triangles;
 	GLuint num_cmds;
 
-	//VBO vbo;
+	// Mesh;
 	SharedMesh shared_mesh;
 
 	static int const dist_sun = 1000;
@@ -170,10 +170,7 @@ private:
 	void calc_light( );
 	void proc_set_state( SetState & state );
 
-	// Mesh functions
-	//ChunkBuffer * get_buffer( );
-	//void put_buffer( ChunkBuffer *& buffer );
-
+	// Chunk State functions
 	void chunk_state( Chunk & chunk, ChunkState const state, bool flag );
 	void chunk_state_clear( Chunk & chunk );
 
@@ -198,6 +195,7 @@ private:
 	void chunk_gen( Chunk & chunk );
 
 	void chunk_mesh( Chunk & chunk );
+	void chunk_buffer( Chunk & chunk );
 
 	void chunk_save( Chunk & chunk );
 	void chunk_remove( Chunk & chunk );
@@ -272,6 +270,8 @@ public:
 	LightData & get_light_data( ) {
 		return light_data;
 	}
+
+	void print_center_chunk_mesh( );
 };
 
 // Change to block pointer and face
@@ -284,36 +284,3 @@ extern inline void put_face(
 	SharedMesh::SMHandle & handle, glm::ivec3 const & pos,
 	glm::vec4 const & color, Face const & face,
 	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs );
-
-/*
-extern void put_face( 
-	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
-	FaceVerts const & verts, glm::vec4 const & color, 
-	glm::vec3 const & normal, FaceUvs const & uvs );
-*/
-
-/*
-extern void put_face(
-	std::vector< ChunkFaceVertices > & buffer, glm::ivec3 const & pos,
-	FaceVerts const & verts, glm::vec4 const & color,
-	FaceNorms const & normal, FaceUvs const & uvs );
-*/
-
-/*
-extern inline void put_face(
-	std::vector< ChunkFaceVertices > & buffer, glm::ivec3 const & pos,
-	glm::vec4 const & color, Face const & face );
-
-extern inline void put_face(
-	std::vector< ChunkFaceVertices > & buffer, glm::ivec3 const & pos, 
-	glm::vec4 const & color, Face const & face,
-	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs );
-*/
-
-/*
-extern void put_face(
-	std::vector< ChunkFaceVertices > & buffer_verts, glm::ivec3 const & pos,
-	FaceVerts const & verts, glm::ivec3 const & scale_verts,
-	glm::vec4 const & color, glm::vec3 const & normal,
-	FaceUvs const & uvs, glm::ivec2 const & scale_uvs );
-*/

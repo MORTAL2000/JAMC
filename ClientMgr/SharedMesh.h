@@ -7,6 +7,7 @@
 #include <list>
 #include <unordered_map>
 #include <mutex>
+#include <sstream>
 
 class SharedMesh {
 public:
@@ -32,7 +33,7 @@ public:
 		GLfloat uv[ 3 ];
 	};
 
-	struct DrawElementsIndirectCommand {
+	struct SharedMeshCommands {
 		GLuint count_inds;
 		GLuint count_instace;
 		GLuint idx_inds;
@@ -40,12 +41,10 @@ public:
 		GLuint base_instance;
 	};
 
-	typedef DrawElementsIndirectCommand DEICommand;
+	typedef SharedMeshCommands SMCommand;
 
 	struct SharedMeshBlock {
-		char unsigned * const ptr_data;
 		GLuint const index;
-		GLsync sync;
 	};
 
 	typedef SharedMeshBlock SMBlock;
@@ -72,13 +71,9 @@ public:
 		GLuint cnt_vbo;
 		GLuint cnt_ibo;
 
-		// Indice Pattern
-		std::vector< GLuint > list_inds;
-
 		SharedMeshGeometrySet(
 			TypeGeometry type, glm::mat4 const & mat_model,
-			GLuint id_prog, GLuint id_tex,
-			std::vector< GLuint > & list_inds );
+			GLuint id_prog, GLuint id_tex );
 	};
 
 	typedef SharedMeshGeometrySet SMGSet;
@@ -87,11 +82,21 @@ public:
 
 	// *** Shared Mesh Handle ***
 
+	struct SharedMeshClientBuffer {
+		std::vector< Vertex > list_verts;
+		std::vector< GLuint > list_inds;
+
+		std::vector< std::pair< float, GLuint > > list_sort;
+		std::vector< GLuint > list_temp;
+	};
+
+	typedef SharedMeshClientBuffer SMCBuffer;
+
 	class SharedMeshHandle {
 		friend class SharedMesh;
 
 	private:
-		SharedMesh * parent;
+		SharedMesh * ptr_parent;
 
 		GLuint size_vbo_block;
 		GLuint size_ibo_block;
@@ -100,6 +105,7 @@ public:
 		GLuint size_ibo;
 
 		std::mutex mtx_cmds;
+		std::mutex mtx_sets;
 
 		// Prob need mutex for set data
 		std::vector< std::pair< GLuint, SMBlock * > > list_vbo_blocks;
@@ -107,26 +113,39 @@ public:
 		std::vector< SMGSet > list_sets;
 
 		// Command List
-		std::vector< std::pair< SMGSet *, DEICommand > > list_cmds;
+		std::vector< std::pair< SMGSet, SMCommand > > list_cmds;
 
 	public:
+		SMCBuffer * ptr_buffer;
+
 		SharedMeshHandle( );
 		~SharedMeshHandle( );
 
 	private:
-		void clear( );
 
 	public:
 		GLuint get_size_vbo( );
 		GLuint get_size_ibo( );
 
 		void push_set( SMGSet & set );
-		void buffer_data( Vertex & vert );
 		void finalize_set( );
+
+		void push_verts( std::initializer_list< Vertex > const & verts );
+		void push_inds( std::initializer_list< GLuint > const & inds );
+
+		bool request_buffer( );
+		void submit_buffer( );
+		void release_buffer( );
 
 		void submit_commands( );
 
-		void release( );
+		void clear( );
+
+		bool swap_handle( SharedMeshHandle & handle_swap );
+
+		std::string print_vbo( );
+		std::string print_ibo( );
+		std::string print_commands( );
 	};
 
 	typedef SharedMeshHandle SMHandle;
@@ -136,14 +155,15 @@ public:
 	typedef std::pair< GLuint, SMBlock * > SMBPair;
 
 private:
+	// GL id handles
 	GLuint id_vao;
 	GLuint id_vbo;
 	GLuint id_ibo;
 	GLuint id_cmd;
 	GLuint id_mats_model;
 	GLuint id_mats_norm;
-	
-	GLuint num_commands;
+
+	// IBO and VBO block data and lists
 	GLuint num_vbo_blocks;
 	GLuint num_ibo_blocks;
 
@@ -151,40 +171,39 @@ private:
 	std::vector< SMBlock > list_vbo_blocks;
 	std::queue< std::pair< GLuint, SMBlock * > > queue_vbo_avail;
 	std::unordered_map< GLuint, SMBlock * > map_vbo_live;
-	std::queue< std::pair< GLuint, SMBlock * > > queue_vbo_release;
-	std::list< std::pair< GLuint, SMBlock * > > list_vbo_sync;
 
 	GLuint size_ibo_block;
 	std::vector< SMBlock > list_ibo_blocks;
 	std::queue< std::pair< GLuint, SMBlock * > > queue_ibo_avail;
 	std::unordered_map< GLuint, SMBlock * > map_ibo_live;
-	std::queue< std::pair< GLuint, SMBlock * > > queue_ibo_release;
-	std::list< std::pair < GLuint, SMBlock * > > list_ibo_sync;
 
-	std::vector< DEICommand > list_commands;
+	// Command data and lists
+	GLuint num_commands;
+
+	std::vector< SMCommand > list_commands;
 	std::vector< glm::mat4 > list_mats_model;
 	std::vector< glm::mat3 > list_mats_norm;
 
+	// Buffer data and lists
+	GLuint num_buffers;
+	GLuint size_buffer_verts;
+	GLuint size_buffer_inds;
+
+	std::vector< SMCBuffer > list_buffers;
+	std::queue< SMCBuffer * > queue_buffer_avail;
+	std::unordered_map< SMCBuffer *, SMCBuffer * > map_buffer_live;
+
+	// Access Mutex
 	std::mutex mtx_vbo;
 	std::mutex mtx_ibo;
-	std::mutex mtx_cmd;
+	std::mutex mtx_cmds;
+	std::mutex mtx_buffers;
 
 public:
 	SharedMesh( );
 	~SharedMesh( );
 
 private:
-
-public:
-	void init( 
-		GLuint size_vbo_block, GLuint num_vbo_blocks,
-		GLuint size_ibo_block, GLuint num_ibo_blocks );
-
-	void end( );
-
-	bool get_handle( SMHandle & handle );
-	bool return_handle( SMHandle & handle );
-
 	bool request_vbo_blocks( std::vector< SMBPair > & list_vbo_blocks, GLuint num_blocks );
 	bool request_ibo_blocks( std::vector< SMBPair > & list_ibo_blocks, GLuint num_blocks );
 
@@ -194,28 +213,40 @@ public:
 	void release_vbo_all( std::vector< SMBPair > & list_vbo_blocks );
 	void release_ibo_all( std::vector< SMBPair > & list_ibo_blocks );
 
+	bool request_buffer( SMCBuffer * & buffer );
+	void release_buffer( SMCBuffer * & buffer );
+
+public:
+	void init( 
+		GLuint size_vbo_block, GLuint num_vbo_blocks,
+		GLuint size_ibo_block, GLuint num_ibo_blocks,
+		GLuint num_buffers,
+		GLuint size_buffer_verts, GLuint size_buffer_inds );
+
+	void end( );
+
+	bool request_handle( SMHandle & handle );
+	bool release_handle( SMHandle & handle );
+
 	void clear_commands( );
-	void push_command( glm::mat4 & mat_model, glm::mat3 & mat_norm, DEICommand & command );
+	void push_command( glm::mat4 & mat_model, glm::mat3 & mat_norm, SMCommand & command );
 	void buffer_commands( );
 
-	void process_released( );
-
 	GLuint size_commands( );
-	GLuint size_vbo_live( );
-	GLuint size_ibo_live( );
+
 	GLuint size_vbo_avail( );
+	GLuint size_vbo_live( );
+
 	GLuint size_ibo_avail( );
-	GLuint size_vbo_release( );
-	GLuint size_ibo_release( );
-	GLuint size_vbo_sync( );
-	GLuint size_ibo_sync( );
+	GLuint size_ibo_live( );
+
+	GLuint size_buffer_avail( );
+	GLuint size_buffer_live( );
 
 	GLuint num_primitives( );
 
 	void render( Client & client );
 	void render_range( Client & client, GLuint idx_start, GLuint length );
-	void render_old( Client & client );
 
-	void unmap( );
 };
 

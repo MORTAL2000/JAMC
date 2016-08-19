@@ -44,7 +44,7 @@ enum ChunkState {
 	CS_Gen,
 	CS_SMesh,
 	CS_TMesh,
-	//CS_Buffer,
+	CS_Buffer,
 	CS_Save,
 	CS_Remove,
 	CS_Size
@@ -78,12 +78,12 @@ public:
 	std::mutex mtx_adj;
 	std::array< Chunk *, FD_Size > ptr_adj;
 
-	bool toggle_solid = false, toggle_trans = false;
-	bool active_solid = false, active_trans = false;
-	SharedMesh::SMHandle handles_solid[ 2 ];
-	SharedMesh::SMHandle handles_trans[ 2 ];
+	SharedMesh::SMHandle handle_solid;
+	SharedMesh::SMHandle handle_solid_temp;
 
-	//ChunkBuffer * ptr_buffer = nullptr;
+	SharedMesh::SMHandle handle_trans;
+	SharedMesh::SMHandle handle_trans_temp;
+
 	ChunkFile * ptr_file;
 	ChunkNoise * ptr_noise;
 
