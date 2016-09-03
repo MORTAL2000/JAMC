@@ -113,7 +113,7 @@ bool Directional::is_point_in_cone( glm::ivec3 & point, glm::vec3 & cone_apex, g
 
 	bool is_infinite = glm::dot( apex_to_point, apex_to_base ) /
 		glm::length( apex_to_point ) / glm::length( apex_to_base ) >
-		cos( halfAperture * PI / 180.0f );
+		glm::cos( glm::radians( halfAperture ) );
 
 	/*if( !is_infinite ) return false;
 
@@ -172,10 +172,16 @@ void Directional::pos_lw_to_lr( glm::ivec3 const & pos_lw, glm::ivec3 & pos_lr )
 	if( pos_lr.z < 0 ) pos_lr.z += Region::size_z;
 }
 
-void Directional::pos_trim( glm::vec3 & pos_gw ) { 
-	//pos_lc.x = int( floor( pos_gw.x ) );
-	//pos_lc.y = int( floor( pos_gw.y ) );
-	//pos_lc.z = int( floor( pos_gw.z ) );
+void Directional::pos_trim( glm::vec3 & pos_gw, glm::ivec3 & pos_trim ) { 
+	pos_trim.x = floor( pos_gw.x );
+	pos_trim.y = floor( pos_gw.y );
+	pos_trim.z = floor( pos_gw.z );
+}
+
+void Directional::pos_trim( glm::vec3 & pos_gw, glm::vec3 & pos_trim ) {
+	pos_trim.x = floor( pos_gw.x );
+	pos_trim.y = floor( pos_gw.y );
+	pos_trim.z = floor( pos_gw.z );
 }
 
 bool Directional::is_within_range( glm::ivec3 const & point, glm::ivec3 const & range, glm::ivec3 const & check ) {

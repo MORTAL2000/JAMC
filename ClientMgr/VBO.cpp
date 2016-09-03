@@ -99,8 +99,8 @@ void VBO::finalize_set( ) {
 		idx_base = idx_max + 1;
 	}
 
-	set_last.len_inds = list_inds.size( ) - set_last.idx_inds;
-	set_last.len_verts = list_verts.size( ) - set_last.idx_verts;
+	set_last.len_inds = ( GLuint ) list_inds.size( ) - set_last.idx_inds;
+	set_last.len_verts = ( GLuint ) list_verts.size( ) - set_last.idx_verts;
 	set_last.num_eles = set_last.len_inds / GeomNumIndsLookup[ set_last.type ];
 }
 
@@ -117,8 +117,8 @@ void VBO::buffer( ) {
 		list_inds.size( ) * sizeof( GLuint ), 
 		list_inds.data( ), GL_STATIC_DRAW );
 
-	last_size_vbo = list_verts.size( ) * sizeof( Vertex );
-	last_size_ibo = list_inds.size( ) * sizeof( GLuint );
+	last_size_vbo = ( GLuint ) list_verts.size( ) * sizeof( Vertex );
+	last_size_ibo = ( GLuint ) list_inds.size( ) * sizeof( GLuint );
 }
 
 void VBO::render( Client & client ) {

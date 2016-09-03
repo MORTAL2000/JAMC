@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "WormBlock.h"
 #include "Client.h"
 
 Player::Player( ) :
@@ -61,6 +62,31 @@ Player::Player( ) :
 					else {
 						client.gui_mgr.print_to_console( "Godmode unset!" );
 					}
+
+					ec_player.last_input = time_now;
+				}
+				else if( client.input_mgr.is_key( 'Y' ) ) { 
+					client.thread_mgr.task_main( 10, [ & ] ( ) {
+						client.entity_mgr.entity_add( "WormBlock", [ & ] ( Client & client, Entity & entity ) {
+							auto & ec_state_block = entity.h_state.get( );
+							ec_state_block.pos = ec_state.pos;
+
+							return ErrorEntity::EE_Ok;
+						} );
+					} );
+
+					ec_player.last_input = time_now;
+				}
+				else if( client.input_mgr.is_key( 'U' ) ) {
+					client.thread_mgr.task_main( 10, [ & ] ( ) {
+						client.entity_mgr.entity_add( "Water Block", [ & ] ( Client & client, Entity & entity ) {
+							client.gui_mgr.print_to_console( "Adding water thing" );
+							auto & ec_state_block = entity.h_state.get( );
+							ec_state_block.pos = ec_state.pos;
+
+							return ErrorEntity::EE_Ok;
+						} );
+					} );
 
 					ec_player.last_input = time_now;
 				}
@@ -189,8 +215,13 @@ Player::Player( ) :
 				ec_state.accel += accel_input;
 
 				float frict = 1.0f;
+				float veloc = glm::length( ec_state.veloc );
 
-				if( glm::length( ec_state.veloc ) > 0 ) {
+				if( veloc > 0 ) {
+					if( veloc > 128.0f ) { 
+						ec_state.veloc = glm::normalize( ec_state.veloc ) * 128.0f;
+					}
+
 					if( ec_state.accel.x == 0 ) {
 						if( ec_state.veloc.x > 0 ) {
 							ec_state.veloc.x -= frict;

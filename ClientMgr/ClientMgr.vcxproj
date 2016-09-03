@@ -192,6 +192,8 @@
     <ClCompile Include="TimeMgr.cpp" />
     <ClCompile Include="Tnt.cpp" />
     <ClCompile Include="VBO.cpp" />
+    <ClCompile Include="WaterBlock.cpp" />
+    <ClCompile Include="WormBlock.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Block.h" />
@@ -228,10 +230,14 @@
     <ClInclude Include="TimeMgr.h" />
     <ClInclude Include="Tnt.h" />
     <ClInclude Include="VBO.h" />
+    <ClInclude Include="WaterBlock.h" />
+    <ClInclude Include="WormBlock.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\Basic.frag" />
-    <None Include="Shaders\Basic.vert" />
+    <None Include="Shaders\BasicOrtho.frag" />
+    <None Include="Shaders\BasicOrtho.vert" />
+    <None Include="Shaders\BasicPersp.frag" />
+    <None Include="Shaders\BasicPersp.vert" />
     <None Include="Shaders\Entity.frag" />
     <None Include="Shaders\Entity.vert" />
     <None Include="Shaders\Selector.frag" />

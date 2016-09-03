@@ -58,7 +58,8 @@ public:
 	static void pos_lw_to_r( glm::ivec3 const & pos_lw, glm::ivec3 & pos_r );
 	static void pos_lw_to_lr( glm::ivec3 const & pos_lw, glm::ivec3 & pos_lr );
 
-	static void pos_trim( glm::vec3 & pos_gw );
+	static void pos_trim( glm::vec3 & pos_gw, glm::ivec3 & pos_trim );
+	static void pos_trim( glm::vec3 & pos_gw, glm::vec3 & pos_trim );
 
 	// Vec Range functions
 	static bool is_within_range( glm::ivec3 const & point, glm::ivec3  const & range, glm::ivec3  const & check );

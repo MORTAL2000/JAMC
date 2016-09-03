@@ -44,7 +44,8 @@ enum ChunkState {
 	CS_Gen,
 	CS_SMesh,
 	CS_TMesh,
-	CS_Buffer,
+	CS_SBuffer,
+	CS_TBuffer,
 	CS_Save,
 	CS_Remove,
 	CS_Size

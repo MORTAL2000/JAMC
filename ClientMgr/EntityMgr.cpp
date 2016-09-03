@@ -5,6 +5,8 @@
 #include "GravBlock.h"
 #include "LineBlock.h"
 #include "SpawnBlock.h"
+#include "WormBlock.h"
+#include "WaterBlock.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtc/matrix_inverse.hpp"
 
@@ -40,17 +42,18 @@ static int num_entity = 10000;
 static std::vector< ChunkFaceVertices > list_faces;
 
 void EntityMgr::init( ) { 
-	std::cout << "Init entity manager..." << std::endl;
+	printf( "\n*** EntityMgr ***\n" );
 	client.resource_mgr.reg_pool< Entity >( num_entity );
 	client.resource_mgr.reg_pool< ECState >( num_entity );
 	client.resource_mgr.reg_pool< ECTnt >( num_entity );
 	client.resource_mgr.reg_pool< ECGravBlock >( num_entity );
 	client.resource_mgr.reg_pool< ECSpawnBlock >( num_entity );
+	client.resource_mgr.reg_pool< ECWater >( num_entity );
 
 	list_entity.reserve( num_entity );
 	map_entity.reserve( num_entity );
 
-	init_mesh( );
+	GL_CHECK( init_mesh( ) );
 
 	alloc_base = [ ] ( Client & client, Entity & entity ) {
 		entity.time_live = client.time_mgr.get_time( TimeStrings::GAME );
@@ -97,6 +100,8 @@ void EntityMgr::init( ) {
 	loader_add( &GravBlock( ) );
 	loader_add( &LineBlock( ) );
 	loader_add( &SpawnBlock( ) );
+	loader_add( &WormBlock( ) );
+	loader_add( &WaterBlock( ) );
 
 	entity_add( "Player", [ ] ( Client & client, Entity & entity ) {
 
@@ -121,7 +126,7 @@ void EntityMgr::update( ) {
 	}
 
 	client.resource_mgr.pool< Entity >().apply_func_live_threads( client.thread_mgr,
-		10, client.thread_mgr.cnt_thread_sync( ), [ & ] ( Entity & entity ) { 
+		10, client.thread_mgr.cnt_thread_sync( ) * 10, [ & ] ( Entity & entity ) { 
 
 		auto & state = entity.h_state.get( );
 
@@ -153,10 +158,39 @@ void EntityMgr::render( ) {
 	Entity * entity;
 	client.texture_mgr.bind_program( "Entity" );
 
-	static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
-	static GLuint idx_mat_norm = glGetUniformLocation( client.texture_mgr.id_prog, "mat_norm" );
-	static GLuint idx_idx_layer = glGetUniformLocation( client.texture_mgr.id_prog, "idx_layer" );
-	static GLuint idx_frag_color = glGetUniformLocation( client.texture_mgr.id_prog, "entity_color" );
+	static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_bound_program, "mat_model" );
+	static GLuint idx_mat_norm = glGetUniformLocation( client.texture_mgr.id_bound_program, "mat_norm" );
+	static GLuint idx_idx_layer = glGetUniformLocation( client.texture_mgr.id_bound_program, "idx_layer" );
+	static GLuint idx_frag_color = glGetUniformLocation( client.texture_mgr.id_bound_program, "entity_color" );
+
+	auto iter = list_entity.begin( );
+	while( iter != list_entity.end( ) ) {
+		entity = &iter->get( );
+
+		if( !entity->is_visible ) {
+			iter++;
+			continue;
+		}
+
+		glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_model ) );
+		glUniformMatrix3fv( idx_mat_norm, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_norm ) );
+		glUniform1f( idx_idx_layer, client.chunk_mgr.get_block_data( entity->id ).faces[ 0 ].id_subtex );
+		glUniform4fv( idx_frag_color, 1, ( const GLfloat * ) &entity->color );
+
+		vbo.render( client );
+
+		iter++;
+	}
+}
+
+void EntityMgr::render_shadow( glm::mat4 & mat_light ) { 
+	Entity * entity;
+	client.texture_mgr.bind_program( "ShadowMap" );
+
+	static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_bound_program, "mat_model" );
+	static GLuint idx_mat_norm = glGetUniformLocation( client.texture_mgr.id_bound_program, "mat_norm" );
+	static GLuint idx_idx_layer = glGetUniformLocation( client.texture_mgr.id_bound_program, "idx_layer" );
+	static GLuint idx_frag_color = glGetUniformLocation( client.texture_mgr.id_bound_program, "entity_color" );
 
 	auto iter = list_entity.begin( );
 	while( iter != list_entity.end( ) ) {
@@ -235,7 +269,7 @@ void EntityMgr::loader_add( EntityLoader * entity_loader ) {
 	map_loader.emplace(
 		std::pair< std::string, int > {
 		entity_loader->name,
-			list_loader.size( ) - 1
+			( GLuint ) list_loader.size( ) - 1
 	}
 	);
 
@@ -267,7 +301,7 @@ void EntityMgr::loader_add( std::string const & str_name, EFAlloc ef_alloc,
 	map_loader.emplace( 
 		std::pair< std::string, int > {
 			str_name,
-			list_loader.size( ) - 1
+			( int ) list_loader.size( ) - 1
 		} 
 	);
 

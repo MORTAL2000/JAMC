@@ -30,32 +30,47 @@ layout( location = 4 ) in uint id;
 layout( location = 5 ) in mat4 mat_model;
 layout( location = 9 ) in mat3 mat_norm;
 
-uniform mat4 mat_light[ 3 ];
+uniform float dist_fade = 250.0;
+uniform float dist_fade_cutoff = 300.0;
+
+const uint MAX_CASCADES = 8;
+uniform mat4 mat_light[ MAX_CASCADES ];
+out vec4 frag_vert_light[ MAX_CASCADES ];
+uniform uint num_cascades;
 
 out vec4 frag_diffuse;
 out vec4 frag_color;
-out vec3 frag_uv;
-out vec4 vert_model;
 out vec3 frag_norm;
-out vec4 frag_vert_light[ 3 ];
+out vec3 frag_uv;
+
+out vec4 vert_model;
+out vec4 vert_view;
+
 out vec3 diff_sun;
 
 float grad_diffuse;
+float grad_fade;
 
 void main() {
 	vert_model = mat_model * vert;
+	vert_view = mat_view * vert_model;
 	frag_norm = mat_norm * norm;
 
-	diff_sun = normalize( vec3( pos_sun - pos_camera ) );
+	grad_fade = max( 0, distance( vert_model.xz, pos_camera.xz ) - dist_fade );
+	grad_fade = min( 1, grad_fade / ( dist_fade_cutoff - dist_fade ) );
+	grad_fade = 1.0 - grad_fade;
+
+	diff_sun = normalize( vec3( pos_sun ) );
 	grad_diffuse = clamp( dot( frag_norm, diff_sun ), 0.0, 1.0 );
 	frag_diffuse = diffuse * vec4( grad_diffuse, grad_diffuse, grad_diffuse, 1.0 );
 
-	frag_vert_light[ 0 ] = mat_light[ 0 ] * mat_model * vec4( vert.xyz, 1.0 );
-	frag_vert_light[ 1 ] = mat_light[ 1 ] * mat_model * vec4( vert.xyz, 1.0 );
-	frag_vert_light[ 2 ] = mat_light[ 2 ] * mat_model * vec4( vert.xyz, 1.0 );
+	for( uint i = 0; i < num_cascades; ++i ) {
+		frag_vert_light[ i ] = mat_light[ i ] * mat_model * vec4( vert.xyz, 1.0 );
+	}
 
 	gl_Position = mat_perspective * mat_view * vert_model;
 	frag_color = color;
+	frag_color.a *= grad_fade;
 
 	frag_uv = uv;
 }

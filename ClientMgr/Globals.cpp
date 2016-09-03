@@ -22,27 +22,26 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam 
 	}
 }
 
-inline std::string checkGlErrors( ) {
-	int error = glGetError( );
+inline std::string getGLErrorString( int error ) {
 	switch( error ) {
 		case GL_NO_ERROR:
 		return "NO GLErrors!";
 		case GL_INVALID_ENUM:
-		return "GLError: GL_INVALID_ENUM!";
+		return "GL_INVALID_ENUM!";
 		case GL_INVALID_OPERATION:
-		return "GLError: GL_INVALID_OPERATION!";
+		return "GL_INVALID_OPERATION!";
 		case GL_STACK_OVERFLOW:
-		return "GLError: GL_STACK_OVERFLOW!";
+		return "GL_STACK_OVERFLOW!";
 		case GL_STACK_UNDERFLOW:
-		return "GLError: GL_STACK_UNDERFLOW!";
+		return "GL_STACK_UNDERFLOW!";
 		case GL_OUT_OF_MEMORY:
-		return "GLError: GL_OUT_OF_MEMORY!";
+		return "GL_OUT_OF_MEMORY!";
 		case GL_INVALID_FRAMEBUFFER_OPERATION:
-		return "GLError: GL_INVALID_FRAMEBUFFER_OPERATION!";
+		return "GL_INVALID_FRAMEBUFFER_OPERATION!";
 		case GL_TABLE_TOO_LARGE:
-		return "GLError: GL_TABLE_TOO_LARGE!";
+		return "GL_TABLE_TOO_LARGE!";
 		default:
-		return "GLError: UNKNOWN ERROR!";
+		return "UNKNOWN ERROR!";
 	}
 }
 

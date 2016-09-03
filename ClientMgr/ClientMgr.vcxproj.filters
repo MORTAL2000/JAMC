@@ -213,6 +213,12 @@
     <ClCompile Include="SharedMesh.cpp">
       <Filter>Source Files\Objects</Filter>
     </ClCompile>
+    <ClCompile Include="WormBlock.cpp">
+      <Filter>Source Files\Managers\EntityMgr\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="WaterBlock.cpp">
+      <Filter>Source Files\Managers\EntityMgr\Entities</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Globals.h">
@@ -317,6 +323,12 @@
     <ClInclude Include="SharedMesh.h">
       <Filter>Header Files\Objects</Filter>
     </ClInclude>
+    <ClInclude Include="WormBlock.h">
+      <Filter>Header Files\Managers\EntityMgr\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="WaterBlock.h">
+      <Filter>Header Files\Managers\EntityMgr\Entities</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\SMBasic.frag">
@@ -355,12 +367,6 @@
     <None Include="Shaders\Terrain.vert">
       <Filter>Resource Files\Mesh</Filter>
     </None>
-    <None Include="Shaders\Basic.frag">
-      <Filter>Resource Files\Mesh</Filter>
-    </None>
-    <None Include="Shaders\Basic.vert">
-      <Filter>Resource Files\Mesh</Filter>
-    </None>
     <None Include="Shaders\SMShadowMapSolid.frag">
       <Filter>Resource Files\Shadow Map</Filter>
     </None>
@@ -372,6 +378,18 @@
     </None>
     <None Include="Shaders\SMShadowMapTrans.vert">
       <Filter>Resource Files\Shadow Map</Filter>
+    </None>
+    <None Include="Shaders\BasicOrtho.frag">
+      <Filter>Resource Files\Mesh</Filter>
+    </None>
+    <None Include="Shaders\BasicOrtho.vert">
+      <Filter>Resource Files\Mesh</Filter>
+    </None>
+    <None Include="Shaders\BasicPersp.frag">
+      <Filter>Resource Files\Mesh</Filter>
+    </None>
+    <None Include="Shaders\BasicPersp.vert">
+      <Filter>Resource Files\Mesh</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

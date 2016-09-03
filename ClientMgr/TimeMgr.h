@@ -16,9 +16,10 @@
 #define TimeDuration std::chrono::high_resolution_clock::duration
 #define TimeNow std::chrono::high_resolution_clock::now()
 
-static int const	history_size = 144 * 5,
-					time_size = 64,
-					record_size = 64;
+int constexpr
+	history_size = 144 * 5,
+	time_size = 64,
+	record_size = 64;
 
 struct TimeStrings {
 	static const std::string

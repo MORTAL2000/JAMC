@@ -32,7 +32,13 @@ void Client::thread_main_loop( ) {
 
 		time_mgr.begin_record( RecordStrings::UPDATE_PRE );
 		if( time_mgr.get_record_curr( RecordStrings::FRAME ) > TIME_FRAME_MILLI / 1000.0f ) {
-			time_mgr.add_time( TimeStrings::GAME_ACCUM, time_mgr.get_record_curr( RecordStrings::FRAME ) );
+			if( time_mgr.get_record_curr( RecordStrings::FRAME ) > TIME_MILLISEC / 4.0f ) { 
+				time_mgr.add_time( TimeStrings::GAME_ACCUM, TIME_MILLISEC / 4.0f );
+			}
+			else { 
+				time_mgr.add_time( TimeStrings::GAME_ACCUM, time_mgr.get_record_curr( RecordStrings::FRAME ) );
+			}
+
 			//time_mgr.add_time( TimeStrings::RENDER_ACCUM, time_mgr.get_record_curr( RecordStrings::FRAME ) );
 
 			time_mgr.push_record( RecordStrings::FRAME );
@@ -112,66 +118,30 @@ void Client::thread_main_loop( ) {
 }
 
 void Client::init( ) {
-	resource_mgr.init( );
-	thread_mgr.init( );
-	display_mgr.init( );
-
-	// Init things that do not depend on opengl
-	time_mgr.init( );
-	input_mgr.init( );
-	texture_mgr.init( );
-	gui_mgr.init( );
-	chunk_mgr.init( );
-	entity_mgr.init( );
+	init_mgrs( );
 
 	// Sets pointer to thing
 	SetWindowLongPtr( display_mgr.get_HWND(), GWLP_USERDATA, ( LONG_PTR )this );
 
-	mesh.init( 12, 100, 9, 100, 64, 40, 60 );
-	mesh.request_handle( handles[ 0 ] );
-
-	auto & handle = handles[ 0 ];
-
-	handle.request_buffer( );
-
-	handle.push_set( SharedMesh::SMGSet(
-		SharedMesh::TypeGeometry::TG_Triangles,
-		glm::translate( glm::mat4( 1.0f ), glm::vec3( 100, 100, 0 ) ),
-		client.texture_mgr.get_program_id( "SMBasic" ),
-		client.texture_mgr.id_materials
-	) );
-
-	handle.push_verts( {
-		{ { 0, 0, 0 }, { 1, 0, 0, 1 }, { 0, 0, 1 }, { 0, 0, 0 } },
-		{ { 100, 0, 0 }, { 1, 0, 0, 1 }, { 0, 0, 1 }, { 0, 1, 0 } },
-		{ { 100, 100, 0 }, { 1, 0, 0, 1 }, { 0, 0, 1 }, { 1, 1, 0 } },
-		{ { 0, 100, 0 }, { 1, 0, 0, 1 }, { 0, 0, 1 }, { 0, 1, 0 } }
-	} );
-
-	handle.push_inds( {
-		0, 1, 2,
-		2, 3, 0
-	} );
-
-	handle.finalize_set( );
-
-	auto & handle2 = handles[ 1 ];
-
-	mesh.request_handle( handle2 );
-
-	handle.swap_handle( handle2 );
-
-	handle.clear( );
-
-	handle2.submit_buffer( );
-
-	handle2.release_buffer( );
-
-	handle2.submit_commands( );
-
-	mesh.buffer_commands( );
+	#if defined( GL_DEBUG ) || defined( _DEBUG )
+	system( "PAUSE" );
+	#endif
 
 	thread_main_loop( );
+}
+
+void Client::init_mgrs( ) { 
+	resource_mgr.init( );
+	thread_mgr.init( );
+	display_mgr.init( );
+
+	// Init things that depend on opengl
+	GL_CHECK( time_mgr.init( ) );
+	GL_CHECK( input_mgr.init( ) );
+	GL_CHECK( texture_mgr.init( ) );
+	GL_CHECK( gui_mgr.init( ) );
+	GL_CHECK( chunk_mgr.init( ) );
+	GL_CHECK( entity_mgr.init( ) );
 }
 
 void Client::update( ) {
@@ -181,24 +151,24 @@ void Client::update( ) {
 	out << "[FRAMES] Update: " << std::setw( 4 ) << update_last << " Render: " << std::setw( 4 ) << render_last;
 	gui_mgr.print_to_static( out.str( ) );
 
-	input_mgr.update( );
+	GL_CHECK( input_mgr.update( ) );
 
 	time_mgr.begin_record( RecordStrings::UPDATE_TIME );
-	time_mgr.update( );
+	GL_CHECK( time_mgr.update( ) );
 	time_mgr.end_record( RecordStrings::UPDATE_TIME );
 	time_mgr.push_record( RecordStrings::UPDATE_TIME );
 
-	display_mgr.update( );
-	texture_mgr.update( );
+	GL_CHECK( display_mgr.update( ) );
+	GL_CHECK( texture_mgr.update( ) );
 
 	time_mgr.begin_record( RecordStrings::UPDATE_GUI );
-	gui_mgr.update( );
+	GL_CHECK( gui_mgr.update( ) );
 	time_mgr.end_record( RecordStrings::UPDATE_GUI );
 	time_mgr.push_record( RecordStrings::UPDATE_GUI );
 
-	chunk_mgr.update( );
-	entity_mgr.update( );
-	thread_mgr.update( );
+	GL_CHECK( chunk_mgr.update( ) );
+	GL_CHECK( entity_mgr.update( ) );
+	GL_CHECK( thread_mgr.update( ) );
 
 	gui_mgr.update_static( );
 }
@@ -209,24 +179,24 @@ void Client::render( ) {
 
 	client.time_mgr.begin_record( RecordStrings::RENDER_DRAW );
 
-	chunk_mgr.render( );
+	GL_CHECK( chunk_mgr.render( ) );
 
-	entity_mgr.render( );
+	GL_CHECK( entity_mgr.render( ) );
 
-	client.texture_mgr.unbind_program( );
-
-	render_output( );
+	GL_CHECK( render_output( ) );
 	client.time_mgr.end_record( RecordStrings::RENDER_DRAW );
 	client.time_mgr.push_record( RecordStrings::RENDER_DRAW );
 }
 
 void Client::render_output( ) {
+	client.texture_mgr.unbind_program( );
+
 	glDisable( GL_TEXTURE_2D );
 	glDisable( GL_LIGHTING );
 
 	display_mgr.set_ortho( );
 
-	//display_mgr.draw_key( 30 );
+	display_mgr.draw_key( 30 );
 	
 	glEnable( GL_TEXTURE_2D );
 

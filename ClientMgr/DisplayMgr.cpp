@@ -5,15 +5,6 @@
 
 #include <iostream>
 
-const glm::vec3 verts_skybox[ 6 ][ 4 ] = {
-	{ { -0.5f, -0.5f, 0.5f }, { 0.5f, -0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { -0.5f, 0.5f, 0.5f } },
-	{ { 0.5f, -0.5f, -0.5f }, { -0.5f, -0.5f, -0.5f }, { -0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, -0.5f } },
-	{ { 0.5f, -0.5f, 0.5f }, { 0.5f, -0.5f, -0.5f }, { 0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f } },
-	{ { -0.5f, -0.5f, -0.5f }, { -0.5f, -0.5f, 0.5f }, { -0.5f, 0.5f, 0.5f }, { -0.5f, 0.5f, -0.5f } },
-	{ { 0.5f, 0.5f, -0.5f }, { -0.5f, 0.5f, -0.5f }, { -0.5f, 0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f } },
-	{ { -0.5f, -0.5f, -0.5f }, { 0.5f, -0.5f, -0.5f }, { 0.5f, -0.5f, 0.5f }, { -0.5f, -0.5f, 0.5f } }
-};
-
 Camera::Camera( ) :
 	pos_camera( 0, Chunk::size_y * 2 / 3, 0 ),
 	rot_camera( 0.0f, 180.0f, 0.0f ) { }
@@ -44,7 +35,6 @@ void DisplayMgr::init( ) {
 	printTabbedLine( 1, out );
 
 	printTabbedLine( 1, ( char* ) glGetString( GL_VERSION ) );
-	printTabbedLine( 1, checkGlErrors( ) );
 
 	camera.mvp_matrices.mat_world = glm::mat4( 1.0f );
 	camera.mvp_matrices.mat_view = glm::mat4( 1.0f );
@@ -58,15 +48,6 @@ void DisplayMgr::init( ) {
 }
 
 void DisplayMgr::update( ) {
-	/*if( !client.input_mgr.is_cursor_vis( ) ) {
-		camera.rot_camera.x -= client.input_mgr.get_mouse_delta( ).y * mouse_sensitivity;
-		camera.rot_camera.y += client.input_mgr.get_mouse_delta( ).x * mouse_sensitivity;
-
-		while( camera.rot_camera.x >= 360 ) camera.rot_camera.x -= 360;
-		while( camera.rot_camera.x < 0 ) camera.rot_camera.x += 360;
-		if( camera.rot_camera.x > 180 && camera.rot_camera.x < 270 ) camera.rot_camera.x = 270;
-		if( camera.rot_camera.x < 180 && camera.rot_camera.x > 90 ) camera.rot_camera.x = 90;
-	}*/
 	auto & p_ec_state = client.entity_mgr.entity_player->h_state.get( );
 
 	camera.pos_camera = p_ec_state.pos;
@@ -258,18 +239,12 @@ void DisplayMgr::init_gl( ) {
 	glewInit( );
 	printTabbedLine( 2, "...Init Glew" );
 
-	//glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-	//( GL_CULL_FACE );
 	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	glClearDepth( 3000.0f );
 
-	//glEnable( GL_CULL_FACE );
-	//glCullFace( GL_BACK );
-
-	glEnable( GL_MULTISAMPLE );
-
 	glEnable( GL_TEXTURE_2D );
 	glEnable( GL_DEPTH_TEST );
+	glDepthFunc( GL_LESS );
 
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -278,16 +253,6 @@ void DisplayMgr::init_gl( ) {
 	glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
 
 	glShadeModel( GL_SMOOTH );
-
-	//glEnableClientState( GL_VERTEX_ARRAY );
-	//glEnableClientState( GL_COLOR_ARRAY );
-	//glEnableClientState( GL_NORMAL_ARRAY );
-	//glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-
-	//glEnable( GL_COLOR_MATERIAL );
-
-	glEnable( GL_LIGHTING );
-	//glEnable( GL_LIGHT1 );
 
 	printTabbedLine( 1, "...Init GL" );
 }
@@ -379,7 +344,7 @@ void DisplayMgr::draw_string( Vect3< int > const & pos, std::string & string, gl
 }
 */
 
-/*
+
 void DisplayMgr::draw_key( int const size ) {
 	glPushMatrix( );
 
@@ -408,7 +373,7 @@ void DisplayMgr::draw_key( int const size ) {
 	glPopMatrix( );
 }
 
-
+/*
 void DisplayMgr::draw_skybox( glm::vec3 & pos_skybox, float const size ) {
 	client.texture_mgr.bind_skybox( );
 
@@ -574,8 +539,12 @@ void DisplayMgr::set_proj( ) {
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity( );
 
-	gluPerspective( fov / 2.0f, float( dim_window.x ) / dim_window.y, 0.2f, 3000.0f );
-	camera.mvp_matrices.mat_perspective = glm::perspective( glm::radians( fov / 2.0f ), float( dim_window.x ) / dim_window.y, 0.2f, 3000.0f );
+	float aspect = float( dim_window.x ) / dim_window.y;
+	float fov_y = fov / aspect;
+
+	gluPerspective( fov_y, aspect, 0.1f, 3000.0f );
+	camera.mvp_matrices.mat_perspective = glm::perspective( 
+		glm::radians( fov_y ), aspect, 0.1f, 3000.0f );
 
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity( );

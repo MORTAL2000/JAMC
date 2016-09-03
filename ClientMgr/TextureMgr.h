@@ -11,35 +11,31 @@
 typedef std::array< std::array< float, 2 >, 4 > face_uvs;
 
 struct ShaderLoader { 
+	GLuint id_program = 0;
 	std::string name;
-	GLuint id_prog = 0;
 };
 
-struct MultiTex { 
-	GLuint size;
-	GLuint id_tex;
+struct MultiTexture { 
+	GLuint id_texture;
 	GLuint num_mipmap;
-	glm::ivec2 dim;
-	std::string name;
-	std::unordered_map< std::string, int > map_tex_lookup;
+	GLuint num_subtexture;
+	glm::ivec2 dim_texture;
+	std::string name_texture;
+	std::unordered_map< std::string, int > map_subtexture_lookup;
 
-	MultiTex( ) :
-		size( 0 ),
-		id_tex( 0 ),
-		name( "" ),
-		dim( 0, 0 ),
-		map_tex_lookup( ) { }
+	MultiTexture( ) :
+		id_texture( 0 ),
+		num_mipmap( 0 ),
+		num_subtexture( 0 ),
+		dim_texture( 0, 0 ),
+		name_texture( "" ),
+		map_subtexture_lookup( ) { }
 };
 
 class TextureMgr :
 	public Manager {
 
 private:
-	static int const size_terrain_mip_map;
-	static int const size_terrain_texture_padding;
-	static int const size_terrain_texture;
-	static int const size_terrain_atlas;
-
 	std::string const path_shaders;
 	std::vector< ShaderLoader > list_shaders;
 	std::unordered_map< std::string, GLuint > map_shaders;
@@ -49,18 +45,16 @@ private:
 	GLuint id_ubo_mvp;
 	GLuint id_ubo_lights;
 
-	std::vector< face_uvs > uvs_skybox;
-	face_uvs uvs_sun;
 	std::vector< face_uvs > uvs_fonts;
 	face_uvs uvs_materials;
 
-	std::vector< MultiTex > list_multitex;
-	std::unordered_map< std::string, MultiTex * > map_multitex;
+	std::vector< MultiTexture > list_multitex;
+	std::unordered_map< std::string, MultiTexture * > map_multitex;
 
 public:	
-	GLuint id_prog = 0;
-	GLuint id_active = 0;
-	GLuint id_texture = 0;
+	GLuint id_bound_program = 0;
+	GLuint id_bound_active = 0;
+	GLuint id_bound_texture = 0;
 
 	GLuint id_skybox;
 	GLuint id_fonts;
@@ -69,7 +63,6 @@ public:
 private:
 	void load_textures( );
 	void load_skybox( );
-	void load_sun( );
 	void load_fonts( );
 	void load_materials( );
 
@@ -77,7 +70,7 @@ private:
 	void load_vert_shader( std::string const & path_file, GLuint & id_vert );
 	void load_frag_shader( std::string const & path_file, GLuint & id_frag );
 	void load_shader( std::string const & path_vert, 
-		std::string const & path_frag, GLuint & id_prog );
+		std::string const & path_frag, GLuint & id_program );
 
 public:
 	TextureMgr( Client & client );
@@ -99,19 +92,41 @@ public:
 	GLuint const get_program_id( std::string const & name );
 
 	void bind_program( std::string const & name );
-	void bind_program( GLuint id_prog );
+	void bind_program( GLuint const id_prog );
 	void unbind_program( );
 
-	MultiTex * get_texture( std::string const & name_tex );
-	GLuint get_texture_id( std::string const & name_tex );
-	GLuint get_texture_layer( std::string const & name_tex, std::string const & name_subtex );
+	MultiTexture * get_texture( std::string const & name_texture );
+	GLuint get_texture_id( std::string const & name_texture );
+	GLuint get_texture_layer( std::string const & name_texture, std::string const & name_subtexture );
 
 	void bind_texture( GLuint const id_active, GLuint const id_texture );
 	void bind_texture_array( GLuint const id_active, GLuint const id_texture );
 
-	face_uvs & get_uvs_skybox( FaceDirection dir_face );
-	face_uvs & get_uvs_sun( );
 	face_uvs & get_uvs_fonts( int const id_font );
 	face_uvs & get_uvs_materials( );
 
+	void update_uniform( GLuint id_program, std::string const & name_uniform, GLint const value );
+	template< int unsigned size >
+	void update_uniform( GLuint id_program, std::string const & name_uniform, GLint const ( & value )[ size ] ) { 
+		bind_program( id_program );
+		glUniform1iv( glGetUniformLocation( id_program, name_uniform.c_str( ) ), size, value );
+	}
+
+	void update_uniform( GLuint id_program, std::string const & name_uniform, GLuint const value );
+
+	void update_uniform( GLuint id_program, std::string const & name_uniform, GLfloat const value );
+	template< int unsigned size >
+	void update_uniform( GLuint id_program, std::string const & name_uniform, GLfloat const ( &value )[ size ] ) {
+		bind_program( id_program );
+		glUniform1fv( glGetUniformLocation( id_program, name_uniform.c_str( ) ), size, value );
+	}
+
+	void update_uniform( GLuint id_program, std::string const & name_uniform, glm::mat4 const & value );
+
+	template< class T >
+	void update_uniform( std::string const & name_program, std::string const & name_uniform, T const & value ) { 
+		GLuint id_program;
+		id_program = get_program_id( name_program.c_str( ) );
+		update_uniform( id_program, name_uniform, value );
+	}
 };

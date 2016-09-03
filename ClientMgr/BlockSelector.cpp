@@ -186,17 +186,6 @@ BlockSelector::~BlockSelector( ) {
 void BlockSelector::init( ) {
 	vbo.init( );
 
-
-	std::cout << "Block select errors0: " << checkGlErrors( ) << std::endl;
-
-	//shared_mesh.init( 8192, 100, 12288, 100 );
-	//shared_mesh.get_handle( handles[ 0 ] );
-	//shared_mesh.get_handle( handles[ 1 ] );
-
-	//make_mesh( );
-
-	//shared_mesh.unmap( );
-
 	id_block = 0;
 	is_dirty = true;
 }
@@ -231,7 +220,7 @@ void BlockSelector::update( ) {
 
 void BlockSelector::render( ) {
 	client.texture_mgr.bind_program( "Selector" );
-	static GLuint prog_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
+	static GLuint prog_model = glGetUniformLocation( client.texture_mgr.id_bound_program, "mat_model" );
 
 	auto & dim_window = client.display_mgr.get_window( );
 	int size_active;
@@ -315,98 +304,99 @@ void BlockSelector::mesh( ) {
 		return;
 	}
 
-	static bool is_test = true;
-	if( is_test == true ) { 
-		
-		is_test = false;
-	}
-
-	Block * block;
-	glm::vec3 const * vert;
-	glm::vec4 color;
-	glm::vec3 const * norm;
-	glm::vec3 const * uv;
-
-	block = &client.chunk_mgr.get_block_data( id_block );
-
-	vbo.clear( );
-
-	vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
-		"Selector", client.texture_mgr.get_texture_id( "Blocks" ),
-		std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
-	) );
-
-	for( auto & face : block->faces ) { 
-		for( int j = 0; j < 4; ++j ) {
-			vert = &face.verts[ j ];
-			color = block->color * face.color;
-			norm = &face.norms[ j ];
-			uv = &face.uvs[ j ];
-
-			vbo.push_data( VBO::Vertex {
-				vert->x, vert->y, vert->z,
-				color.r, color.g, color.b, color.a,
-				norm->x, norm->y, norm->z,
-				uv->x, uv->y, uv->z
-			} );
-		}
-	}
-
-	for( int k = num_hist; k >= 1; --k ) {
-		id_temp = id_block + k;
-		while( id_temp >= client.chunk_mgr.get_num_blocks( ) ) id_temp -= client.chunk_mgr.get_num_blocks( );
-		block = &client.chunk_mgr.get_block_data( id_temp );
-
-		vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
-			"Selector", client.texture_mgr.get_texture_id( "Blocks" ),
-			std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
-		) );
-
-		for( auto & face : block->faces ) {
-			for( int j = 0; j < 4; ++j ) {
-				vert = &face.verts[ j ];
-				color = block->color * face.color;
-				norm = &face.norms[ j ];
-				uv = &face.uvs[ j ];
-
-				vbo.push_data( VBO::Vertex {
-					vert->x, vert->y, vert->z,
-					color.r, color.g, color.b, color.a,
-					norm->x, norm->y, norm->z,
-					uv->x, uv->y, uv->z
-				} );
-			}
-		}
-
-		id_temp = id_block - k;
-		while( id_temp < 0 ) id_temp += client.chunk_mgr.get_num_blocks( );
-		block = &client.chunk_mgr.get_block_data( id_temp );
-
-		vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
-			"Selector", client.texture_mgr.get_texture_id( "Blocks" ),
-			std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
-		) );
-
-		for( auto & face : block->faces ) {
-			for( int j = 0; j < 4; ++j ) {
-				vert = &face.verts[ j ];
-				color = block->color * face.color;
-				norm = &face.norms[ j ];
-				uv = &face.uvs[ j ];
-
-				vbo.push_data( VBO::Vertex {
-					vert->x, vert->y, vert->z,
-					color.r, color.g, color.b, color.a,
-					norm->x, norm->y, norm->z,
-					uv->x, uv->y, uv->z
-				} );
-			}
-		}
-	}
-
-	vbo.finalize_set( );
-
 	client.thread_mgr.task_main( 5, [ & ] ( ) { 
+
+		static bool is_test = true;
+		if( is_test == true ) {
+
+			is_test = false;
+		}
+
+		Block * block;
+		glm::vec3 const * vert;
+		glm::vec4 color;
+		glm::vec3 const * norm;
+		glm::vec3 const * uv;
+
+		block = &client.chunk_mgr.get_block_data( id_block );
+
+		vbo.clear( );
+
+		vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
+			"Selector", client.texture_mgr.get_texture_id( "Blocks" ),
+			std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
+		) );
+
+		for( auto & face : block->faces ) {
+			for( int j = 0; j < 4; ++j ) {
+				vert = &face.verts[ j ];
+				color = block->color * face.color;
+				norm = &face.norms[ j ];
+				uv = &face.uvs[ j ];
+
+				vbo.push_data( VBO::Vertex {
+					vert->x, vert->y, vert->z,
+					color.r, color.g, color.b, color.a,
+					norm->x, norm->y, norm->z,
+					uv->x, uv->y, uv->z
+				} );
+			}
+		}
+
+		for( int k = num_hist; k >= 1; --k ) {
+			id_temp = id_block + k;
+			while( id_temp >= client.chunk_mgr.get_num_blocks( ) ) id_temp -= client.chunk_mgr.get_num_blocks( );
+			block = &client.chunk_mgr.get_block_data( id_temp );
+
+			vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
+				"Selector", client.texture_mgr.get_texture_id( "Blocks" ),
+				std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
+			) );
+
+			for( auto & face : block->faces ) {
+				for( int j = 0; j < 4; ++j ) {
+					vert = &face.verts[ j ];
+					color = block->color * face.color;
+					norm = &face.norms[ j ];
+					uv = &face.uvs[ j ];
+
+					vbo.push_data( VBO::Vertex {
+						vert->x, vert->y, vert->z,
+						color.r, color.g, color.b, color.a,
+						norm->x, norm->y, norm->z,
+						uv->x, uv->y, uv->z
+					} );
+				}
+			}
+
+			id_temp = id_block - k;
+			while( id_temp < 0 ) id_temp += client.chunk_mgr.get_num_blocks( );
+			block = &client.chunk_mgr.get_block_data( id_temp );
+
+			vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
+				"Selector", client.texture_mgr.get_texture_id( "Blocks" ),
+				std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
+			) );
+
+			for( auto & face : block->faces ) {
+				for( int j = 0; j < 4; ++j ) {
+					vert = &face.verts[ j ];
+					color = block->color * face.color;
+					norm = &face.norms[ j ];
+					uv = &face.uvs[ j ];
+
+					vbo.push_data( VBO::Vertex {
+						vert->x, vert->y, vert->z,
+						color.r, color.g, color.b, color.a,
+						norm->x, norm->y, norm->z,
+						uv->x, uv->y, uv->z
+					} );
+				}
+			}
+		}
+
+		vbo.finalize_set( );
+
 		vbo.buffer( );
 	} );
 

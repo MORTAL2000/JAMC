@@ -6,6 +6,7 @@
 #include "Block.h"
 #include "Chunk.h"
 #include "ResPool.h" 
+#include "VBO.h"
 
 #include <fstream>
 #include <unordered_map>
@@ -49,7 +50,7 @@ struct World {
 	static int const num_chunks = 
 		( size_x * 2 + 1 ) * ( size_y * 2 + 1 ) * ( size_z * 2 + 1 ) + 
 		( size_x * 2 + 1 ) * ( size_z * 2 + 1 );
-	static int const level_sea = Chunk::size_y / 2;
+	static int const level_sea = 0;
 };
 
 struct Region { 
@@ -79,6 +80,26 @@ struct ChunkFile {
 	std::fstream file_stream;
 };
 
+struct NoiseLayer { 
+	int height_base;
+	int height_min, height_max;
+
+	float seed_x, seed_y;
+
+	float scale_x, scale_y;
+	float scale_height;
+	std::vector< std::pair< float, float > > list_bounds;
+};
+
+struct Biome {
+	std::string name_biome;
+	NoiseLayer noise_biome;
+	NoiseLayer noise_lerp;
+	int id_block_surface;
+	int id_block_depth;
+	std::vector< NoiseLayer > list_noise;
+};
+
 struct ChunkNoise {
 	int cnt_using = 0;
 	int height[ Chunk::size_x ][ Chunk::size_z ];
@@ -103,9 +124,11 @@ private:
 	GLuint num_cmds;
 
 	// Mesh;
+	VBO vbo_skybox;
+	VBO vbo_sun;
 	SharedMesh shared_mesh;
 
-	static int const dist_sun = 1000;
+	static int const dist_sun = 750;
 	bool is_sun_pause;
 	float pos_deg_light;
 
@@ -130,6 +153,10 @@ private:
 	// Chunk data container mutex
 	std::recursive_mutex mtx_chunks, mtx_dirty, mtx_edge, mtx_render;
 
+	// Biome Data
+	std::vector< Biome > list_biomes;
+	std::unordered_map< std::string, GLuint > map_biome_name;
+
 	// Chunk data containers
 	std::unordered_map< int, Handle< Chunk > > map_chunks;
 	std::unordered_map< int, ChunkNoise > map_noise;
@@ -140,42 +167,53 @@ private:
 
 	std::unordered_map< int, Chunk & > map_render;
 
-	// Mesh pool data
-	//static int const size_pool_buff = 128;
-	//std::mutex mtx_pool_buff;
-	//std::array< ChunkBuffer, size_pool_buff > list_pool_buff;
-	//std::vector< ChunkBuffer * > list_avail_buff;
-
 	std::vector< Chunk * > list_render;
 
 	// Emitter data
 	LightData light_data;
 
-public:
-	static const GLuint num_cascade = 3;
-
 private:
 	GLuint idx_solid;
 	GLuint idx_trans;
 
+	static GLuint constexpr num_cascades = 6;
+
+	glm::mat4 mat_model;
+	glm::mat3 mat_norm;
+	glm::mat4 mat_view_light;
+	glm::mat4 mat_ortho_light[ num_cascades ];
+
+	glm::vec2 dim_shadow;
+	glm::vec2 pos_shadow;
+
 	GLuint const SHADOW_WIDTH;
 	GLuint const SHADOW_HEIGHT;
-	GLfloat const near_plane;
-	GLfloat const far_plane;
-	GLfloat const dim_ortho[ num_cascade ];
+	GLfloat depth_cascades[ num_cascades ];
+
+	glm::vec4 corners_frustrum[ num_cascades ][ 8 ];
+	float sides_ortho[ num_cascades ][ 6 ];
 
 	GLuint id_depth_fbo;
-	GLuint id_tex_depth[ num_cascade ];
+	GLuint id_tex_depth[ num_cascades ];
 	GLuint id_tex_blur;
 
 	// Light functions
 	void init_light( );
 	void calc_light( );
-	void proc_set_state( SetState & state );
+
+	// Skybox functions
+	void init_skybox( );
+
+	// ShadowMap functions
+	void init_shadowmap( );
+
+	// Chunk Debug functions
+	void init_debug( );
 
 	// Chunk State functions
 	void chunk_state( Chunk & chunk, ChunkState const state, bool flag );
 	void chunk_state_clear( Chunk & chunk );
+	void proc_set_state( SetState & state );
 
 	// Chunk functions
 	void render_skybox( );
@@ -276,6 +314,16 @@ public:
 	}
 
 	void print_center_chunk_mesh( );
+
+	inline void put_sort(
+		std::vector< std::pair< float, GLuint > > & list_sort,
+		glm::vec3 & pos_gw,
+		Block & block, FaceDirection face );
+
+	inline void put_sort(
+		std::vector< std::pair< float, GLuint > > & list_sort,
+		glm::vec3 & pos_gw, glm::vec3 & scale,
+		Block & block, FaceDirection face );
 };
 
 // Change to block pointer and face
@@ -288,3 +336,4 @@ extern inline void put_face(
 	SharedMesh::SMHandle & handle, glm::ivec3 const & pos,
 	glm::vec4 const & color, Face const & face,
 	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs );
+

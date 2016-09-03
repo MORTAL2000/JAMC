@@ -3,6 +3,7 @@
 #include "Client.h"
 
 #include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/norm.hpp"
 #include "tinyxml2-master\tinyxml2.h"
 
 #include <algorithm>
@@ -10,6 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <limits>
 
 #include "simplexnoise.h"
 
@@ -18,19 +20,13 @@ glm::ivec3 const World::size_vect( World::size_x, World::size_y, World::size_z )
 ChunkMgr::ChunkMgr( Client & client ) :
 	Manager( client ),
 	SHADOW_WIDTH( 4096 ), SHADOW_HEIGHT( 4096 ),
-	near_plane( 1.0f ),
-	far_plane( 756.0f ),
-	dim_ortho { 16.0f, 64.0f, 256.0f } { }
+	dim_shadow { 200.0f, 200.0f },
+	pos_shadow { 0.0f, 0.0f } { }
 
 ChunkMgr::~ChunkMgr( ) { }
 
 void ChunkMgr::init( ) {
-	printTabbedLine( 0, "Init ChunkMgr..." );
-
-	load_block_data( );
-
-	std::cout << std::endl;
-	printTabbedLine( 1, "Init Pools..." );
+	printf( "\n*** ChunkMgr ***\n" );
 
 	client.resource_mgr.reg_pool< Chunk >( World::num_chunks );
 
@@ -38,111 +34,23 @@ void ChunkMgr::init( ) {
 	map_dirty.reserve( World::num_chunks );
 	map_noise.reserve( ( World::size_x * 2 + 1 ) * ( World::size_z * 2 + 1 ) + 32 );
 
-	shared_mesh.init( 
-			Chunk::size_x * Chunk::size_z * 4 * 2, ( World::size_x * 2 + 1 ) * ( World::size_z * 2 + 1 ) * 4, 
-			Chunk::size_x * Chunk::size_z * 6 * 2, ( World::size_x * 2 + 1 ) * ( World::size_z * 2 + 1 ) * 4,
-			512, Chunk::size_x * Chunk::size_z * 4 * 2, Chunk::size_x * Chunk::size_z * 6 * 2 );
-
 	pos_center_chunk_lw = glm::ivec3( 0, 0, 0 );
 
-	{
-		float padding = 0.1f;
-		glGenBuffers( 1, &id_vbo_chunk_outline );
-		glBindBuffer( GL_ARRAY_BUFFER, id_vbo_chunk_outline );
-		std::vector< GLfloat > temp_verts;
-		temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( padding );
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( padding );
+	load_block_data( );
 
-		temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
-
-		temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
-
-		temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
-
-		temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( padding );
-		temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
-
-		temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
-		temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
-
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( padding );
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
 	
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+	shared_mesh.init(
+		Chunk::size_x * Chunk::size_z * 4, ( World::size_x * 2 + 1 ) * ( World::size_z * 2 + 1 ) * 8,
+		Chunk::size_x * Chunk::size_z * 6, ( World::size_x * 2 + 1 ) * ( World::size_z * 2 + 1 ) * 8,
+		512, Chunk::size_x * Chunk::size_z * 4 * 2, Chunk::size_x * Chunk::size_z * 6 * 2 );
 
-		temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( padding );
-		temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
+	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade", ( GLfloat ) Chunk::size_x * ( World::size_x - 1 ) );
+	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade_cutoff", ( GLfloat ) Chunk::size_x * World::size_x );
 
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( padding );
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
-
-		temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
-		temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
-
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
-		temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
-
-		size_chunk_outline = temp_verts.size( );
-
-		glBufferData( GL_ARRAY_BUFFER, size_chunk_outline * sizeof( GLfloat ), temp_verts.data( ), GL_STATIC_DRAW );
-	}
-
-	std::cout << std::endl;
-	printTabbedLine( 1, "Init Light..." );
-	init_light( );
-
-	std::cout << std::endl;
-	printTabbedLine( 1, "Creating FBO..." );
-	glGenFramebuffers( 1, &id_depth_fbo );
-	glBindFramebuffer( GL_FRAMEBUFFER, id_depth_fbo );
-
-	std::cout << std::endl;
-	printTabbedLine( 1, "Creating shadowmap texture..." );
-	glGenTextures( num_cascade, &id_tex_depth[ 0 ] );
-
-
-	for( GLuint i = 0; i < num_cascade; ++i ) {
-		client.texture_mgr.bind_texture( 1 + i, id_tex_depth[ i ] );
-
-		std::cout << std::endl;
-		printTabbedLine( 1, "Binding shadowmap data..." );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER );
-		GLfloat borderColor[ ] = { 1.0, 1.0, 1.0, 1.0 };
-		glTexParameterfv( GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor );
-
-		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, id_tex_depth[ i ], 0 );
-		glDrawBuffer( GL_NONE );
-		glReadBuffer( GL_NONE );
-	}
-
-	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-
-	int idx_sampler = glGetUniformLocation( client.texture_mgr.get_program_id( "SMShadowMapSolid" ), "frag_sampler" );
-	glUniform1i( idx_sampler, 0 );
-
-	idx_sampler = glGetUniformLocation( client.texture_mgr.get_program_id( "SMShadowMapTrans" ), "frag_sampler" );
-	glUniform1i( idx_sampler, 0 );
-	
-	client.texture_mgr.bind_program( "SMTerrain" );
-	idx_sampler = glGetUniformLocation( client.texture_mgr.id_prog, "frag_shadow" );
-	GLint id_shadow[] = { 1, 2, 3 };
-	glUniform1iv( idx_sampler, num_cascade, &id_shadow[ 0 ] );
-
-	int idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_l" );
-	glUniform1f( idx_bias, 0.000005f );
-
-	idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_h" );
-	glUniform1f( idx_bias, 0.000005f );
-
-	glActiveTexture( GL_TEXTURE0 );
+	GL_CHECK( init_light( ) );
+	GL_CHECK( init_skybox( ) );
+	GL_CHECK( init_shadowmap( ) );
+	GL_CHECK( init_debug( ) );
 
 	using namespace std::tr2::sys;
 	path path_world( "./World" );
@@ -150,14 +58,327 @@ void ChunkMgr::init( ) {
 	if( !exists( path_world ) ) {
 		create_directory( path_world );
 	}
+	else { 
+		remove_all( path_world );
+		create_directory( path_world );
+	}
+
+	// Base Biome
+	{
+		Biome biome;
+		biome.name_biome = "Base";
+		biome.id_block_surface = get_block_data( "Grass" ).id;
+		biome.id_block_depth = get_block_data( "Dirt" ).id;
+
+		biome.list_noise.push_back( {
+			3,
+			-7, 13,
+			500.0f, 500.0f,
+			0.001f, 0.001f, 10.0f,
+			{ { -10.0f, 10.0f } }
+		} );
+
+		list_biomes.push_back( biome );
+		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
+	}
+
+	// Ice Shard Biome
+	{
+		Biome biome;
+		biome.name_biome = "Ice Shards";
+		biome.id_block_surface = get_block_data( "Ice" ).id;
+		biome.id_block_depth = get_block_data( "Ice" ).id;
+
+		biome.noise_biome = {
+			0,
+			-100, 100,
+			991.2f, 2991.2f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 100.0f } }
+		};
+
+		biome.noise_lerp = {
+			0,
+			-100, 100,
+			991.2f, 2991.2f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 52.5f } }
+		};
+
+		biome.list_noise.push_back( {
+			10,
+			10, 10,
+			0, 0,
+			0.1f, 0.1f, 0.0f,
+			{ { 0.0f, 0.0f } }
+		} );
+
+		biome.list_noise.push_back( {
+			0,
+			0, 15,
+			0, 0,
+			0.05f, 0.05f, 15.0f,
+			{ { -15.0f, 15.0f } }
+		} );
+
+		list_biomes.push_back( biome );
+		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
+	}
+
+	// Sand Plateau Biome
+	{
+		Biome biome;
+		biome.name_biome = "Sand Plateau";
+		biome.id_block_surface = get_block_data( "Sand" ).id;
+		biome.id_block_depth = get_block_data( "Sand" ).id;
+
+		biome.noise_biome = {
+			0,
+			-100, 100,
+			10101.2f, 10101.2f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 100.0f } }
+		};
+		biome.noise_lerp = {
+			0,
+			-100, 100,
+			10101.2f, 10101.2f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 55.0f } }
+		};
+
+		biome.list_noise.push_back( {
+			10,
+			0, 12,
+			10101.2f, 10101.2f,
+			0.01f, 0.01f, 10.0f,
+			{ { 0.0f, 10.0f } }
+		} );
+
+		biome.list_noise.push_back( {
+			10,
+			0, 12,
+			10101.2f, 10101.2f,
+			0.01f, 0.01f, 10.0f,
+			{ { 0.0f, 10.0f } }
+		} );
+
+		biome.list_noise.push_back( {
+			10,
+			0, 15,
+			10101.2f, 10101.2f,
+			0.01f, 0.01f, 10.0f,
+			{ { 2.5f, 10.0f } }
+		} );
+
+		biome.list_noise.push_back( {
+			10,
+			0, 17,
+			10101.2f, 10101.2f,
+			0.01f, 0.01f, 10.0f,
+			{ { 5.0f, 10.0f } }
+		} );
+
+		biome.list_noise.push_back( {
+			10,
+			0, 20,
+			10101.2f, 10101.2f,
+			0.01f, 0.01f, 10.0f,
+			{ { 7.5f, 10.0f } }
+		} );
+
+		list_biomes.push_back( biome );
+		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
+	}
+
+	// Cobblestone Chasm Biome
+	{
+		Biome biome;
+		biome.name_biome = "Cobblestone Chasm";
+		biome.id_block_surface = get_block_data( "Cobblestone" ).id;
+		biome.id_block_depth = get_block_data( "Cobblestone" ).id;
+
+		biome.noise_biome = {
+			0,
+			-100, 100,
+			1901.2f, 1101.2f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 100.0f } }
+		};
+		biome.noise_lerp = {
+			0,
+			-100, 100,
+			1901.2f, 1101.2f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 55.0f } }
+		};
+
+		biome.list_noise.push_back( {
+			0,
+			-6, 6,
+			1231.2f, 1231.2f,
+			0.01f, 0.01f, 6.0f,
+			{ { -6.0f, 6.0f } }
+		} );
+
+		biome.list_noise.push_back( {
+			30,
+			-30, 0,
+			234.2f, 234.2f,
+			0.03f, 0.009f, 60.0f,
+			{ { -60.0f, -30.0f } }
+		} );
+
+		list_biomes.push_back( biome );
+		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
+	}
+
+	// Grass Plateau Biome
+	{
+		Biome biome;
+		biome.name_biome = "Grass Plateau";
+		biome.id_block_surface = get_block_data( "Grass" ).id;
+		biome.id_block_depth = get_block_data( "Dirt" ).id;
+
+		biome.noise_biome = {
+			0,
+			-100, 100,
+			331.9f, 331.9f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 100.0f } }
+		};
+		biome.noise_lerp = {
+			0,
+			-100, 100,
+			331.9f, 331.9f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 55.0f } }
+		};
+
+		biome.list_noise.push_back( {
+			10,
+			0, 12,
+			10101.2f, 10101.2f,
+			0.01f, 0.01f, 10.0f,
+			{ { 0.0f, 10.0f } }
+		} );
+
+		biome.list_noise.push_back( {
+			10,
+			0, 12,
+			10101.2f, 10101.2f,
+			0.01f, 0.01f, 10.0f,
+			{ { 0.0f, 10.0f } }
+		} );
+
+		biome.list_noise.push_back( {
+			10,
+			0, 15,
+			10101.2f, 10101.2f,
+			0.01f, 0.01f, 10.0f,
+			{ { 2.5f, 10.0f } }
+		} );
+
+		biome.list_noise.push_back( {
+			10,
+			0, 17,
+			10101.2f, 10101.2f,
+			0.01f, 0.01f, 10.0f,
+			{ { 5.0f, 10.0f } }
+		} );
+
+		biome.list_noise.push_back( {
+			10,
+			0, 20,
+			10101.2f, 10101.2f,
+			0.01f, 0.01f, 10.0f,
+			{ { 7.5f, 10.0f } }
+		} );
+
+		list_biomes.push_back( biome );
+		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
+	}
+
+	// Grass Hill Biome
+	{
+		Biome biome;
+		biome.name_biome = "Grass Hill";
+		biome.id_block_surface = get_block_data( "Grass" ).id;
+		biome.id_block_depth = get_block_data( "Dirt" ).id;
+
+		biome.noise_biome = {
+			0,
+			-100, 100,
+			3031.9f, 3031.9f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 100.0f } }
+		};
+		biome.noise_lerp = {
+			0,
+			-100, 100,
+			3031.9f, 3031.9f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 55.0f } }
+		};
+
+		biome.list_noise.push_back( {
+			0,
+			-30, 30,
+			101.2f, 101.2f,
+			0.008f, 0.008f, 30.0f,
+			{ { -30.0f, 30.0f } }
+		} );
+
+		list_biomes.push_back( biome );
+		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
+	}
+
+	// Ocean
+	{
+		Biome biome;
+		biome.name_biome = "Ocean";
+		biome.id_block_surface = get_block_data( "Sand" ).id;
+		biome.id_block_depth = get_block_data( "Sand" ).id;
+
+		biome.noise_biome = {
+			0,
+			-100, 100,
+			6031.9f, 6031.9f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 100.0f } }
+		};
+		biome.noise_lerp = {
+			0,
+			-100, 100,
+			6031.9f, 6031.9f,
+			0.001f, 0.001f, 100.0f,
+			{ { 50.0f, 65.0f } }
+		};
+
+		biome.list_noise.push_back( {
+			-5,
+			-30, -3,
+			6631.9f, 6631.9f,
+			0.01f, 0.01f, 30.0f,
+			{ { -30.0f, 30.0f } }
+		} );
+
+		biome.list_noise.push_back( {
+			-10,
+			-50, -5,
+			6931.9f, 6931.9f,
+			0.01f, 0.01f, 40.0f,
+			{ { -40.0f, 40.0f } }
+		} );
+
+
+		list_biomes.push_back( biome );
+		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
+	}
 
 	is_chunk_debug = false;
 	is_shadow_debug = false;
 	is_shadows = true;
-
-	std::cout << std::endl;
-	printTabbedLine( 1, checkGlErrors( ) );
-	std::cout << std::endl;
 }
 
 int time_last_map = 0;
@@ -228,7 +449,7 @@ void ChunkMgr::update( ) {
 						if( iter_chunks != map_chunks.end( ) ) {
 							auto & chunk = iter_chunks->second.get( );
 							if( chunk.is_loaded && !chunk.is_shutdown ) {
-								//chunk_state( chunk, ChunkState::CS_TMesh, true );
+								chunk_state( chunk, ChunkState::CS_TMesh, true );
 							}
 						}
 					}
@@ -311,6 +532,10 @@ void ChunkMgr::update( ) {
 	out.str( "" );
 	out << "[Sun] Deg:" << pos_deg_light;
 	client.gui_mgr.print_to_static( out.str( ) );
+
+	out.str( "" );
+	out << "[Sun] Pos:" << Directional::print_vec( light_data.sun_data.pos_sun );
+	client.gui_mgr.print_to_static( out.str( ) );
 }
 
 void ChunkMgr::render( ) {
@@ -328,16 +553,38 @@ void ChunkMgr::render( ) {
 	render_debug( );
 }
 
-void ChunkMgr::render_skybox( ) { 
-	client.texture_mgr.unbind_program( );
-	client.texture_mgr.bind_skybox( );
+void ChunkMgr::render_skybox( ) {
+	glm::mat4 mat_model = 
+		glm::translate( glm::mat4( 1.0f ), client.display_mgr.camera.pos_camera ) * 
+		glm::rotate( glm::mat4( 1.0f ), glm::radians( client.time_mgr.get_time( TimeStrings::GAME ) / 1000.0f ), glm::vec3( 0, 1, 0 ) ) *
+		glm::scale( glm::mat4( 1.0f ), glm::vec3( 1000.0f, 1000.0f, 1000.0f ) );
 
-	//client.display_mgr.draw_skybox( client.display_mgr.camera.pos_camera + glm::vec3( 0, -200, 0 ), 2500 );
-	//client.display_mgr.draw_sun( glm::vec3( light_data.sun_data.pos_sun ), 50 );
+	client.texture_mgr.update_uniform( "BasicPersp", "mat_model", mat_model );
+	vbo_skybox.render( client );
+
+	auto & pos_sun = light_data.sun_data.pos_sun;
+
+	mat_model = glm::mat4( 1.0f ) *
+		glm::translate( glm::mat4( 1.0f ), client.display_mgr.camera.pos_camera + glm::vec3( pos_sun ) ) *
+		glm::rotate( glm::mat4( 1.0f ), glm::radians( 90.0f ), glm::vec3( 0, 1, 0 ) ) *
+		glm::rotate( glm::mat4( 1.0f ), -glm::atan( pos_sun.y, pos_sun.x ), glm::vec3( 1, 0, 0 ) ) *
+		glm::scale( glm::mat4( 1.0f ), glm::vec3( 50.0f, 50.0f, 1.0f ) );
+
+	glDisable( GL_CULL_FACE );
+	client.texture_mgr.update_uniform( "BasicPersp", "mat_model", mat_model );
+	vbo_sun.render( client );
+	glEnable( GL_CULL_FACE );
 }
 
 void ChunkMgr::render_exlude( ) {
-	auto & camera = client.display_mgr.camera.pos_camera;
+	static glm::ivec3 pos_check[ 8 ] = { 
+		{ 0, 0, 0 }, { Chunk::vec_size.x, 0, 0 }, { Chunk::vec_size.x, Chunk::vec_size.y, 0 }, 
+		{ 0, Chunk::vec_size.y, 0 }, { 0, 0, Chunk::vec_size.z }, { Chunk::vec_size.x, 0, Chunk::vec_size.z },
+		{ Chunk::vec_size.x, Chunk::vec_size.y, Chunk::vec_size.z }, { 0, Chunk::vec_size.y, Chunk::vec_size.z }
+	};
+
+	auto & camera = client.display_mgr.camera;
+	float dist = 0;
 
 	client.time_mgr.begin_record( RecordStrings::RENDER_EXLUSION );
 
@@ -345,50 +592,19 @@ void ChunkMgr::render_exlude( ) {
 
 	for( auto & pair_render : map_render ) {
 		auto & chunk = pair_render.second;
-		if( Directional::is_point_in_cone(
-			chunk.pos_gw,
-			client.display_mgr.camera.pos_camera,
-			client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-			client.display_mgr.fov ) ||
-			Directional::is_point_in_cone(
-				chunk.pos_gw + glm::ivec3( Chunk::vec_size.x, 0, 0 ),
-				client.display_mgr.camera.pos_camera,
-				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				client.display_mgr.fov ) ||
-			Directional::is_point_in_cone(
-				chunk.pos_gw + glm::ivec3( Chunk::vec_size.x, Chunk::vec_size.y, 0 ),
-				client.display_mgr.camera.pos_camera,
-				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				client.display_mgr.fov ) ||
-			Directional::is_point_in_cone(
-				chunk.pos_gw + glm::ivec3( 0, Chunk::vec_size.y, 0 ),
-				client.display_mgr.camera.pos_camera,
-				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				client.display_mgr.fov ) ||
+		dist = glm::distance( 
+			glm::vec2( chunk.pos_lw.x, chunk.pos_lw.z ), 
+			glm::vec2( pos_center_chunk_lw.x, pos_center_chunk_lw.z ) 
+		);
 
-			Directional::is_point_in_cone(
-				chunk.pos_gw + glm::ivec3( 0, 0, Chunk::vec_size.z ),
-				client.display_mgr.camera.pos_camera,
-				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				client.display_mgr.fov ) ||
-			Directional::is_point_in_cone(
-				chunk.pos_gw + glm::ivec3( Chunk::vec_size.x, 0, Chunk::vec_size.z ),
-				client.display_mgr.camera.pos_camera,
-				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				client.display_mgr.fov ) ||
-			Directional::is_point_in_cone(
-				chunk.pos_gw + glm::ivec3( Chunk::vec_size.x, Chunk::vec_size.y, Chunk::vec_size.z ),
-				client.display_mgr.camera.pos_camera,
-				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				client.display_mgr.fov ) ||
-			Directional::is_point_in_cone(
-				chunk.pos_gw + glm::ivec3( 0, Chunk::vec_size.y, Chunk::vec_size.z ),
-				client.display_mgr.camera.pos_camera,
-				client.display_mgr.camera.pos_camera + glm::vec3( client.display_mgr.camera.vec_front ),
-				client.display_mgr.fov ) ||
-			glm::distance( glm::vec3( chunk.pos_lw ), glm::vec3( pos_center_chunk_lw ) ) <= 3.0
-			) {
-			list_render.push_back( &chunk );
+		for( GLuint i = 0; i < 8; ++i ) {
+			if( Directional::is_point_in_cone( chunk.pos_gw + pos_check[ i ], camera.pos_camera, 
+				camera.pos_camera + camera.vec_front, client.display_mgr.fov ) ||
+				dist <= 4.0f ) {
+
+				list_render.push_back( &chunk );
+				break; 
+			}
 		}
 	}
 
@@ -435,15 +651,6 @@ void ChunkMgr::render_build( ) {
 	num_triangles += shared_mesh.num_primitives( );
 }
 
-static glm::mat4 mat_model;
-static glm::mat3 mat_norm;
-static glm::mat4 mat_ortho_light;
-static glm::mat4 mat_view_light;
-static glm::mat4 mat_proj_light[ ChunkMgr::num_cascade ];
-
-static glm::vec2 dim_shadow = { 200, 200 };
-static glm::vec2 pos_shadow = { 0, 0 };
-
 void ChunkMgr::render_pass_shadow( ) {
 	static GLuint id_blocks = client.texture_mgr.get_texture_id( "Blocks" );
 
@@ -451,12 +658,12 @@ void ChunkMgr::render_pass_shadow( ) {
 		client.texture_mgr.unbind_program( );
 		client.display_mgr.set_ortho( );
 
-		glDisable( GL_LIGHTING );
+		glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
 
 		glBindTexture( GL_TEXTURE_2D, id_tex_depth[ 2 ] );
 
-		dim_shadow = { 800, 800 };
-		pos_shadow = { 320, 250 };
+		dim_shadow = { 200, 200 };
+		pos_shadow = { 550, 100 };
 
 		glBegin( GL_QUADS );
 		glTexCoord2f( 0.0f, 0.0f );
@@ -476,7 +683,7 @@ void ChunkMgr::render_pass_shadow( ) {
 		glBindTexture( GL_TEXTURE_2D, id_tex_depth[ 1 ] );
 
 		dim_shadow = { 200, 200 };
-		pos_shadow = { 110, 250 };
+		pos_shadow = { 325, 100 };
 
 		glBegin( GL_QUADS );
 		glTexCoord2f( 0.0f, 0.0f );
@@ -495,8 +702,8 @@ void ChunkMgr::render_pass_shadow( ) {
 
 		glBindTexture( GL_TEXTURE_2D, id_tex_depth[ 0 ] );
 
-		dim_shadow = { 50, 50 };
-		pos_shadow = { 50, 250 };
+		dim_shadow = { 200, 200 };
+		pos_shadow = { 100, 100 };
 		glBegin( GL_QUADS );
 		glTexCoord2f( 0.0f, 0.0f );
 		glVertex2f( pos_shadow.x, pos_shadow.y );
@@ -512,34 +719,79 @@ void ChunkMgr::render_pass_shadow( ) {
 
 		glEnd( );
 
-		glEnable( GL_LIGHTING );
-
 		client.display_mgr.set_proj( );
 	}
 
 	if( is_shadows ) {
-		static GLuint idx_mat_light_solid =
-			glGetUniformLocation( client.texture_mgr.get_program_id( "SMShadowMapSolid" ), "mat_light" );
-		static GLuint idx_mat_light_trans =
-			glGetUniformLocation( client.texture_mgr.get_program_id( "SMShadowMapTrans" ), "mat_light" );
+		static GLuint idx_mat_light_solid = glGetUniformLocation( client.texture_mgr.get_program_id( "SMShadowMapSolid" ), "mat_light" );
+		static GLuint idx_mat_light_trans = glGetUniformLocation( client.texture_mgr.get_program_id( "SMShadowMapTrans" ), "mat_light" );
 
-		for( GLuint i = 0; i < num_cascade; i++ ) {
-			mat_ortho_light = glm::ortho( -dim_ortho[ i ], dim_ortho[ i ], -dim_ortho[ i ], dim_ortho[ i ], near_plane, far_plane );
+		auto & window = client.display_mgr.get_window( );
+		auto & camera = client.display_mgr.camera;
 
-			glm::vec3 vec_look = glm::normalize( glm::vec3( client.chunk_mgr.light_data.sun_data.pos_sun ) - client.display_mgr.camera.pos_camera );
-			glm::vec3 vec_fwd = glm::normalize( glm::vec3( client.display_mgr.camera.vec_front.x, 0, client.display_mgr.camera.vec_front.z ) ) * 
-				( std::sqrt( std::pow( dim_ortho[ i ], 2 ) * 2 ) - 2.0f );
+		glm::mat4 mat_inv_cam = glm::inverse( client.display_mgr.camera.mvp_matrices.mat_view );
 
-			mat_view_light = glm::lookAt(
-				client.display_mgr.camera.pos_camera + vec_fwd + vec_look * ( far_plane / 2.0f ),
-				client.display_mgr.camera.pos_camera + vec_fwd,
-				glm::vec3( 0.0f, 1.0f, 0.0f ) );
+		float ar =  window.x / window.y;
+		float tanh_hfov = glm::tan( glm::radians( client.display_mgr.fov / 2.0f ) );
+		float tanh_vfov = glm::tan( glm::radians( ( client.display_mgr.fov / ar ) / 2.0f ) );
 
-			mat_view_light =
-				glm::rotate( glm::mat4( 1.0f ), glm::radians( 135 + client.display_mgr.camera.rot_camera.y ), glm::vec3( 0, 0, 1 ) ) *
-				mat_view_light;
+		float zclip[ num_cascades + 1 ];
+		zclip[ 0 ] = 0.2f;
+		for( GLuint i = 0; i < num_cascades; ++i ) { 
+			zclip[ i + 1 ] = depth_cascades[ i ];
+		}
 
-			mat_proj_light[ i ] = mat_ortho_light * mat_view_light * glm::mat4( 1.0f );
+		for( GLuint i = 0; i < num_cascades; i++ ) {
+			glm::vec3 vec_look = glm::normalize( glm::vec3( client.chunk_mgr.light_data.sun_data.pos_sun ) );
+			mat_view_light = glm::lookAt( client.display_mgr.camera.pos_camera + vec_look * 250.0f , client.display_mgr.camera.pos_camera, glm::vec3( 0.0f, 1.0f, 0.0f ) );
+
+			float xn = zclip[ i ] * tanh_hfov;
+			float xf = zclip[ i + 1 ] * tanh_hfov;
+			float yn = zclip[ i ] * tanh_vfov;
+			float yf = zclip[ i + 1 ] * tanh_vfov;
+
+			corners_frustrum[ i ][ 0 ] = glm::vec4 { xn, yn, zclip[ i ], 1.0f };
+			corners_frustrum[ i ][ 1 ] = glm::vec4 { -xn, yn, zclip[ i ], 1.0f };
+			corners_frustrum[ i ][ 2 ] = glm::vec4 { xn, -yn, zclip[ i ], 1.0f };
+			corners_frustrum[ i ][ 3 ] = glm::vec4 { -xn, -yn, zclip[ i ], 1.0f };
+
+			corners_frustrum[ i ][ 4 ] = glm::vec4 { xf, yf, zclip[ i + 1 ], 1.0f };
+			corners_frustrum[ i ][ 5 ] = glm::vec4 { -xf, yf, zclip[ i + 1 ], 1.0f };
+			corners_frustrum[ i ][ 6 ] = glm::vec4 { xf, -yf, zclip[ i + 1 ], 1.0f };
+			corners_frustrum[ i ][ 7 ] = glm::vec4 { -xf, -yf, zclip[ i + 1 ], 1.0f };
+
+			sides_ortho[ i ][ 0 ] = std::numeric_limits< float >::max( );
+			sides_ortho[ i ][ 1 ] = -std::numeric_limits< float >::max( );
+
+			sides_ortho[ i ][ 2 ] = std::numeric_limits< float >::max( );
+			sides_ortho[ i ][ 3 ] = -std::numeric_limits< float >::max( );
+
+			sides_ortho[ i ][ 4 ] = std::numeric_limits< float >::max( );
+			sides_ortho[ i ][ 5 ] = -std::numeric_limits< float >::max( );
+
+			for( GLuint j = 0; j < 8; ++j ) {
+				corners_frustrum[ i ][ j ] = mat_inv_cam * corners_frustrum[ i ][ j ];
+				corners_frustrum[ i ][ j ] = mat_view_light * corners_frustrum[ i ][ j ];
+
+				sides_ortho[ i ][ 0 ] = std::min( sides_ortho[ i ][ 0 ], corners_frustrum[ i ][ j ].x );
+				sides_ortho[ i ][ 1 ] = std::max( sides_ortho[ i ][ 1 ], corners_frustrum[ i ][ j ].x );
+
+				sides_ortho[ i ][ 2 ] = std::min( sides_ortho[ i ][ 2 ], corners_frustrum[ i ][ j ].y );
+				sides_ortho[ i ][ 3 ] = std::max( sides_ortho[ i ][ 3 ], corners_frustrum[ i ][ j ].y );
+
+				sides_ortho[ i ][ 4 ] = std::min( sides_ortho[ i ][ 4 ], corners_frustrum[ i ][ j ].z );
+				sides_ortho[ i ][ 5 ] = std::max( sides_ortho[ i ][ 5 ], corners_frustrum[ i ][ j ].z );
+			}
+
+			//printf( "z: %f to %f\n", minZ, maxZ );
+			//printf( "x: %f to %f, y: %f to %f, z: %f to %f\n", minX, maxX, minY, maxY, minZ, maxZ );
+			mat_ortho_light[ i ] = glm::ortho( 
+				-sides_ortho[ i ][ 0 ], 
+				-sides_ortho[ i ][ 1 ],
+				-sides_ortho[ i ][ 2 ],
+				-sides_ortho[ i ][ 3 ],
+				0.5f , Chunk::size_z * float( World::size_z * 2 + 1 ) 
+			) * mat_view_light;
 		}
 
 		glCullFace( GL_FRONT );
@@ -547,7 +799,7 @@ void ChunkMgr::render_pass_shadow( ) {
 		glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
 		glBindFramebuffer( GL_FRAMEBUFFER, id_depth_fbo );
 
-		for( GLuint i = 0; i < num_cascade; i++ ) {
+		for( GLuint i = 0; i < num_cascades; i++ ) {
 			client.texture_mgr.bind_texture( 1 + i, id_tex_depth[ i ] );
 			glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, id_tex_depth[ i ], 0 );
 
@@ -555,7 +807,7 @@ void ChunkMgr::render_pass_shadow( ) {
 			glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
 
 			client.texture_mgr.bind_program( "SMShadowMapSolid" );
-			glUniformMatrix4fv( idx_mat_light_solid, 1, GL_FALSE, glm::value_ptr( mat_proj_light[ i ] ) );
+			glUniformMatrix4fv( idx_mat_light_solid, 1, GL_FALSE, glm::value_ptr( mat_ortho_light[ i ] ) );
 
 			client.texture_mgr.bind_texture_array( 0, id_blocks );
 
@@ -564,11 +816,13 @@ void ChunkMgr::render_pass_shadow( ) {
 			glEnable( GL_BLEND );
 
 			client.texture_mgr.bind_program( "SMShadowMapTrans" );
-			glUniformMatrix4fv( idx_mat_light_trans, 1, GL_FALSE, glm::value_ptr( mat_proj_light[ i ] ) );
+			glUniformMatrix4fv( idx_mat_light_trans, 1, GL_FALSE, glm::value_ptr( mat_ortho_light[ i ] ) );
 
 			glDisable( GL_CULL_FACE );
 			shared_mesh.render_range( client, idx_solid, idx_trans - idx_solid );
 			glEnable( GL_CULL_FACE );
+
+			client.entity_mgr.render( );
 		}
 
 		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -578,7 +832,7 @@ void ChunkMgr::render_pass_shadow( ) {
 	else { 
 		glBindFramebuffer( GL_FRAMEBUFFER, id_depth_fbo );
 
-		for( GLuint i = 0; i < num_cascade; i++ ) {
+		for( GLuint i = 0; i < num_cascades; i++ ) {
 			client.texture_mgr.bind_texture( 1 + i, id_tex_depth[ i ] );
 			glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, id_tex_depth[ i ], 0 );
 			glClear( GL_DEPTH_BUFFER_BIT );
@@ -595,13 +849,13 @@ void ChunkMgr::render_pass_norm( ) {
 	client.texture_mgr.bind_program( "SMTerrain" );
 	client.texture_mgr.bind_texture_array( 0, id_blocks );
 
-	glUniformMatrix4fv( idx_mat_light, num_cascade, GL_FALSE, glm::value_ptr( mat_proj_light[ 0 ] ) );
+	glUniformMatrix4fv( idx_mat_light, num_cascades, GL_FALSE, glm::value_ptr( mat_ortho_light[ 0 ] ) );
 
 	client.display_mgr.resize_window( client.display_mgr.get_window ( ) );
 
-	glDisable( GL_BLEND );
+	//glDisable( GL_BLEND );
 	shared_mesh.render_range( client, 0, idx_solid );
-	glEnable( GL_BLEND );
+	//glEnable( GL_BLEND );
 
 	glDisable( GL_CULL_FACE );
 	shared_mesh.render_range( client, idx_solid, idx_trans - idx_solid );
@@ -612,57 +866,35 @@ void ChunkMgr::render_debug( ) {
 	//vbo.render( client );
 
 	if( is_chunk_debug ) {
+		glLoadIdentity( );
 		client.display_mgr.set_camera( );
 
 		auto & camera = client.display_mgr.camera.pos_camera;
 
-		//client.texture_mgr.bind_texture( 0, client.texture_mgr.id_materials );
-		//client.texture_mgr.bind_program( "Basic" );
-		client.texture_mgr.unbind_program( );
-
-		glDisable( GL_TEXTURE_2D );
+		client.texture_mgr.bind_texture( 0, client.texture_mgr.id_materials );
+		client.texture_mgr.bind_program( "BasicPersp" );
+		GLuint idx_model = glGetUniformLocation( client.texture_mgr.id_bound_program, "mat_model" );
 
 		glBindBuffer( GL_ARRAY_BUFFER, id_vbo_chunk_outline );
 		glEnableClientState( GL_VERTEX_ARRAY );
 		glVertexPointer( 3, GL_FLOAT, sizeof( GLfloat ) * 3, BUFFER_OFFSET( 0 ) );
 
 		Chunk * chunk;
-
-		glm::ivec3 * pos_chunk;
 		std::lock_guard< std::recursive_mutex > lock( mtx_render );
+
 		for( auto & pair_render : map_render ) {
 			chunk = &pair_render.second;
-			pos_chunk = &chunk->pos_gw;
+
+			glm::mat4 mat_model = glm::translate( glm::mat4( 1.0f ), glm::vec3( chunk->pos_gw ) );
+			glUniformMatrix4fv( idx_model, 1, GL_FALSE, glm::value_ptr( mat_model ) );
 
 			if( chunk->cnt_adj != 6 ) {
-				glPushMatrix( );
-
-				glColor4f( 1.0f, 0.0f, 0.0f, 1.0f );
-				glTranslatef( pos_chunk->x, pos_chunk->y, pos_chunk->z );
 				glDrawArrays( GL_LINES, 0, size_chunk_outline / 3 );
-
-				glPopMatrix( );
 			}
 			else {
-				glPushMatrix( );
-
-				glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
-				glTranslatef( pos_chunk->x, pos_chunk->y, pos_chunk->z );
 				glDrawArrays( GL_LINES, 0, size_chunk_outline / 3 );
-
-				glPopMatrix( );
 			}
 		}
-
-		/*
-		glBegin( GL_LINES );
-		glVertex3f( camera.x, camera.y - 1, camera.z );
-		glVertex3f(
-			camera.x + light_data.sun_data.pos_sun.x,
-			camera.y + light_data.sun_data.pos_sun.y,
-			camera.z + light_data.sun_data.pos_sun.z );
-		glEnd( );
-		*/
 
 		glDisableClientState( GL_VERTEX_ARRAY );
 		glBindBuffer( GL_ARRAY_BUFFER, 0 );
@@ -690,8 +922,8 @@ GLfloat spec_mat[ ] = { 0.5f, 0.5f, 0.3f, 1.0f };
 
 void ChunkMgr::init_light( ) {
 	light_data.num_emitters.x = 0;
-	pos_deg_light = 90;
-	is_sun_pause = true;
+	pos_deg_light = 50;
+	is_sun_pause = false;
 
 	//glEnable( GL_LIGHT0 );
 	//glMaterialf( GL_FRONT, GL_SHININESS, 20.0f );
@@ -712,7 +944,7 @@ void ChunkMgr::calc_light( ) {
 	float time_game = client.time_mgr.get_time( TimeStrings::GAME );
 	if( !is_sun_pause ) pos_deg_light += DELTA_CORRECT;
 	while( pos_deg_light >= 360 ) pos_deg_light -= 360;
-	float rad_time = pos_deg_light  * PI / 180;
+	float rad_time = pos_deg_light  * PI / 180.0f;
 	float light_amb = 0.0f;
 
 	if( pos_deg_light >= 350 ) {
@@ -734,10 +966,10 @@ void ChunkMgr::calc_light( ) {
 		light_amb = max_amb;
 	}
 
-	light_data.sun_data.pos_sun = glm::vec4( client.display_mgr.camera.pos_camera, 0.0 ) + glm::vec4(
+	light_data.sun_data.pos_sun = glm::vec4(
 		cos( rad_time ) * dist_sun,
 		sin( rad_time ) * dist_sun,
-		sin( rad_time + 90 ) * ( dist_sun / 2 ),
+		sin( rad_time + PI / 2.0f ) * ( dist_sun / 2.0f ),
 		1.0 );
 
 	light_data.sun_data.ambient = glm::vec4( light_amb, light_amb, light_amb, 1.0f );
@@ -747,6 +979,172 @@ void ChunkMgr::calc_light( ) {
 	glLightfv( GL_LIGHT0, GL_POSITION, pos );
 	glLightfv( GL_LIGHT0, GL_AMBIENT, glm::value_ptr( light_data.sun_data.ambient ) );
 	glLightfv( GL_LIGHT0, GL_DIFFUSE, glm::value_ptr( light_data.sun_data.diffuse ) );
+}
+
+void ChunkMgr::init_skybox( ) { 
+	vbo_skybox.init( );
+
+	vbo_skybox.push_set( VBO::IndexSet(
+		VBO::TypeGeometry::TG_Triangles,
+		"BasicPersp",
+		client.texture_mgr.id_skybox,
+		std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 } ) );
+
+	float dx = 1.0f / 3600.0f;
+	float dy = 1.0f / 2700.0f;
+	glm::vec4 color = { 0.5f, 0.5f, 0.5f, 1.0f };
+
+	//Front
+	vbo_skybox.push_data( { { 1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.0f + dx / 2, 0.3333f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { -1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.25f - dx / 2, 0.3333f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { -1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.25f - dx / 2, 0.6666f - dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { 1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.0f + dx / 2, 0.6666f - dy / 2, 1.0f } } );
+
+	//Back
+	vbo_skybox.push_data( { { -1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.5f + dx / 2, 0.3333f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { 1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.75f - dx / 2, 0.3333f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { 1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.75f - dx / 2, 0.6666f - dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { -1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.5f + dx / 2, 0.6666f - dy / 2, 1.0f } } );
+
+	//Right
+	vbo_skybox.push_data( { { -1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 1, 0, 0 }, { 0.25f + dx / 2, 0.333f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { -1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 1, 0, 0 }, { 0.5f - dx / 2, 0.333f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { -1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 1, 0, 0 }, { 0.5f - dx / 2, 0.6666f - dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { -1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 1, 0, 0 }, { 0.25f + dx / 2, 0.6666f - dy / 2, 1.0f } } );
+
+	//Left
+	vbo_skybox.push_data( { { 1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { -1, 0, 0 }, { 0.75f + dx / 2, 0.3333f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { 1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { -1, 0, 0 }, { 1.0f - dx / 2, 0.3333f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { 1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { -1, 0, 0 }, { 1.0f - dx / 2, 0.6666f - dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { 1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { -1, 0, 0 }, { 0.75f + dx / 2, 0.6666f - dy / 2, 1.0f } } );
+
+	//Top
+	vbo_skybox.push_data( { { -1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, -1, 0 }, { 0.25f + dx / 2, 0.6666f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { -1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, -1, 0 }, { 0.5f - dx / 2, 0.6666f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { 1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, -1, 0 }, { 0.5f - dx / 2, 1.0f - dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { 1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, -1, 0 }, { 0.25f + dx / 2, 1.0f - dy / 2, 1.0f } } );
+
+	//Bot
+	vbo_skybox.push_data( { { 1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 1, 0 }, { 0.25f + dx / 2, 0.0f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { 1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 1, 0 }, { 0.5f - dx / 2, 0.0f + dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { -1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 1, 0 }, { 0.5f - dx / 2, 0.3333f - dy / 2, 1.0f } } );
+	vbo_skybox.push_data( { { -1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 1, 0 }, { 0.25f + dx / 2, 0.3333f - dy / 2, 1.0f } } );
+
+	vbo_skybox.finalize_set( );
+
+	vbo_skybox.buffer( );
+
+	vbo_sun.init( );
+
+	vbo_sun.push_set( VBO::IndexSet(
+		VBO::TypeGeometry::TG_Triangles,
+		"BasicPersp",
+		client.texture_mgr.id_skybox,
+		std::vector< GLuint > { 0, 1, 2, 2, 3, 0 } 
+	) );
+
+	vbo_sun.push_data( { { 1, -1, 0 }, { 0.5, 0.5f, 0.5f, 1.0f }, { 0, 0, 1 }, { 0.0f + dx / 2, 0.0f + dy / 2, 1.0f } } );
+	vbo_sun.push_data( { { -1, -1, 0 }, { 0.5, 0.5f, 0.5f, 1.0f }, { 0, 0, 1 }, { 0.25f - dx / 2, 0.0f + dy / 2, 1.0f } } );
+	vbo_sun.push_data( { { -1, 1, 0 }, { 0.5, 0.5f, 0.5f, 1.0f }, { 0, 0, 1 }, { 0.25f - dx / 2, 0.3333f - dy / 2, 1.0f } } );
+	vbo_sun.push_data( { { 1, 1, 0 }, { 0.5, 0.5f, 0.5f, 1.0f }, { 0, 0, 1 }, { 0.0f + dx / 2, 0.3333f - dy / 2, 1.0f } } );
+
+	vbo_sun.finalize_set( );
+
+	vbo_sun.buffer( );
+}
+
+void ChunkMgr::init_shadowmap( ) { 
+	glGenFramebuffers( 1, &id_depth_fbo );
+	glBindFramebuffer( GL_FRAMEBUFFER, id_depth_fbo );
+
+	printf( "Creating shadowmap textures..." );
+	glGenTextures( num_cascades, &id_tex_depth[ 0 ] );
+
+	for( GLuint i = 0; i < num_cascades; ++i ) {
+		client.texture_mgr.bind_texture( 1 + i, id_tex_depth[ i ] );
+
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER );
+		GLfloat borderColor[ ] = { 1.0, 1.0, 1.0, 1.0 };
+		glTexParameterfv( GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor );
+
+		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, id_tex_depth[ i ], 0 );
+		glDrawBuffer( GL_NONE );
+		glReadBuffer( GL_NONE );
+	}
+
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	GLint idx_cascades[ ] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+	depth_cascades[ 0 ] = 16.0f;
+	depth_cascades[ 1 ] = 32.0f;
+	depth_cascades[ 2 ] = 64.0f;
+	depth_cascades[ 3 ] = 128.0f;
+	depth_cascades[ 4 ] = 256.0f;
+	depth_cascades[ 5 ] = 512.0f;
+	depth_cascades[ 6 ] = 1024.0;
+	depth_cascades[ 7 ] = 2048.0f;
+
+	client.texture_mgr.update_uniform( "SMShadowMapSolid", "frag_sampler", ( GLint ) 0 );
+	client.texture_mgr.update_uniform( "SMShadowMapTrans", "frag_sampler", ( GLint ) 0 );
+
+	client.texture_mgr.update_uniform( "SMTerrain", "frag_shadow", idx_cascades );
+	client.texture_mgr.update_uniform( "SMTerrain", "num_cascades", num_cascades );
+	client.texture_mgr.update_uniform( "SMTerrain", "depth_cascades", depth_cascades );
+	client.texture_mgr.update_uniform( "SMTerrain", "bias_l", 0.000005f );
+	client.texture_mgr.update_uniform( "SMTerrain", "bias_h", 0.000005f );
+
+	glActiveTexture( GL_TEXTURE0 );
+}
+
+void ChunkMgr::init_debug( ) { 
+	float padding = 0.1f;
+	glGenBuffers( 1, &id_vbo_chunk_outline );
+	glBindBuffer( GL_ARRAY_BUFFER, id_vbo_chunk_outline );
+
+	std::vector< GLfloat > temp_verts;
+	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( padding );
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( padding );
+
+	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
+
+	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
+
+	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+
+	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( padding );
+	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
+
+	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
+	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( padding );
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
+
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+
+	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( padding );
+	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
+
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( padding );
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
+
+	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+
+	size_chunk_outline = ( int ) temp_verts.size( );
+
+	glBufferData( GL_ARRAY_BUFFER, size_chunk_outline * sizeof( GLfloat ), temp_verts.data( ), GL_STATIC_DRAW );
 }
 
 void ChunkMgr::proc_set_state( SetState & state ) {
@@ -809,7 +1207,7 @@ void ChunkMgr::chunk_update( Chunk & chunk ) {
 		if( chunk.states[ CS_Gen ] ) {
 			chunk_gen( chunk );
 		}
-		else if( chunk.states[ CS_Buffer ] ) {
+		else if( chunk.states[ CS_SBuffer ] || chunk.states[ CS_TBuffer ] ) {
 			chunk_buffer( chunk );
 		}
 		else if( chunk.states[ CS_SMesh ] || chunk.states[ CS_TMesh ] ) {
@@ -914,6 +1312,12 @@ void ChunkMgr::chunk_add( glm::ivec3 const & pos_lw ) {
 	shared_mesh.request_handle( chunk->handle_trans );
 	shared_mesh.request_handle( chunk->handle_trans_temp );
 
+	chunk->handle_solid.release_buffer( );
+	chunk->handle_solid_temp.release_buffer( );
+
+	chunk->handle_trans.release_buffer( );
+	chunk->handle_trans_temp.release_buffer( );
+
 	chunk->ptr_noise = nullptr;
 	chunk->ptr_file = nullptr;
 
@@ -937,18 +1341,6 @@ void ChunkMgr::chunk_shutdown( Chunk & chunk ) {
 }
 
 void ChunkMgr::chunk_init( Chunk & chunk ) {
-	static float scale_world = 0.006f;
-	static float height_world = 50.0f;
-	static int seed_world = 1234;
-
-	static float scale_basic = 0.006f;
-	static float height_basic = 4.0f;
-	static int seed_basic = 101010;
-
-	static float scale_cliffs = 0.0006f;
-	static float height_cliffs = 50.0f;
-	static int seed_cliffs = 2234;
-
 	chunk.is_working = true;
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
@@ -966,49 +1358,106 @@ void ChunkMgr::chunk_init( Chunk & chunk ) {
 
 			chunk.ptr_noise = &iter_noise->second;
 
-			float noise, noise_total;
+			//float noise_biome;
+			float noise, noise_lerp, noise_total;
+
+			auto & biome_base = list_biomes[ 0 ];
 
 			for( int i = 0; i < Chunk::size_x; i++ ) {
 				for( int j = 0; j < Chunk::size_z; j++ ) {
-					noise = 0;
 					noise_total = 0;
 
-					noise = raw_noise_2d(
-						( seed_world + chunk.pos_gw.x + i ) * scale_world / 5,
-						( seed_world + chunk.pos_gw.z + j ) * scale_world / 5 ) * height_world;
+					for( auto & layer_noise : biome_base.list_noise ) { 
+						noise = raw_noise_2d( 
+							layer_noise.seed_x + ( chunk.pos_gw.x + i ) * layer_noise.scale_x,
+							layer_noise.seed_y + ( chunk.pos_gw.z + j ) * layer_noise.scale_y ) *
+							layer_noise.scale_height;
 
-					if( noise > 0 ) {
-						noise_total += noise;
+						for( auto & pair_bounds : layer_noise.list_bounds ) { 
+							if( noise >= pair_bounds.first &&
+								noise <= pair_bounds.second ) {
+
+								noise += layer_noise.height_base;
+								if( noise < layer_noise.height_min ) { noise = layer_noise.height_min; }
+								if( noise > layer_noise.height_max ) { noise = layer_noise.height_max; }
+
+								noise_total += noise;
+
+								break;
+							}
+						}
+					}
+
+					chunk.ptr_noise->biome[ i ][ j ] = 0;
+					chunk.ptr_noise->height[ i ][ j ] = noise_total;
+
+					for( GLuint idx_biome = 1; idx_biome < list_biomes.size( ); ++idx_biome ) {
+						auto & biome = list_biomes[ idx_biome ];
+						auto & layer_biome = biome.noise_biome;
+
+						noise = raw_noise_2d(
+							layer_biome.seed_x + ( chunk.pos_gw.x + i ) * layer_biome.scale_x,
+							layer_biome.seed_y + ( chunk.pos_gw.z + j ) * layer_biome.scale_y ) *
+							layer_biome.scale_height;
+
+						for( auto & pair_bounds : layer_biome.list_bounds ) { 
+							if( noise >= pair_bounds.first &&
+								noise <= pair_bounds.second ) {
+
+								chunk.ptr_noise->biome[ i ][ j ] = idx_biome;
+								break;
+							}
+						}
+
+						if( chunk.ptr_noise->biome[ i ][ j ] == idx_biome ) { 
+							noise_total = 0;
+
+
+							for( auto & layer_height : biome.list_noise ) { 
+								noise = raw_noise_2d(
+									layer_height.seed_x + ( chunk.pos_gw.x + i ) * layer_height.scale_x,
+									layer_height.seed_y + ( chunk.pos_gw.z + j ) * layer_height.scale_y ) *
+									layer_height.scale_height;
+
+								for( auto & pair_bounds : layer_height.list_bounds ) { 
+									if( noise >= pair_bounds.first &&
+										noise <= pair_bounds.second ) {
+									
+										noise += layer_height.height_base;
+										if( noise < layer_height.height_min ) { noise = layer_height.height_min; }
+										if( noise > layer_height.height_max ) { noise = layer_height.height_max; }
+
+										noise_total += noise;
+										break;
+									}
+								}
+							}
+
+							auto & layer_lerp = biome.noise_lerp;
+							noise_lerp = 1.0f;
+
+							noise = raw_noise_2d(
+								layer_lerp.seed_x + ( chunk.pos_gw.x + i ) * layer_lerp.scale_x,
+								layer_lerp.seed_y + ( chunk.pos_gw.z + j ) * layer_lerp.scale_y ) *
+								layer_lerp.scale_height;
+
+							for( auto & pair_bounds : layer_lerp.list_bounds ) { 
+								if( noise >= pair_bounds.first &&
+									noise <= pair_bounds.second ) {
+
+									noise_lerp = ( noise - pair_bounds.first ) / ( pair_bounds.second - pair_bounds.first );
+
+									break;
+								}
+							}
+
+							chunk.ptr_noise->height[ i ][ j ] = chunk.ptr_noise->height[ i ][ j ] * ( 1.0f - noise_lerp ) + noise_lerp * noise_total;
+						}
 					}
 
 					noise = raw_noise_2d(
-						( seed_basic + chunk.pos_gw.x + i ) * scale_basic,
-						( seed_basic + chunk.pos_gw.z + j ) * scale_basic ) * height_basic;
-
-					noise_total += noise;
-
-					noise = raw_noise_2d(
-						( seed_basic + chunk.pos_gw.x + i ) * scale_world,
-						( seed_basic + chunk.pos_gw.z + j ) * scale_world ) * 2.0f;
-
-					noise_total *= noise;
-
-					chunk.ptr_noise->height[ i ][ j ] = World::level_sea + noise_total;
-
-					noise_total = noise = raw_noise_2d(
-						( seed_basic + chunk.pos_gw.x + i ) * scale_basic / 5,
-						( seed_basic + chunk.pos_gw.z + j ) * scale_basic / 5 ) * 20.0f;
-
-					if( noise_total > 10.0f ) {
-						chunk.ptr_noise->biome[ i ][ j ] = 1;
-					}
-					else {
-						chunk.ptr_noise->biome[ i ][ j ] = 0;
-					}
-
-					noise = raw_noise_2d(
-						( seed_basic + chunk.pos_gw.x + i ) * scale_basic,
-						( seed_basic + chunk.pos_gw.z + j ) * scale_basic ) * 5.0f;
+						( 400.0f + chunk.pos_gw.x + i ) * 0.01f,
+						( 400.0f + chunk.pos_gw.z + j ) * 0.01f ) * 5.0f;
 
 					chunk.ptr_noise->envir[ i ][ j ] = noise;
 				}
@@ -1042,7 +1491,6 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 
 		int pos_hash = Directional::get_hash( pos_r );
 		{
-			//client.time_mgr.begin_record( std::string( "FILE" ) );
 			std::lock_guard< std::mutex > lock( mtx_file );
 			auto iter_file = map_file.find( pos_hash );
 
@@ -1144,9 +1592,6 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 
 				chunk.is_loaded = true;
 			}
-
-			//client.time_mgr.end_record( std::string( "FILE" ) );
-			//client.time_mgr.push_record( std::string( "FILE" ) );
 		}
 
 		if( chunk.is_loaded ) {
@@ -1160,7 +1605,6 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 				}
 			}
 
-			//chunk_state( chunk, ChunkState::CS_Wait, true );
 			chunk_state( chunk, ChunkState::CS_SMesh, true );
 			chunk_state( chunk, ChunkState::CS_TMesh, true );
 		}
@@ -1182,49 +1626,40 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Load, false );
 
-		Block & block_grass = get_block_data( "Grass" );
-		Block & block_sand = get_block_data( "Sand" );
-		Block & block_dirt = get_block_data( "Dirt" );
 		Block & block_water = get_block_data( "Water" );
+		Block & block_cobble = get_block_data( "Cobblestone" );
 
-		int noise = 0;
-		int biome = 0;
+		int noise_height = 0;
+		int noise_biome = 0;
+
+		float noise_cobble;
 
 		for( int i = 0; i < Chunk::size_x; i++ ) {
 			for( int k = 0; k < Chunk::size_z; k++ ) {
-				noise = chunk.ptr_noise->height[ i ][ k ];
-				biome = chunk.ptr_noise->biome[ i ][ k ];
+				noise_height = chunk.ptr_noise->height[ i ][ k ];
+				noise_biome = chunk.ptr_noise->biome[ i ][ k ];
+				auto & biome = list_biomes[ noise_biome ];
+				noise_cobble = 10 + raw_noise_2d( ( chunk.pos_gw.x + i ) * 0.01f, ( chunk.pos_gw.z + k ) * 0.01f ) * 5.0f;
+
 				for( int j = 0; j < Chunk::size_y; j++ ) {
-					if( biome == 0 ) {
-						if( chunk.pos_gw.y + j < noise ) {
-							chunk.id_blocks[ i ][ j ][ k ] = block_dirt.id;
-						}
-						else if( chunk.pos_gw.y + j == noise ) {
-							chunk.id_blocks[ i ][ j ][ k ] = block_grass.id;
+					if( chunk.pos_gw.y + j < noise_height ) {
+						if( chunk.pos_gw.y + j < noise_height - noise_cobble ) {
+							chunk.id_blocks[ i ][ j ][ k ] = block_cobble.id;
 						}
 						else {
-							if( chunk.pos_gw.y + j <= World::level_sea ) {
-								chunk.id_blocks[ i ][ j ][ k ] = block_water.id;
-							}
-							else {
-								chunk.id_blocks[ i ][ j ][ k ] = -1;
-							}
+							chunk.id_blocks[ i ][ j ][ k ] = biome.id_block_depth;
 						}
 					}
-					else if( biome == 1 ) {
-						if( chunk.pos_gw.y + j < noise ) {
-							chunk.id_blocks[ i ][ j ][ k ] = block_sand.id;
-						}
-						else if( chunk.pos_gw.y + j == noise ) {
-							chunk.id_blocks[ i ][ j ][ k ] = block_sand.id;
+					else if( chunk.pos_gw.y + j == noise_height ) {
+						chunk.id_blocks[ i ][ j ][ k ] = biome.id_block_surface;
+					}
+					else {
+						if( chunk.pos_gw.y + j <= World::level_sea &&
+							noise_biome != map_biome_name[ "Cobblestone Chasm" ] ) {
+							chunk.id_blocks[ i ][ j ][ k ] = block_water.id;
 						}
 						else {
-							if( chunk.pos_gw.y + j <= World::level_sea ) {
-								chunk.id_blocks[ i ][ j ][ k ] = block_water.id;
-							}
-							else {
-								chunk.id_blocks[ i ][ j ][ k ] = -1;
-							}
+							chunk.id_blocks[ i ][ j ][ k ] = -1;
 						}
 					}
 
@@ -1240,7 +1675,6 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 
 		chunk.is_loaded = true;
 
-		//chunk_state( chunk, ChunkState::CS_Wait, true );
 		if( chunk.cnt_solid != 0 )
 			chunk_state( chunk, ChunkState::CS_Gen, true );
 
@@ -1267,12 +1701,19 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 		auto & block_bleaves = get_block_data( "Leaves Brown" );
 		auto & block_grass_blade = get_block_data( "Grass Blade" );
 
+		auto & biome_base = map_biome_name[ "Base" ];
+		auto & biome_grass_hill = map_biome_name[ "Grass Hill" ];
+		auto & biome_grass_plateau = map_biome_name[ "Grass Plateau" ];
+
 		for( int i = 0; i < Chunk::size_x; i++ ) {
 			for( int j = 0; j < Chunk::size_z; j++ ) {
 				if( chunk.ptr_noise->height[ i ][ j ] >= World::level_sea &&
 					chunk.ptr_noise->height[ i ][ j ] >= chunk.pos_gw.y &&
 					chunk.ptr_noise->height[ i ][ j ] < chunk.pos_gw.y + Chunk::size_y ) {
-					if( chunk.ptr_noise->biome[ i ][ j ] == 0 ) {
+
+					if( chunk.ptr_noise->biome[ i ][ j ] == biome_base ||
+						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_hill ||
+						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_plateau ) {
 						if( rand( ) % 1000 < 3 ) {
 							set_tree(
 								glm::ivec3( chunk.pos_gw.x, 0, chunk.pos_gw.z ) +
@@ -1293,7 +1734,7 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 								block_dgleaves.id );
 						}
 						else if( rand( ) % 1000 < 3 ) {
-							set_block(
+							set_block( 
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
 								block_rleaves.id );
@@ -1305,7 +1746,7 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 								block_grass_blade.id );
 						}
 					}
-					else if( chunk.ptr_noise->biome[ i ][ j ] == 1 ) { 
+					else if( chunk.ptr_noise->biome[ i ][ j ] == map_biome_name[ "Sand Plateau" ] ) {
 						if( rand( ) % 1000 < 2 ) {
 							set_tree(
 								glm::ivec3( chunk.pos_gw.x, 0, chunk.pos_gw.z ) +
@@ -1669,18 +2110,33 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 
 			chunk.handle_solid_temp.finalize_set( );
 
-			if( !chunk.handle_solid_temp.get_size_ibo( ) ) {
+			if( chunk.handle_solid_temp.get_size_ibo( ) ) {
+				chunk_state( chunk, ChunkState::CS_SBuffer, true );
+
+				std::unique_lock< std::recursive_mutex > lock( mtx_render );
+				map_render.insert( { chunk.hash_lw, chunk } );
+			}
+			else { 
 				chunk.handle_solid_temp.clear( );
 				chunk.handle_solid_temp.release_buffer( );
+			
+				chunk.handle_solid.swap_handle( chunk.handle_solid_temp );
+
+				chunk.handle_solid_temp.clear( );
 			}
 		}
 		
-		if( chunk.states[ ChunkState::CS_TMesh ] && chunk.handle_trans_temp.ptr_buffer ) { 
+		if( chunk.states[ ChunkState::CS_TMesh ] && chunk.handle_trans_temp.ptr_buffer ) {
 			chunk_state( chunk, ChunkState::CS_TMesh, false );
 
 			chunk.handle_trans_temp.clear( );
-			chunk.handle_trans_temp.ptr_buffer->list_verts.clear( );
-			chunk.handle_trans_temp.ptr_buffer->list_inds.clear( );
+
+			auto & buffer = *chunk.handle_trans_temp.ptr_buffer;
+
+			buffer.list_verts.clear( );
+			buffer.list_inds.clear( );
+			buffer.list_temp.clear( );
+			buffer.list_sort.clear( );
 
 			chunk.handle_trans_temp.push_set( SharedMesh::SMGSet(
 				SharedMesh::TypeGeometry::TG_Triangles,
@@ -1688,6 +2144,144 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 				client.texture_mgr.get_program_id( "SMTerrain" ),
 				client.texture_mgr.get_texture_id( "Blocks" )
 			) );
+
+			for( pos_curr.x = 0; pos_curr.x < Chunk::size_x; pos_curr.x++ ) {
+				for( pos_curr.y = 0; pos_curr.y < Chunk::size_y; pos_curr.y++ ) {
+					for( pos_curr.z = 0; pos_curr.z < Chunk::size_z; pos_curr.z++ ) {
+						id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
+
+						if( id_curr == -1 ) {
+							continue;
+						}
+
+						block_curr = &get_block_data( id_curr );
+
+						if( !block_curr->is_trans ) {
+							continue;
+						}
+
+						// Add the included faces
+						for( auto idx_face : block_curr->include_lookup ) {
+							put_face(
+								chunk.handle_trans_temp,
+								pos_curr,
+								block_curr->color * block_curr->faces[ idx_face ].color,
+								block_curr->faces[ idx_face ] );
+
+							put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + pos_curr ),
+								*block_curr, ( FaceDirection ) idx_face );
+						}
+
+						// Add the excluded faces
+						for( GLuint i = 0; i < FaceDirection::FD_Size; ++i ) {
+							dir_face = ( FaceDirection ) i;
+
+							pos_adj = pos_curr + Directional::get_vec_dir_i( dir_face );
+							chunk_adj = &chunk;
+
+							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
+								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
+
+								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+								chunk_adj = chunk.ptr_adj[ dir_face ];
+
+								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
+									continue;
+								}
+							}
+
+							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+
+							if( !block_curr->occlude_lookup[ dir_face ].size( ) ) { 
+								continue;
+							}
+
+							if( id_adj == -1 ) {
+								put_face(
+									chunk.handle_trans_temp,
+									pos_curr, block_curr->color,
+									block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ] );
+
+								put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + pos_curr ),
+									*block_curr, ( FaceDirection ) dir_face );
+							}
+							else {
+								block_adj = &get_block_data( id_adj );
+
+								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
+									block_curr->is_visible( *block_adj ) ) {
+
+									put_face(
+										chunk.handle_trans_temp,
+										pos_curr, block_curr->color,
+										block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ] );
+
+									put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + pos_curr ),
+										*block_curr, ( FaceDirection ) dir_face );
+								}
+							}
+						}
+					}
+				}
+			}
+
+			std::sort(
+				buffer.list_sort.begin( ), buffer.list_sort.end( ),
+				[ ] ( std::pair< float, GLuint > const & lho, std::pair< float, GLuint > const & rho ) {
+					return lho.first > rho.first;
+				}
+			);
+
+
+			buffer.list_temp.reserve( buffer.list_inds.size( ) );
+
+			for( GLuint i = 0; i < buffer.list_sort.size( ); ++i ) {
+				buffer.list_temp.insert( buffer.list_temp.end( ),
+					std::make_move_iterator( buffer.list_inds.begin( ) + buffer.list_sort[ i ].second * 6 ),
+					std::make_move_iterator( buffer.list_inds.begin( ) + buffer.list_sort[ i ].second * 6 + 6 )
+				);
+			}
+
+			buffer.list_inds = std::move( buffer.list_temp );
+
+			chunk.handle_trans_temp.finalize_set( );
+
+			if( chunk.handle_trans_temp.get_size_ibo( ) ) {
+				chunk_state( chunk, ChunkState::CS_TBuffer, true );
+
+				std::unique_lock< std::recursive_mutex > lock( mtx_render );
+				map_render.insert( { chunk.hash_lw, chunk } );
+			}
+			else {
+				chunk.handle_trans_temp.clear( );
+				chunk.handle_trans_temp.release_buffer( );
+
+				chunk.handle_trans.swap_handle( chunk.handle_trans_temp );
+
+				chunk.handle_trans_temp.clear( );
+			}
+		}
+
+		/*
+		if( chunk.states[ ChunkState::CS_TMesh ] && chunk.handle_trans_temp.ptr_buffer ) { 
+			chunk_state( chunk, ChunkState::CS_TMesh, false );
+
+			chunk.handle_trans_temp.clear( );
+
+			auto & buffer = *chunk.handle_trans_temp.ptr_buffer;
+
+			buffer.list_verts.clear( );
+			buffer.list_inds.clear( );
+			buffer.list_temp.clear( );
+			buffer.list_sort.clear( );
+
+			chunk.handle_trans_temp.push_set( SharedMesh::SMGSet(
+				SharedMesh::TypeGeometry::TG_Triangles,
+				glm::translate( glm::mat4( 1.0f ), glm::vec3( chunk.pos_gw ) ),
+				client.texture_mgr.get_program_id( "SMTerrain" ),
+				client.texture_mgr.get_texture_id( "Blocks" )
+			) );
+
 
 			for( int iter_face = 0; iter_face < FaceDirection::FD_Size; iter_face++ ) {
 				dir_face = ( FaceDirection ) iter_face;
@@ -1727,6 +2321,9 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 								pos_curr,
 								block_curr->color * block_curr->faces[ idx_face ].color,
 								block_curr->faces[ idx_face ] );
+
+							put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + pos_curr ), 
+								glm::vec3( 1, 1, 1 ), *block_curr, ( FaceDirection )idx_face );
 						}
 
 						// Start List z
@@ -1766,6 +2363,9 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 											list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 											glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
 											glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+
+										put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ),
+											glm::vec3( 1, 1, list_cnt_last[ dir_face ] ), *list_block_last[ dir_face ], dir_face );
 									}
 
 									list_id_last[ dir_face ] = { id_curr, id_curr };
@@ -1796,6 +2396,9 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
 												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+										
+											put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ),
+												glm::vec3( 1, 1, list_cnt_last[ dir_face ] ), *list_block_last[ dir_face ], dir_face );
 										}
 
 										list_id_last[ dir_face ] = { id_curr, id_curr };
@@ -1871,6 +2474,9 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 											list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 											glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
 											glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+									
+										put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ),
+											glm::vec3( 1, 1, list_cnt_last[ dir_face ] ), *list_block_last[ dir_face ], dir_face );
 									}
 
 									list_id_last[ dir_face ] = { id_curr, id_curr };
@@ -1901,6 +2507,9 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
 												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+										
+											put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ),
+												glm::vec3( 1, 1, list_cnt_last[ dir_face ] ), *list_block_last[ dir_face ], dir_face );
 										}
 
 										list_id_last[ dir_face ] = { id_curr, id_curr };
@@ -1934,43 +2543,50 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 						list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 						glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
 						glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
+				
+					put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + list_pos_last[ dir_face ] ),
+						glm::vec3( 1, 1, list_cnt_last[ dir_face ] ), *list_block_last[ dir_face ], dir_face );
 				}
 			}
+			
+
+			std::sort( 
+				buffer.list_sort.begin( ), buffer.list_sort.end( ),
+				[ ] ( std::pair< float, GLuint > const & lho, std::pair< float, GLuint > const & rho ) {
+					return lho.first > rho.first;
+				} 
+			);
+
+
+			buffer.list_temp.reserve( buffer.list_inds.size( ) );
+
+			for( GLuint i = 0; i < buffer.list_sort.size( ); ++i ) {
+				buffer.list_temp.insert( buffer.list_temp.end( ),
+					std::make_move_iterator( buffer.list_inds.begin( ) + buffer.list_sort[ i ].second * 6 ),
+					std::make_move_iterator( buffer.list_inds.begin( ) + buffer.list_sort[ i ].second * 6 + 6 ) 
+				);
+			}
+
+			buffer.list_inds = std::move( buffer.list_temp );
 
 			chunk.handle_trans_temp.finalize_set( );
 
-			if( !chunk.handle_trans_temp.get_size_ibo( ) ) {
+			if( chunk.handle_trans_temp.get_size_ibo( ) ) {
+				chunk_state( chunk, ChunkState::CS_TBuffer, true );
+
+				std::unique_lock< std::recursive_mutex > lock( mtx_render );
+				map_render.insert( { chunk.hash_lw, chunk } );
+			}
+			else { 
 				chunk.handle_trans_temp.clear( );
 				chunk.handle_trans_temp.release_buffer( );
+
+				chunk.handle_trans.swap_handle( chunk.handle_trans_temp );
+
+				chunk.handle_trans_temp.clear( );
 			}
 		}
-
-		if( chunk.handle_solid_temp.get_size_ibo( ) ||
-			chunk.handle_trans_temp.get_size_ibo( ) ) {
-
-			chunk_state( chunk, ChunkState::CS_Buffer, true );
-
-			std::unique_lock< std::recursive_mutex > lock( mtx_render );
-			map_render.insert( { chunk.hash_lw, chunk } );
-		}
-		else {			
-			chunk.handle_solid.clear( );
-			chunk.handle_solid.release_buffer( );
-
-			chunk.handle_solid_temp.clear( );
-			chunk.handle_solid_temp.release_buffer( );
-
-			chunk.handle_trans.clear( );
-			chunk.handle_trans.release_buffer( );
-
-			chunk.handle_trans_temp.clear( );
-			chunk.handle_trans_temp.release_buffer( );
-
-			chunk_state( chunk, ChunkState::CS_Buffer, false );
-
-			std::unique_lock< std::recursive_mutex > lock( mtx_render );
-			map_render.erase( chunk.hash_lw );
-		}
+		*/
 
 		chunk.is_working = false;
 	} );
@@ -1978,10 +2594,10 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 
 void ChunkMgr::chunk_buffer( Chunk & chunk ) {
 	chunk.is_working = true;
+	client.thread_mgr.task_main( 10, 
+	if( chunk.states[ ChunkState::CS_SBuffer ] ) {
+		chunk_state( chunk, ChunkState::CS_SBuffer, false );
 
-	chunk_state( chunk, ChunkState::CS_Buffer, false );
-
-	if( chunk.handle_solid_temp.get_size_ibo( ) ) {
 		chunk.handle_solid_temp.submit_buffer( );
 		chunk.handle_solid_temp.release_buffer( );
 
@@ -1990,7 +2606,9 @@ void ChunkMgr::chunk_buffer( Chunk & chunk ) {
 		chunk.handle_solid_temp.clear( );
 	}
 
-	if( chunk.handle_trans_temp.get_size_ibo( ) ) { 
+	if( chunk.states[ ChunkState::CS_TBuffer ] ) { 
+		chunk_state( chunk, ChunkState::CS_TBuffer, false );
+
 		chunk.handle_trans_temp.submit_buffer( );
 		chunk.handle_trans_temp.release_buffer( );
 
@@ -2457,9 +3075,9 @@ void ChunkMgr::load_block_data( ) {
 			} 
 		}
 
-		block.id = list_block_data.size( );
+		block.id = ( int ) list_block_data.size( );
 		list_block_data.emplace_back( block );
-		map_block_data.insert( { block.name, list_block_data.size( ) - 1 } );
+		map_block_data.insert( { block.name, ( GLuint ) list_block_data.size( ) - 1 } );
 	}
 	
 	printTabbedLine( 1, out.str( ) );
@@ -3009,7 +3627,7 @@ std::string const & ChunkMgr::get_block_string( int const id ) {
 }
 
 int ChunkMgr::get_num_blocks( ) {
-	return list_block_data.size( );
+	return ( int ) list_block_data.size( );
 }
 
 void ChunkMgr::print_dirty( ) {
@@ -3113,7 +3731,7 @@ inline void put_face(
 	SharedMesh::SMHandle & handle, glm::ivec3 const & pos,
 	glm::vec4 const & color, Face const & face ) {
 
-	GLuint idx_inds = handle.ptr_buffer->list_verts.size( );
+	GLuint idx_inds = ( GLuint ) handle.ptr_buffer->list_verts.size( );
 
 	handle.push_verts( {
 		{ { pos.x + face.verts[ 0 ].x, pos.y + face.verts[ 0 ].y, pos.z + face.verts[ 0 ].z },
@@ -3148,13 +3766,13 @@ inline void put_face(
 	glm::vec4 const & color, Face const & face,
 	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs ) {
 
-	GLuint idx_inds = handle.ptr_buffer->list_verts.size( );
+	GLuint idx_inds = ( GLuint ) handle.ptr_buffer->list_verts.size( );
 
 	handle.push_verts( {
 		{ { pos.x + face.verts[ 0 ].x * scale_verts.x, pos.y + face.verts[ 0 ].y * scale_verts.y, pos.z + face.verts[ 0 ].z * scale_verts.z },
 		{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
 		{ face.norms[ 0 ].x, face.norms[ 0 ].y, face.norms[ 0 ].z },
-		{ face.uvs[ 0 ].x, face.uvs[ 0 ].y, face.uvs[ 0 ].z } },
+		{ face.uvs[ 0 ].x, face.uvs[ 0 ].y,face.uvs[ 0 ].z } },
 
 		{ { pos.x + face.verts[ 1 ].x * scale_verts.x, pos.y + face.verts[ 1 ].y * scale_verts.y, pos.z + face.verts[ 1 ].z * scale_verts.z },
 		{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
@@ -3175,5 +3793,29 @@ inline void put_face(
 	handle.push_inds( {
 		idx_inds + 0, idx_inds + 1, idx_inds + 2,
 		idx_inds + 2, idx_inds + 3, idx_inds + 0
+	} );
+}
+
+inline void ChunkMgr::put_sort(
+	std::vector< std::pair< float, GLuint > > & list_sort,
+	glm::vec3 & pos_gw,
+	Block & block, FaceDirection face ) {
+
+
+	list_sort.push_back( {
+		glm::length2( pos_gw + block.faces[ face ].offset - client.display_mgr.camera.pos_camera ),
+		( GLuint ) list_sort.size( )
+	} );
+}
+
+inline void ChunkMgr::put_sort(
+	std::vector< std::pair< float, GLuint > > & list_sort,
+	glm::vec3 & pos_gw, glm::vec3 & scale, 
+	Block & block, FaceDirection face ) {
+
+
+	list_sort.push_back( {
+		glm::length2( pos_gw + block.faces[ face ].offset * scale - client.display_mgr.camera.pos_camera ),
+		( GLuint ) list_sort.size( )
 	} );
 }

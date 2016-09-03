@@ -106,7 +106,7 @@ void ThreadMgr::update( ) {
 
 	// Print Main cnts
 	for( int i = 0; i < funcs_main.size( ); i++ ) {
-		total += funcs_main[ i ].size( );
+		total += ( int ) funcs_main[ i ].size( );
 	}
 
 	out.str( "" );
@@ -120,7 +120,7 @@ void ThreadMgr::update( ) {
 	// Print Io cnts
 	total = 0;
 	for( int i = 0; i < funcs_io.size( ); i++ ) {
-		total += funcs_io[ i ].size( );
+		total += ( int ) funcs_io[ i ].size( );
 	}
 
 	out.str( "" );
@@ -142,7 +142,7 @@ void ThreadMgr::update( ) {
 	// Print Async cnts
 	total = 0;
 	for( int i = 0; i < funcs_async.size( ); i++ ) { 
-		total += funcs_async[ i ].size( );
+		total += ( int ) funcs_async[ i ].size( );
 	}
 
 	out.str( "" );
@@ -158,7 +158,7 @@ void ThreadMgr::update( ) {
 
 	out.str( "" );
 	out << "[Async Cnt]";
-	for( int i = cnt_async.size( ) / 2; i < cnt_async.size( ); i++ ) {
+	for( int i = ( int ) cnt_async.size( ) / 2; i < ( int ) cnt_async.size( ); i++ ) {
 		out << " t" << i << ": " << cnt_async[ i ];
 	}
 	client.gui_mgr.print_to_static( out.str( ) );
@@ -376,7 +376,7 @@ static int max_interm_async = 5;
 
 void ThreadMgr::select_func_async( int & priority, std::function< void( ) > & func ) {
 	for( int i = 0; i < size_prio_init; i++ ) { 
-		if( !funcs_async[ i ].empty( ) && cnt_async_total - cnt_prio_async_last[ i ] >= max_interm_async ) { 
+		if( !funcs_async[ i ].empty( ) && cnt_async_total - cnt_prio_async_last[ i ] >= ( int unsigned ) max_interm_async ) { 
 			priority = i;
 			func = std::move( funcs_async[ i ].front( ) );
 			funcs_async[ i ].pop( );

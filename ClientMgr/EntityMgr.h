@@ -48,6 +48,7 @@ public:
 	void init( );
 	void update( );
 	void render( );
+	void render_shadow( glm::mat4 & mat_light );
 	void end( );
 	void sec( );
 

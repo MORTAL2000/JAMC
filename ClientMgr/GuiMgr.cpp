@@ -16,17 +16,17 @@ void GuiMgr::init( ) {
 	client.resource_mgr.reg_pool< PCDTextField >( 1000 );
 	client.resource_mgr.reg_pool< PageComp >( 1000 );
 
-	block_selector.init( );
+	GL_CHECK( block_selector.init( ) );
 
-	add_page( std::string( "Console" ),
+	GL_CHECK( add_page( std::string( "Console" ),
 		PageFuncs::alloc_console,
 		PageFuncs::cust_null
-		);
+		) );
 
-	add_page( std::string( "Static" ),
+	GL_CHECK( add_page( std::string( "Static" ),
 		PageFuncs::alloc_static,
 		PageFuncs::cust_null
-		);
+		) );
 
 	is_visible = true;
 }
@@ -54,8 +54,8 @@ void GuiMgr::update( ) {
 void GuiMgr::render( ) {
 	block_selector.render( );
 
-	client.texture_mgr.bind_program( "Basic" );
-	static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
+	client.texture_mgr.bind_program( "BasicOrtho" );
+	static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_bound_program, "mat_model" );
 
 	if( !is_visible ) {
 		return;
@@ -78,7 +78,7 @@ void GuiMgr::sec( ) { }
 
 void GuiMgr::on_down( int button ) {
 	bool is_handled = false;
-	int i = list_order.size( ) - 1;
+	int i = ( int ) list_order.size( ) - 1;
 
 	auto & pos_mouse = client.input_mgr.get_mouse_down( button );
 
@@ -103,7 +103,7 @@ void GuiMgr::on_down( int button ) {
 
 void GuiMgr::on_hold( int button ) {
 	bool is_handled = false;
-	int i = list_order.size( ) - 1;
+	int i = ( int )list_order.size( ) - 1;
 
 	while( !is_handled && i >= 0 ) {
 		auto & page = *list_order[ i ];
@@ -118,7 +118,7 @@ void GuiMgr::on_hold( int button ) {
 
 void GuiMgr::on_up( int button ) {
 	bool is_handled = false;
-	int i = list_order.size( ) - 1;
+	int i = ( int ) list_order.size( ) - 1;
 
 	auto & pos_mouse = client.input_mgr.get_mouse_up( button );
 
@@ -177,7 +177,7 @@ void GuiMgr::print_to_console( std::string const & str_print ) {
 	std::unique_lock< std::mutex > lock( mtx_console );
 
 	while( pos_e != std::string::npos ) {
-		pos_e = str_print.find( '\n', pos_s );
+		pos_e = ( int ) str_print.find( '\n', pos_s );
 		token = str_print.substr( pos_s, pos_e - pos_s );
 		pos_s = pos_e + 1;
 
@@ -454,8 +454,8 @@ void GuiMgr::process_input( ) {
 
 	if( str_command.size( ) <= 0 ) return;
 
-	pos_start = str_command.find( "/cmd " );
-	pos_end = str_command.find( " ", pos_start + 5 );
+	pos_start = ( int ) str_command.find( "/cmd " );
+	pos_end = ( int ) str_command.find( " ", pos_start + 5 );
 
 	if( pos_start != str_command.npos ) {
 		pos_start += 5;
@@ -512,14 +512,14 @@ void GuiMgr::process_input( ) {
 					}
 				}
 
-				pos_start = str_command.find( "n:" );
+				pos_start = ( int ) str_command.find( "n:" );
 				if( pos_start != std::string::npos ) {
-					pos_end = str_command.find( " ", pos_start + 2 );
+					pos_end = ( int ) str_command.find( " ", pos_start + 2 );
 					token = str_command.substr( pos_start + 2, pos_end - ( pos_start + 2 ) );
 					pos_start = pos_end;
 
 					if( pos_end != std::string::npos ) {
-						while( pos_end != std::string::npos && ( pos_end = str_command.find( " ", pos_start + 1 ) ) <= str_command.find( ":", pos_start + 1 ) ) {
+						while( pos_end != std::string::npos && ( pos_end = ( int ) str_command.find( " ", pos_start + 1 ) ) <= ( int ) str_command.find( ":", pos_start + 1 ) ) {
 							token += str_command.substr( pos_start, ( pos_end - pos_start ) );
 							pos_start = pos_end;
 						}
@@ -578,14 +578,14 @@ void GuiMgr::process_input( ) {
 					id = iter_map->second[ 0 ];
 				}
 
-				pos_start = str_command.find( "n:" );
+				pos_start = ( int ) str_command.find( "n:" );
 				if( pos_start != std::string::npos ) {
-					pos_end = str_command.find( " ", pos_start + 2 );
+					pos_end = ( int ) str_command.find( " ", pos_start + 2 );
 					token = str_command.substr( pos_start + 2, pos_end - ( pos_start + 2 ) );
 					pos_start = pos_end;
 
 					if( pos_end != std::string::npos ) {
-						while( pos_end != std::string::npos && ( pos_end = str_command.find( " ", pos_start + 1 ) ) <= str_command.find( ":", pos_start + 1 ) ) {
+						while( pos_end != std::string::npos && ( pos_end = ( int ) str_command.find( " ", pos_start + 1 ) ) <= ( int ) str_command.find( ":", pos_start + 1 ) ) {
 							token += str_command.substr( pos_start, ( pos_end - pos_start ) );
 							pos_start = pos_end;
 						}
@@ -645,14 +645,14 @@ void GuiMgr::process_input( ) {
 					id = iter_map->second[ 0 ];
 				}
 
-				pos_start = str_command.find( "n:" );
+				pos_start = ( int ) str_command.find( "n:" );
 				if( pos_start != std::string::npos ) {
-					pos_end = str_command.find( " ", pos_start + 2 );
+					pos_end = ( int ) str_command.find( " ", pos_start + 2 );
 					token = str_command.substr( pos_start + 2, pos_end - ( pos_start + 2 ) );
 					pos_start = pos_end;
 
 					if( pos_end != std::string::npos ) {
-						while( pos_end != std::string::npos && ( pos_end = str_command.find( " ", pos_start + 1 ) ) <= str_command.find( ":", pos_start + 1 ) ) {
+						while( pos_end != std::string::npos && ( pos_end = ( int ) str_command.find( " ", pos_start + 1 ) ) <= ( int ) str_command.find( ":", pos_start + 1 ) ) {
 							token += str_command.substr( pos_start, ( pos_end - pos_start ) );
 							pos_start = pos_end;
 						}
@@ -709,7 +709,7 @@ void GuiMgr::process_input( ) {
 			}
 		}
 		else if( token == "setfov" ) {
-			pos_start = str_command.find( "f:", 0 );
+			pos_start = ( int ) str_command.find( "f:", 0 );
 			if( pos_start == std::string::npos ) {
 				return;
 			}
@@ -726,7 +726,7 @@ void GuiMgr::process_input( ) {
 			client.display_mgr.set_proj( );
 		}
 		else if( token == "bias_l" ) {
-			pos_start = str_command.find( "f:", 0 );
+			pos_start = ( int ) str_command.find( "f:", 0 );
 			if( pos_start == std::string::npos ) {
 				return;
 			}
@@ -740,11 +740,11 @@ void GuiMgr::process_input( ) {
 			print_to_console( out.str( ) );
 
 			client.texture_mgr.bind_program( "Terrain" );
-			int idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_l" );
+			int idx_bias = glGetUniformLocation( client.texture_mgr.id_bound_program, "bias_l" );
 			glUniform1f( idx_bias, bias );
 		}
 		else if( token == "bias_b" ) {
-			pos_start = str_command.find( "f:", 0 );
+			pos_start = ( int ) str_command.find( "f:", 0 );
 			if( pos_start == std::string::npos ) {
 				return;
 			}
@@ -758,13 +758,13 @@ void GuiMgr::process_input( ) {
 			print_to_console( out.str( ) );
 
 			client.texture_mgr.bind_program( "Terrain" );
-			int idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_l" );
+			int idx_bias = glGetUniformLocation( client.texture_mgr.id_bound_program, "bias_l" );
 			glUniform1f( idx_bias, bias );
-			idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_h" );
+			idx_bias = glGetUniformLocation( client.texture_mgr.id_bound_program, "bias_h" );
 			glUniform1f( idx_bias, bias );
 		}
 		else if( token == "bias_h" ) {
-			pos_start = str_command.find( "f:", 0 );
+			pos_start = ( int ) str_command.find( "f:", 0 );
 			if( pos_start == std::string::npos ) {
 				return;
 			}
@@ -778,7 +778,7 @@ void GuiMgr::process_input( ) {
 			print_to_console( out.str( ) );
 
 			client.texture_mgr.bind_program( "Terrain" );
-			int idx_bias = glGetUniformLocation( client.texture_mgr.id_prog, "bias_h" );
+			int idx_bias = glGetUniformLocation( client.texture_mgr.id_bound_program, "bias_h" );
 			glUniform1f( idx_bias, bias );
 		}
 		else if( token == "addemitter" ) {
@@ -860,7 +860,7 @@ void GuiMgr::process_input( ) {
 		else if( token == "printglerror" ) { 
 			auto & out = client.display_mgr.out;
 			out.str( "" );
-			out << checkGlErrors( );
+			//out << checkGlErrors( );
 			client.gui_mgr.print_to_console( out.str( ) );
 		}
 		else if( token == "printchunkmesh" ) {
@@ -905,7 +905,7 @@ std::unordered_map< std::string, std::vector< int > > get_tokenized_ints(
 	int index;
 
 	for( int i = 0; i < list_delim.size( ); i++ ) {
-		index = str_in.find( list_delim[ i ], 0 );
+		index = ( int ) str_in.find( list_delim[ i ], 0 );
 		if( index != str_in.npos ) {
 			list_pair.push_back( { i, index } );
 		}
@@ -942,7 +942,7 @@ std::unordered_map< std::string, std::vector< int > > get_tokenized_ints(
 			auto & list_int = map_token.insert( { list_delim[ list_pair[ i ].first ], { } } ).first->second;
 			start = end = 0;
 			while( end != list_token[ i ].npos ) {
-				end = list_token[ i ].find( " ", start );
+				end = ( int ) list_token[ i ].find( " ", start );
 				token_int = list_token[ i ].substr( start, end - start );
 				if( token_int.size( ) > 0 && isdigit( token_int[ 0 ] ) ) {
 					list_int.push_back( std::stoi( token_int ) );

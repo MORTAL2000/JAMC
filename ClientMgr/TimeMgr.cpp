@@ -81,8 +81,8 @@ void TimeMgr::update() {
 }
 
 void TimeMgr::render() {
-	client.texture_mgr.bind_program( "Basic" );
-	static GLuint idx_model = glGetUniformLocation( client.texture_mgr.id_prog, "mat_model" );
+	client.texture_mgr.bind_program( "BasicOrtho" );
+	static GLuint idx_model = glGetUniformLocation( client.texture_mgr.id_bound_program, "mat_model" );
 
 	glUniformMatrix4fv( idx_model, 1, GL_FALSE, 
 		glm::value_ptr( 
@@ -103,130 +103,130 @@ void TimeMgr::end() {
 void TimeMgr::sec() {
 }
 
-int size_history_max = 288;
+int unsigned size_history_max = 288;
 glm::ivec2 TimeMgr::dim_graph( 144 * 2, 30 );
 
 void TimeMgr::mesh_graphs( ) {
 	if( is_dirty ) { 
-		vbo.clear( );
+		client.thread_mgr.task_main( 5, [ & ] ( ) {
+			vbo.clear( );
 
-		int unsigned size_history;
-		float dx = float( dim_graph.x ) / size_history_max;
-		float max_record = 0;
-		glm::ivec2 dim_char = { 8, 12 };
+			int unsigned size_history;
+			float dx = float( dim_graph.x ) / size_history_max;
+			float max_record = 0;
+			glm::ivec2 dim_char = { 8, 12 };
 
-		auto & norm = Directional::get_vec_dir_f( FaceDirection::FD_Front );
-		auto color = glm::vec4( 0.5f, 0.5f, 0.5f, 0.7f );
+			auto & norm = Directional::get_vec_dir_f( FaceDirection::FD_Front );
+			auto color = glm::vec4( 0.2f, 0.2f, 0.2f, 0.7f );
 
-		vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
-			"Basic", client.texture_mgr.id_materials,
-			std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
-		) );
+			vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
+				"BasicOrtho", client.texture_mgr.id_materials,
+				std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
+			) );
 
-		// Background
-		for( int i = 0; i < list_render.size( ); ++i ) { 
-			for( int j = 0; j < 4; ++j ) { 
-				vbo.push_data( VBO::Vertex {
-					{ verts_graph[ j ].x * dim_graph.x, 
-					( -( i + 1 ) * ( dim_graph.y + padding ) ) + verts_graph[ j ].y * dim_graph.y, 0 },
-					{ color.r, color.g, color.b, color.a },
-					{ norm.x, norm.y, norm.z },
-					{ 0, 0, 0 }
-				} );
-			}
-		}
-
-		color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
-
-		vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Lines,
-			"Basic", client.texture_mgr.id_materials,
-			std::vector< GLuint >{ 0, 1 }
-		) );
-
-		// Line Graph
-		for( int i = 0; i < list_render.size( ); ++i ) {
-			auto & record = get_record( *list_render[ i ] );
-			
-			size_history = record.history.size( );
-
-			if( size_history == 0 ) { 
-				continue;
-			}
-			else if( size_history > size_history_max ) {
-				size_history = size_history_max;
-			}
-
-			max_record = TIME_FRAME_MILLI;
-			for( int j = 0; j < size_history; ++j ) {
-				if( max_record < record.history[ j ] ) { 
-					max_record = record.history[ j ];
-				}
-			}
-
-			for( int j = 0; j < size_history - 1; ++j ) {
-				vbo.push_data( VBO::Vertex { 
-					{ j * dx, 
-					( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( record.history[ j ] / max_record ) * dim_graph.y, 0 },
-					{ color.r, color.g, color.b, color.a },
-					{ norm.x, norm.y, norm.z },
-					{ 0, 0, 0 }
-				} );
-
-				vbo.push_data( VBO::Vertex {
-					{ ( j + 1 ) * dx, 
-					( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( record.history[ j + 1 ] / max_record ) * dim_graph.y, 0 },
-					{ color.r, color.g, color.b, color.a },
-					{ norm.x, norm.y, norm.z },
-					{ 0, 0, 0 }
-				} );
-			}
-
-			vbo.push_data( VBO::Vertex {
-				{ 0,
-				( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( TIME_FRAME_MILLI / max_record ) * dim_graph.y, 0 },
-				{ 0.0f, 1.0f, 0.0f, 1.0f },
-				{ norm.x, norm.y, norm.z },
-				{ 0, 0, 0 }
-			} );
-
-			vbo.push_data( VBO::Vertex {
-				{ float( dim_graph.x ),
-				( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( TIME_FRAME_MILLI / max_record ) * dim_graph.y, 0 },
-				{ 0.0f, 1.0f, 0.0f, 1.0f },
-				{ norm.x, norm.y, norm.z },
-				{ 0, 0, 0 }
-			} );
-		}
-
-		color = glm::vec4( 0.0f, 0.0f, 1.0f, 1.0f );
-
-		vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
-			"Basic", client.texture_mgr.id_fonts,
-			std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
-		) );
-
-		// Text
-		for( int i = 0; i < list_render.size( ); ++i ) {
-			auto & name = *list_render[ i ];
-
-			for( int j = 0; j < name.size( ); j++ ) {
-				auto & uvs = client.texture_mgr.get_uvs_fonts( name[ j ] - 32 );
-
-				for( int k = 0; k < 4; k++ ) {
-					vbo.push_data( {
-						{ padding + j * dim_char.x + verts_graph[ k ].x * dim_char.x,
-						( -( i + 1 ) * ( dim_graph.y + padding ) ) + padding + verts_graph[ k ].y * dim_char.y, 0 },
+			// Background
+			for( int i = 0; i < list_render.size( ); ++i ) {
+				for( int j = 0; j < 4; ++j ) {
+					vbo.push_data( VBO::Vertex {
+						{ verts_graph[ j ].x * dim_graph.x,
+						( -( i + 1 ) * ( dim_graph.y + padding ) ) + verts_graph[ j ].y * dim_graph.y, 0 },
 						{ color.r, color.g, color.b, color.a },
 						{ norm.x, norm.y, norm.z },
-						{ uvs[ k ][ 0 ], uvs[ k ][ 1 ], 0 }
+						{ 0, 0, 0 }
 					} );
 				}
 			}
-		}
 
-		vbo.finalize_set( );
+			color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
 
-		client.thread_mgr.task_main( 5, [ & ] ( ) {
+			vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Lines,
+				"BasicOrtho", client.texture_mgr.id_materials,
+				std::vector< GLuint >{ 0, 1 }
+			) );
+
+			// Line Graph
+			for( int i = 0; i < list_render.size( ); ++i ) {
+				auto & record = get_record( *list_render[ i ] );
+
+				size_history = record.history.size( );
+
+				if( size_history == 0 ) {
+					continue;
+				}
+				else if( size_history > size_history_max ) {
+					size_history = size_history_max;
+				}
+
+				max_record = TIME_FRAME_MILLI;
+				for( int unsigned j = 0; j < size_history; ++j ) {
+					if( max_record < record.history[ j ] ) {
+						max_record = record.history[ j ];
+					}
+				}
+
+				for( int unsigned j = 0; j < size_history - 1; ++j ) {
+					vbo.push_data( VBO::Vertex {
+						{ j * dx,
+						( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( record.history[ j ] / max_record ) * dim_graph.y, 0 },
+						{ color.r, color.g, color.b, color.a },
+						{ norm.x, norm.y, norm.z },
+						{ 0, 0, 0 }
+					} );
+
+					vbo.push_data( VBO::Vertex {
+						{ ( j + 1 ) * dx,
+						( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( record.history[ j + 1 ] / max_record ) * dim_graph.y, 0 },
+						{ color.r, color.g, color.b, color.a },
+						{ norm.x, norm.y, norm.z },
+						{ 0, 0, 0 }
+					} );
+				}
+
+				vbo.push_data( VBO::Vertex {
+					{ 0,
+					( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( TIME_FRAME_MILLI / max_record ) * dim_graph.y, 0 },
+					{ 0.0f, 1.0f, 0.0f, 1.0f },
+					{ norm.x, norm.y, norm.z },
+					{ 0, 0, 0 }
+				} );
+
+				vbo.push_data( VBO::Vertex {
+					{ float( dim_graph.x ),
+					( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( TIME_FRAME_MILLI / max_record ) * dim_graph.y, 0 },
+					{ 0.0f, 1.0f, 0.0f, 1.0f },
+					{ norm.x, norm.y, norm.z },
+					{ 0, 0, 0 }
+				} );
+			}
+
+			color = glm::vec4( 0.0f, 0.0f, 1.0f, 1.0f );
+
+			vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
+				"BasicOrtho", client.texture_mgr.id_fonts,
+				std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
+			) );
+
+			// Text
+			for( int i = 0; i < list_render.size( ); ++i ) {
+				auto & name = *list_render[ i ];
+
+				for( int j = 0; j < name.size( ); j++ ) {
+					auto & uvs = client.texture_mgr.get_uvs_fonts( name[ j ] - 32 );
+
+					for( int k = 0; k < 4; k++ ) {
+						vbo.push_data( {
+							{ padding + j * dim_char.x + verts_graph[ k ].x * dim_char.x,
+							( -( i + 1 ) * ( dim_graph.y + padding ) ) + padding + verts_graph[ k ].y * dim_char.y, 0 },
+							{ color.r, color.g, color.b, color.a },
+							{ norm.x, norm.y, norm.z },
+							{ uvs[ k ][ 0 ], uvs[ k ][ 1 ], 0 }
+						} );
+					}
+				}
+			}
+
+			vbo.finalize_set( );
+
 			vbo.buffer( );
 		} );
 

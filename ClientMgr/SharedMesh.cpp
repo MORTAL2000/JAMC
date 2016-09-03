@@ -87,7 +87,7 @@ void SharedMesh::SharedMeshHandle::finalize_set( ) {
 	idx_block_e = ( set_last.idx_vbo + set_last.cnt_vbo ) / size_vbo_block;
 
 	if( idx_block_e + 1 > list_vbo_blocks.size( ) ) { 
-		if( !ptr_parent->request_vbo_blocks( list_vbo_blocks, idx_block_e + 1 - list_vbo_blocks.size( ) ) ) {
+		if( !ptr_parent->request_vbo_blocks( list_vbo_blocks, idx_block_e + 1 - ( GLuint ) list_vbo_blocks.size( ) ) ) {
 			std::cout << "Error! Not enough VBO blocks!" << std::endl;
 			return;
 		}
@@ -98,7 +98,7 @@ void SharedMesh::SharedMeshHandle::finalize_set( ) {
 	idx_block_e = ( set_last.idx_ibo + set_last.cnt_ibo ) / size_ibo_block;
 
 	if( idx_block_e + 1 > list_ibo_blocks.size( ) ) {
-		if( !ptr_parent->request_ibo_blocks( list_ibo_blocks, idx_block_e + 1 - list_ibo_blocks.size( ) ) ) {
+		if( !ptr_parent->request_ibo_blocks( list_ibo_blocks, idx_block_e + 1 - ( GLuint ) list_ibo_blocks.size( ) ) ) {
 			std::cout << "Error! Not enough IBO blocks!" << std::endl;
 			return;
 		}
@@ -123,8 +123,8 @@ void SharedMesh::SharedMeshHandle::finalize_set( ) {
 
 void SharedMesh::SharedMeshHandle::push_verts( std::initializer_list<Vertex> const & verts ) {
 	ptr_buffer->list_verts.insert( ptr_buffer->list_verts.end( ), verts );
-	list_sets.back( ).cnt_vbo += verts.size( );
-	size_vbo += verts.size( );
+	list_sets.back( ).cnt_vbo += ( GLuint ) verts.size( );
+	size_vbo += ( GLuint ) verts.size( );
 }
 
 void SharedMesh::SharedMeshHandle::push_inds( std::initializer_list<GLuint> const & inds ) {
@@ -140,8 +140,8 @@ void SharedMesh::SharedMeshHandle::push_inds( std::initializer_list<GLuint> cons
 	}
 
 	ptr_buffer->list_inds.insert( ptr_buffer->list_inds.end( ), inds );
-	list_sets.back( ).cnt_ibo += inds.size( );
-	size_ibo += inds.size( );
+	list_sets.back( ).cnt_ibo += ( GLuint ) inds.size( );
+	size_ibo += ( GLuint ) inds.size( );
 }
 
 bool SharedMesh::SharedMeshHandle::request_buffer( ) {
@@ -160,6 +160,18 @@ void SharedMesh::SharedMeshHandle::submit_buffer( ) {
 
 	idx_data_s = 0;
 	idx_data_e = size_vbo % size_vbo_block;
+
+	if( idx_block_s >= ( GLuint ) list_vbo_blocks.size( ) ) {
+		idx_block_s = ( GLuint ) list_vbo_blocks.size( ) - 1;
+		std::cout << "You dun goofed on your buffer size bra." << std::endl;
+		return;
+	}
+
+	if( idx_block_e >= ( GLuint ) list_vbo_blocks.size( ) ) {
+		idx_block_e = ( GLuint ) list_vbo_blocks.size( ) - 1;
+		std::cout << "You dun goofed on your buffer size bra." << std::endl;
+		return;
+	}
 
 	glBindBuffer( GL_ARRAY_BUFFER, ptr_parent->id_vbo );
 
@@ -312,7 +324,7 @@ void SharedMesh::init(
 		queue_buffer_avail.push( &list_buffers[ i ] );
 	}
 
-	std::cout << "Begin Shared Mesh: " << checkGlErrors( ) << std::endl;
+	//std::cout << "Begin Shared Mesh: " << checkGlErrors( ) << std::endl;
 	// Create Buffers
 	glGenVertexArrays( 1, &id_vao );
 	glGenBuffers( 1, &id_vbo );
@@ -321,14 +333,14 @@ void SharedMesh::init(
 	glGenBuffers( 1, &id_mats_model );
 	glGenBuffers( 1, &id_mats_norm );
 
-	std::cout << "Gen Shared Mesh: " << checkGlErrors( ) << std::endl;
+	//std::cout << "Gen Shared Mesh: " << checkGlErrors( ) << std::endl;
 	// Allocate Space
 	glBindBuffer( GL_ARRAY_BUFFER, id_vbo );
 	glBufferData( GL_ARRAY_BUFFER, size_vbo_block * num_vbo_blocks * sizeof( Vertex ), nullptr, GL_STATIC_DRAW );
 
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, id_ibo );
 	glBufferData( GL_ELEMENT_ARRAY_BUFFER, size_ibo_block * num_ibo_blocks * sizeof( GLuint ), nullptr, GL_STATIC_DRAW );
-	std::cout << "Alloc Shared Mesh: " << checkGlErrors( ) << std::endl;
+	//std::cout << "Alloc Shared Mesh: " << checkGlErrors( ) << std::endl;
 
 	// Setup the VAO pointers
 	glBindVertexArray( id_vao );
@@ -378,7 +390,7 @@ void SharedMesh::init(
 	glVertexAttribDivisor( 11, 1 );
 
 	glBindVertexArray( 0 );
-	std::cout << "Setup Pointers Shared Mesh: " << checkGlErrors( ) << std::endl;
+	//std::cout << "Setup Pointers Shared Mesh: " << checkGlErrors( ) << std::endl;
 
 	// Setup VBO Blocks
 	this->size_vbo_block = size_vbo_block;
@@ -397,7 +409,7 @@ void SharedMesh::init(
 		} );
 	}
 
-	std::cout << "Setup VBO blocks Shared Mesh: " << checkGlErrors( ) << std::endl;
+	//std::cout << "Setup VBO blocks Shared Mesh: " << checkGlErrors( ) << std::endl;
 
 	// Setup IBO Blocks
 	this->size_ibo_block = size_ibo_block;
@@ -416,7 +428,7 @@ void SharedMesh::init(
 		} );
 	}
 
-	std::cout << "Setup IBO blocks Shared Mesh: " << checkGlErrors( ) << std::endl;
+	//std::cout << "Setup IBO blocks Shared Mesh: " << checkGlErrors( ) << std::endl;
 }
 
 void SharedMesh::end( ) {
@@ -583,6 +595,7 @@ void SharedMesh::release_buffer( SMCBuffer * & buffer ) {
 
 	auto iter_buffers = map_buffer_live.find( buffer );
 	if( iter_buffers == map_buffer_live.end( ) ) {
+		buffer = nullptr;
 		return;
 	}
 
@@ -614,7 +627,7 @@ void SharedMesh::push_command( glm::mat4 & mat_model, glm::mat3 & mat_norm, SMCo
 	list_mats_model.emplace_back( mat_model );
 	list_mats_norm.emplace_back( mat_norm );
 
-	command.base_instance = list_commands.size( );
+	command.base_instance = ( GLuint ) list_commands.size( );
 	list_commands.emplace_back( command );
 
 	num_commands++;
@@ -638,27 +651,27 @@ GLuint SharedMesh::size_commands( ) {
 }
 
 GLuint SharedMesh::size_vbo_live( ) {
-	return map_vbo_live.size( );
+	return ( GLuint ) map_vbo_live.size( );
 }
 
 GLuint SharedMesh::size_ibo_live( ) {
-	return map_ibo_live.size( );
+	return ( GLuint ) map_ibo_live.size( );
 }
 
 GLuint SharedMesh::size_buffer_avail( ) {
-	return queue_buffer_avail.size( );
+	return ( GLuint ) queue_buffer_avail.size( );
 }
 
 GLuint SharedMesh::size_buffer_live( ) {
-	return map_buffer_live.size( );
+	return ( GLuint ) map_buffer_live.size( );
 }
 
 GLuint SharedMesh::size_vbo_avail( ) {
-	return queue_vbo_avail.size( );
+	return ( GLuint ) queue_vbo_avail.size( );
 }
 
 GLuint SharedMesh::size_ibo_avail( ) {
-	return queue_ibo_avail.size( );
+	return ( GLuint ) queue_ibo_avail.size( );
 }
 
 GLuint SharedMesh::num_primitives( ) {

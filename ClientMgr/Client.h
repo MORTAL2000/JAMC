@@ -52,6 +52,7 @@ public:
 	~Client();
 
 	void init();
+	void init_mgrs( );
 	void update();
 	void render();
 	void end();
