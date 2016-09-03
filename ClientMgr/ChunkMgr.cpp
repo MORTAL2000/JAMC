@@ -2594,30 +2594,36 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 
 void ChunkMgr::chunk_buffer( Chunk & chunk ) {
 	chunk.is_working = true;
-	client.thread_mgr.task_main( 10, 
-	if( chunk.states[ ChunkState::CS_SBuffer ] ) {
-		chunk_state( chunk, ChunkState::CS_SBuffer, false );
 
-		chunk.handle_solid_temp.submit_buffer( );
-		chunk.handle_solid_temp.release_buffer( );
+	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
+	int priority = 3;
+	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
-		chunk.handle_solid.swap_handle( chunk.handle_solid_temp );
+	client.thread_mgr.task_main( priority, [ & ] ( ) {
+		if( chunk.states[ ChunkState::CS_SBuffer ] ) {
+			chunk_state( chunk, ChunkState::CS_SBuffer, false );
 
-		chunk.handle_solid_temp.clear( );
-	}
+			chunk.handle_solid_temp.submit_buffer( );
+			chunk.handle_solid_temp.release_buffer( );
 
-	if( chunk.states[ ChunkState::CS_TBuffer ] ) { 
-		chunk_state( chunk, ChunkState::CS_TBuffer, false );
+			chunk.handle_solid.swap_handle( chunk.handle_solid_temp );
 
-		chunk.handle_trans_temp.submit_buffer( );
-		chunk.handle_trans_temp.release_buffer( );
+			chunk.handle_solid_temp.clear( );
+		}
 
-		chunk.handle_trans.swap_handle( chunk.handle_trans_temp );
+		if( chunk.states[ ChunkState::CS_TBuffer ] ) {
+			chunk_state( chunk, ChunkState::CS_TBuffer, false );
 
-		chunk.handle_trans_temp.clear( );
-	}
+			chunk.handle_trans_temp.submit_buffer( );
+			chunk.handle_trans_temp.release_buffer( );
 
-	chunk.is_working = false;
+			chunk.handle_trans.swap_handle( chunk.handle_trans_temp );
+
+			chunk.handle_trans_temp.clear( );
+		}
+
+		chunk.is_working = false;
+	} );
 }
 
 void ChunkMgr::chunk_save( Chunk & chunk ) {
