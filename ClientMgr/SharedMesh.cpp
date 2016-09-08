@@ -4,6 +4,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtc/matrix_inverse.hpp"
 
+template< class T_vert >
 SharedMesh::SharedMeshGeometrySet::SharedMeshGeometrySet(
 	SharedMesh::TypeGeometry type, glm::mat4 const & mat_model,
 	GLuint id_prog, GLuint id_tex ) :
@@ -359,10 +360,10 @@ void SharedMesh::init(
 	glEnableVertexAttribArray( 10 );
 	glEnableVertexAttribArray( 11 );
 
-	glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( 0 ) ); //Vert
-	glVertexAttribPointer( 1, 4, GL_FLOAT, GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( 12 ) ); //Color
-	glVertexAttribPointer( 2, 3, GL_FLOAT, GL_TRUE, sizeof( Vertex ), BUFFER_OFFSET( 28 ) ); //Norm
-	glVertexAttribPointer( 3, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( 40 ) ); //Uv
+	glVertexAttribPointer( 0, 3, GL_UNSIGNED_BYTE, GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( 0 ) ); //Vert
+	glVertexAttribPointer( 1, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( 3 ) ); //Color
+	glVertexAttribPointer( 2, 3, GL_BYTE, GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( 7 ) ); //Norm
+	glVertexAttribPointer( 3, 3, GL_UNSIGNED_BYTE, GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( 10 ) ); //Uv
 
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, id_ibo );
 

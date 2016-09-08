@@ -18,9 +18,6 @@ class Client :
 	public Manager {
 
 private:
-	SharedMesh mesh;
-	SharedMesh::SMHandle handles[ 4 ];
-
 	std::mutex mutex_thead_ids;
 	std::vector< std::string > list_thread_ids;
 

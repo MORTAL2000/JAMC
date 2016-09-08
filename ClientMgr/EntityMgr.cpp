@@ -177,7 +177,7 @@ void EntityMgr::render( ) {
 		glUniform1f( idx_idx_layer, client.chunk_mgr.get_block_data( entity->id ).faces[ 0 ].id_subtex );
 		glUniform4fv( idx_frag_color, 1, ( const GLfloat * ) &entity->color );
 
-		vbo.render( client );
+		vbo.render( client, false );
 
 		iter++;
 	}
@@ -206,7 +206,7 @@ void EntityMgr::render_shadow( glm::mat4 & mat_light ) {
 		glUniform1f( idx_idx_layer, client.chunk_mgr.get_block_data( entity->id ).faces[ 0 ].id_subtex );
 		glUniform4fv( idx_frag_color, 1, ( const GLfloat * ) &entity->color );
 
-		vbo.render( client );
+		vbo.render( client, false );
 
 		iter++;
 	}
@@ -235,10 +235,10 @@ void EntityMgr::init_mesh( ) {
 
 		for( int j = 0; j < 4; ++j ) {
 			vbo.push_data( VBO::Vertex {
-				verts_entity[ i ][ j ].x, verts_entity[ i ][ j ].y, verts_entity[ i ][ j ].z,
-				color.r, color.g, color.b, color.a,
-				norm[ 0 ], norm[ 1 ], norm[ 2 ],
-				uvs_entity[ j ].x, uvs_entity[ j ].y, 0
+				verts_entity[ i ][ j ],
+				color,
+				norm,
+				{ uvs_entity[ j ].x, uvs_entity[ j ].y, 0 }
 			} );
 		}
 	}

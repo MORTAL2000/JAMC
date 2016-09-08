@@ -30,9 +30,7 @@ void TextureMgr::init( ) {
 
 	GL_CHECK( load_textures( ) );
 
-	GL_CHECK( load_skybox( ) );
 	GL_CHECK( load_fonts( ) );
-	GL_CHECK( load_materials( ) );
 
 	printf( "Creating uniform buffer objects...\n" );
 
@@ -241,7 +239,7 @@ void TextureMgr::load_textures( ) {
 		std::cout << "Loading MultiTex: [" << entry.name_texture << "] dim:" << Directional::print_vec( entry.dim_texture ) 
 			<< " size:" << entry.num_subtexture << " mipmap:" << entry.num_mipmap << std::endl;
 
-		// Request space fot he copy and final multitexture
+		// Request space fo the copy and final multitexture
 		glGenTextures( 1, &id_copy );
 		glBindTexture( GL_TEXTURE_2D, id_copy );
 		glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
@@ -250,7 +248,7 @@ void TextureMgr::load_textures( ) {
 		glGenTextures( 1, &entry.id_texture );
 		glBindTexture( GL_TEXTURE_2D_ARRAY, entry.id_texture );
 		glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-		glTexStorage3D( GL_TEXTURE_2D_ARRAY, entry.num_mipmap, GL_RGBA8, entry.dim_texture.x, entry.dim_texture.y, 1024 );
+		glTexStorage3D( GL_TEXTURE_2D_ARRAY, entry.num_mipmap, GL_RGBA8, entry.dim_texture.x, entry.dim_texture.y, num_tex );
 
 		//std::cout << "Error after allocation? " << checkGlErrors( ) << std::endl;
 
@@ -270,7 +268,7 @@ void TextureMgr::load_textures( ) {
 					iter_multitex_sub->path( ).string( ).c_str( ),
 					SOIL_LOAD_RGBA,
 					id_copy,
-					SOIL_FLAG_POWER_OF_TWO | SOIL_FLAG_INVERT_Y );
+					SOIL_FLAG_INVERT_Y );
 
 				// Copy it from there to our multitexture
 				glCopyImageSubData(
@@ -317,18 +315,7 @@ void TextureMgr::load_textures( ) {
 	std::cout << std::endl;
 }
 
-void TextureMgr::load_skybox( ) { 
-	id_skybox = SOIL_load_OGL_texture(
-		".\\Skybox\\Skybox1.png",
-		SOIL_LOAD_RGBA,
-		SOIL_CREATE_NEW_ID,
-		SOIL_FLAG_INVERT_Y );
-}
-
 void TextureMgr::load_fonts( ) { 
-	int index = 0;
-	int succ = 0;
-	int tex_succ = 0;
 	int x, y;
 	float offset_x = 0;
 	float offset_y = -19.5f;
@@ -339,66 +326,27 @@ void TextureMgr::load_fonts( ) {
 	glm::ivec2 dim_fonts( 860, 1400 );
 	glm::ivec2 dim_char = dim_fonts / 10;
 
-	glGenTextures( 1, &id_fonts );
-	glBindTexture( GL_TEXTURE_2D, id_fonts );
-	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, dim_fonts.x, dim_fonts.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr );
-
-	id_fonts = SOIL_load_OGL_texture(
-		".\\Fonts\\Font1.png",
-		SOIL_LOAD_RGBA,
-		id_fonts,
-		SOIL_FLAG_INVERT_Y );
-
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-
 	for( int i = 0; i < ( 176 - 32 ); i++ ) { 
 		x = ( i * dim_char.x ) % dim_fonts.x;
 		y = dim_fonts.y - dim_char.y - ( ( i * dim_char.x ) / dim_fonts.x ) * ( dim_char.y );
 
-		uvs_fonts.push_back(
-			face_uvs { {
-				{ ( float( x ) + offset_x + padding_x + pixel_correct ) / dim_fonts.x,
-				( float( y ) + offset_y + padding_y + pixel_correct ) / dim_fonts.y },
+		uvs_fonts.push_back( face_uvs { {
+			{ ( float( x ) + offset_x + padding_x + pixel_correct ) / dim_fonts.x,
+			( float( y ) + offset_y + padding_y + pixel_correct ) / dim_fonts.y },
 
-				{ ( float( x ) + offset_x + dim_char.x - padding_x - pixel_correct ) / dim_fonts.x,
-				( float( y ) + offset_y + padding_y + pixel_correct ) / dim_fonts.y },
+			{ ( float( x ) + offset_x + dim_char.x - padding_x - pixel_correct ) / dim_fonts.x,
+			( float( y ) + offset_y + padding_y + pixel_correct ) / dim_fonts.y },
 
-				{ ( float( x ) + offset_x + dim_char.x - padding_x - pixel_correct ) / dim_fonts.x,
-				( float( y ) + offset_y + dim_char.y - padding_y - pixel_correct ) / dim_fonts.y },
+			{ ( float( x ) + offset_x + dim_char.x - padding_x - pixel_correct ) / dim_fonts.x,
+			( float( y ) + offset_y + dim_char.y - padding_y - pixel_correct ) / dim_fonts.y },
 
-				{ ( float( x ) + offset_x + padding_x + pixel_correct ) / dim_fonts.x,
-				( float( y ) + offset_y + dim_char.y - padding_y - pixel_correct ) / dim_fonts.y }
-			} } );
+			{ ( float( x ) + offset_x + padding_x + pixel_correct ) / dim_fonts.x,
+			( float( y ) + offset_y + dim_char.y - padding_y - pixel_correct ) / dim_fonts.y }
+		} } );
 	}
 }
 
-void TextureMgr::load_materials( ) { 
-	glGenTextures( 1, &id_materials );
-	glBindTexture( GL_TEXTURE_2D, id_materials );
-	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, 64, 64, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr );
-
-	id_materials = SOIL_load_OGL_texture(
-		".\\Materials\\Solid.png",
-		SOIL_LOAD_RGBA,
-		id_materials,
-		SOIL_FLAG_INVERT_Y );
-
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-
-	uvs_materials = { {
-		{ 0, 0 },
-		{ 1, 0 },
-		{ 1, 1 },
-		{ 0, 1 }
-	} };
-}
-
 void TextureMgr::update( ) {
-	//std::cout << "Tex in: " << checkGlErrors( ) << std::endl;
 	GL_CHECK( glBindBuffer( GL_UNIFORM_BUFFER, id_ubo_mvp ) );
 	auto & matrices = client.display_mgr.camera.mvp_matrices;
 	matrices.time_game = client.time_mgr.get_time( TimeStrings::GAME );
@@ -408,17 +356,6 @@ void TextureMgr::update( ) {
 	auto & light_data = client.chunk_mgr.get_light_data( );
 
 	GL_CHECK( glBufferSubData( GL_UNIFORM_BUFFER, 0, sizeof( LightData ), &light_data ) );
-//	std::cout << "Tex out: " << checkGlErrors( ) << std::endl;
-	/*
-	int index = 0;
-	glBufferSubData( GL_UNIFORM_BUFFER, index, sizeof( LightData::SunData ), &light_data.sun_data );
-	index += sizeof( LightData::SunData );
-	glBufferSubData( GL_UNIFORM_BUFFER, index, sizeof( GLint ) + light_data.num_emitter * sizeof( glm::vec4 ), &light_data.num_emitter );
-	index += sizeof( GLint ) + light_data.max_emitters * sizeof( glm::vec4 );
-	glBufferSubData( GL_UNIFORM_BUFFER, index, light_data.num_emitter * sizeof( glm::vec4 ), &light_data.list_color );
-	index += light_data.max_emitters * sizeof( glm::vec4 );
-	glBufferSubData( GL_UNIFORM_BUFFER, index, light_data.num_emitter * sizeof( GLfloat ), &light_data.list_radius );
-	*/
 }
 
 void TextureMgr::read_file( std::string const & path_file, std::string & data ) {
@@ -511,30 +448,6 @@ void TextureMgr::load_shader( std::string const & path_vert, std::string const &
 	glDeleteShader( id_vert );
 	glDeleteShader( id_frag );
 }
- 
-void TextureMgr::bind_skybox( ) {
-	if( id_bound_texture != id_skybox ) { 
-		id_bound_texture = id_skybox;
-		glActiveTexture( GL_TEXTURE0 );
-		glBindTexture( GL_TEXTURE_2D, id_bound_texture );
-	}
-}
-
-void TextureMgr::bind_fonts( ) { 
-	if( id_bound_texture != id_fonts ) { 
-		id_bound_texture = id_fonts;
-		glActiveTexture( GL_TEXTURE0 );
-		glBindTexture( GL_TEXTURE_2D, id_bound_texture );
-	}
-}
-
-void TextureMgr::bind_materials( ) {
-	if( id_bound_texture != id_materials ) {
-		id_bound_texture = id_materials;
-		glActiveTexture( GL_TEXTURE0 );
-		glBindTexture( GL_TEXTURE_2D, id_bound_texture );
-	}
-}
 
 ShaderLoader const * TextureMgr::get_program( std::string const & name ) {
 	auto & iter_program = map_shaders.find( name );
@@ -557,10 +470,6 @@ GLuint const TextureMgr::get_program_id( std::string const & name ) {
 
 face_uvs & TextureMgr::get_uvs_fonts( int const id_font ) { 
 	return uvs_fonts[ id_font ];
-}
-
-face_uvs & TextureMgr::get_uvs_materials( ) { 
-	return uvs_materials;
 }
 
 void TextureMgr::update_uniform( GLuint id_program, std::string const & name_uniform, GLint const value ) { 

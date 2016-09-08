@@ -90,6 +90,11 @@ Player::Player( ) :
 
 					ec_player.last_input = time_now;
 				}
+				else if( client.input_mgr.is_key( 'P' ) ) {
+					client.chunk_mgr.next_skybox( );
+
+					ec_player.last_input = time_now;
+				}
 			}
 
 			if( !ec_player.is_godmode ) { 

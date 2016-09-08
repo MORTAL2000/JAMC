@@ -54,9 +54,6 @@ void GuiMgr::update( ) {
 void GuiMgr::render( ) {
 	block_selector.render( );
 
-	client.texture_mgr.bind_program( "BasicOrtho" );
-	static GLuint idx_mat_model = glGetUniformLocation( client.texture_mgr.id_bound_program, "mat_model" );
-
 	if( !is_visible ) {
 		return;
 	}
@@ -67,8 +64,8 @@ void GuiMgr::render( ) {
 			continue;
 		}
 
-		glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( page.mat_model ) );
-		page.vbo.render( client );
+		client.texture_mgr.update_uniform( "BasicOrtho", "mat_model", page.mat_model );
+		page.vbo.render( client, true );
 	}
 }
 

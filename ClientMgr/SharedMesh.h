@@ -26,13 +26,6 @@ public:
 		GL_POINTS, GL_LINES, GL_TRIANGLES
 	};
 
-	struct Vertex {
-		GLfloat pos[ 3 ];
-		GLfloat color[ 4 ];
-		GLfloat norm[ 3 ];
-		GLfloat uv[ 3 ];
-	};
-
 	struct SharedMeshCommands {
 		GLuint count_inds;
 		GLuint count_instace;

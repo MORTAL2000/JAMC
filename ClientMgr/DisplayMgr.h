@@ -39,7 +39,7 @@ public:
 	Camera( );
 };
 
-class DisplayMgr : 
+class DisplayMgr :
 	public Manager {
 
 private:

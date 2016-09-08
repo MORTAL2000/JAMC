@@ -15,6 +15,6 @@ out vec4 frag_color;
 
 void main() {
 	frag_uv = uv;
-	frag_color = color;
+	frag_color = vec4( color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0 );
 	gl_Position = mat_light * mat_model * vert;
 }

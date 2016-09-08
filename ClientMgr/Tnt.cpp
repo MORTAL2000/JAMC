@@ -15,7 +15,7 @@ Tnt::Tnt( ) :
 
 			auto & ec_tnt = entity.get_data< ECTnt >( ).get( );
 			ec_tnt.time_last = client.time_mgr.get_time( TimeStrings::GAME );
-			ec_tnt.time_life = rand( ) % 250 + 250;
+			ec_tnt.time_life = rand( ) % 2500 + 2500;
 			ec_tnt.time_update = 64;
 			ec_tnt.size_explosion = 7;
 

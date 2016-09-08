@@ -46,7 +46,6 @@ private:
 	GLuint id_ubo_lights;
 
 	std::vector< face_uvs > uvs_fonts;
-	face_uvs uvs_materials;
 
 	std::vector< MultiTexture > list_multitex;
 	std::unordered_map< std::string, MultiTexture * > map_multitex;
@@ -56,15 +55,9 @@ public:
 	GLuint id_bound_active = 0;
 	GLuint id_bound_texture = 0;
 
-	GLuint id_skybox;
-	GLuint id_fonts;
-	GLuint id_materials;
-
 private:
 	void load_textures( );
-	void load_skybox( );
 	void load_fonts( );
-	void load_materials( );
 
 	void read_file( std::string const & path_file, std::string & data );
 	void load_vert_shader( std::string const & path_file, GLuint & id_vert );
@@ -84,10 +77,6 @@ public:
 
 	void loader_add( std::string const & name );
 
-	void bind_skybox( );
-	void bind_fonts( );
-	void bind_materials( );
-
 	ShaderLoader const * get_program( std::string const & name );
 	GLuint const get_program_id( std::string const & name );
 
@@ -103,25 +92,29 @@ public:
 	void bind_texture_array( GLuint const id_active, GLuint const id_texture );
 
 	face_uvs & get_uvs_fonts( int const id_font );
-	face_uvs & get_uvs_materials( );
 
 	void update_uniform( GLuint id_program, std::string const & name_uniform, GLint const value );
 	template< int unsigned size >
-	void update_uniform( GLuint id_program, std::string const & name_uniform, GLint const ( & value )[ size ] ) { 
+	void update_uniform( GLuint id_program, std::string const & name_uniform, GLint const ( & values )[ size ] ) { 
 		bind_program( id_program );
-		glUniform1iv( glGetUniformLocation( id_program, name_uniform.c_str( ) ), size, value );
+		glUniform1iv( glGetUniformLocation( id_program, name_uniform.c_str( ) ), size, values );
 	}
 
 	void update_uniform( GLuint id_program, std::string const & name_uniform, GLuint const value );
 
 	void update_uniform( GLuint id_program, std::string const & name_uniform, GLfloat const value );
 	template< int unsigned size >
-	void update_uniform( GLuint id_program, std::string const & name_uniform, GLfloat const ( &value )[ size ] ) {
+	void update_uniform( GLuint id_program, std::string const & name_uniform, GLfloat const ( &values )[ size ] ) {
 		bind_program( id_program );
-		glUniform1fv( glGetUniformLocation( id_program, name_uniform.c_str( ) ), size, value );
+		glUniform1fv( glGetUniformLocation( id_program, name_uniform.c_str( ) ), size, values );
 	}
 
 	void update_uniform( GLuint id_program, std::string const & name_uniform, glm::mat4 const & value );
+	template< int unsigned size >
+	void update_uniform( GLuint id_program, std::string const & name_uniform, glm::mat4 const ( & values )[ size ] ) { 
+		bind_program( id_program );
+		glUniformMatrix4fv( glGetUniformLocation( id_program, name_uniform.c_str( ) ), size, GL_FALSE, glm::value_ptr( values[ 0 ] ) );
+	}
 
 	template< class T >
 	void update_uniform( std::string const & name_program, std::string const & name_uniform, T const & value ) { 

@@ -93,7 +93,7 @@ void TimeMgr::render() {
 					0 
 	) ) ) );
 
-	vbo.render( client );
+	vbo.render( client, true );
 }
 
 void TimeMgr::end() {
@@ -116,11 +116,17 @@ void TimeMgr::mesh_graphs( ) {
 			float max_record = 0;
 			glm::ivec2 dim_char = { 8, 12 };
 
+			GLuint id_materials = client.texture_mgr.get_texture_id( "Materials" );
+			GLuint id_materials_subtex = client.texture_mgr.get_texture_layer( "Materials", "Details/Solid" );
+
+			GLuint id_fonts = client.texture_mgr.get_texture_id( "Fonts" );
+			GLuint id_fonts_subtex = client.texture_mgr.get_texture_layer( "Fonts", "Default/Basic" );
+
 			auto & norm = Directional::get_vec_dir_f( FaceDirection::FD_Front );
 			auto color = glm::vec4( 0.2f, 0.2f, 0.2f, 0.7f );
 
 			vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
-				"BasicOrtho", client.texture_mgr.id_materials,
+				"BasicOrtho", id_materials,
 				std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
 			) );
 
@@ -132,7 +138,7 @@ void TimeMgr::mesh_graphs( ) {
 						( -( i + 1 ) * ( dim_graph.y + padding ) ) + verts_graph[ j ].y * dim_graph.y, 0 },
 						{ color.r, color.g, color.b, color.a },
 						{ norm.x, norm.y, norm.z },
-						{ 0, 0, 0 }
+						{ 0, 0, id_materials_subtex }
 					} );
 				}
 			}
@@ -140,7 +146,7 @@ void TimeMgr::mesh_graphs( ) {
 			color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
 
 			vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Lines,
-				"BasicOrtho", client.texture_mgr.id_materials,
+				"BasicOrtho", id_materials,
 				std::vector< GLuint >{ 0, 1 }
 			) );
 
@@ -170,7 +176,7 @@ void TimeMgr::mesh_graphs( ) {
 						( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( record.history[ j ] / max_record ) * dim_graph.y, 0 },
 						{ color.r, color.g, color.b, color.a },
 						{ norm.x, norm.y, norm.z },
-						{ 0, 0, 0 }
+						{ 0, 0, id_materials_subtex }
 					} );
 
 					vbo.push_data( VBO::Vertex {
@@ -178,7 +184,7 @@ void TimeMgr::mesh_graphs( ) {
 						( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( record.history[ j + 1 ] / max_record ) * dim_graph.y, 0 },
 						{ color.r, color.g, color.b, color.a },
 						{ norm.x, norm.y, norm.z },
-						{ 0, 0, 0 }
+						{ 0, 0, id_materials_subtex }
 					} );
 				}
 
@@ -187,7 +193,7 @@ void TimeMgr::mesh_graphs( ) {
 					( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( TIME_FRAME_MILLI / max_record ) * dim_graph.y, 0 },
 					{ 0.0f, 1.0f, 0.0f, 1.0f },
 					{ norm.x, norm.y, norm.z },
-					{ 0, 0, 0 }
+					{ 0, 0, id_materials_subtex }
 				} );
 
 				vbo.push_data( VBO::Vertex {
@@ -195,14 +201,14 @@ void TimeMgr::mesh_graphs( ) {
 					( -( i + 1 ) * ( dim_graph.y + padding ) ) + ( TIME_FRAME_MILLI / max_record ) * dim_graph.y, 0 },
 					{ 0.0f, 1.0f, 0.0f, 1.0f },
 					{ norm.x, norm.y, norm.z },
-					{ 0, 0, 0 }
+					{ 0, 0, id_materials_subtex }
 				} );
 			}
 
 			color = glm::vec4( 0.0f, 0.0f, 1.0f, 1.0f );
 
 			vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
-				"BasicOrtho", client.texture_mgr.id_fonts,
+				"BasicOrtho", id_fonts,
 				std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
 			) );
 
@@ -219,7 +225,7 @@ void TimeMgr::mesh_graphs( ) {
 							( -( i + 1 ) * ( dim_graph.y + padding ) ) + padding + verts_graph[ k ].y * dim_char.y, 0 },
 							{ color.r, color.g, color.b, color.a },
 							{ norm.x, norm.y, norm.z },
-							{ uvs[ k ][ 0 ], uvs[ k ][ 1 ], 0 }
+							{ uvs[ k ][ 0 ], uvs[ k ][ 1 ], id_fonts_subtex }
 						} );
 					}
 				}

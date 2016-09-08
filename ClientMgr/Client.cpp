@@ -202,15 +202,10 @@ void Client::render_output( ) {
 
 	glDisable( GL_CULL_FACE );
 
-	client.texture_mgr.bind_program( "SMBasic" );
-	client.texture_mgr.bind_texture( 0, client.texture_mgr.id_materials );
-
-	mesh.render( *this );
-
 	glEnable( GL_CULL_FACE );
 
-	gui_mgr.render( );
-	time_mgr.render( );
+	GL_CHECK( gui_mgr.render( ) );
+	GL_CHECK( time_mgr.render( ) );
 
 	glEnable( GL_LIGHTING );
 

@@ -21,7 +21,7 @@ void DisplayMgr::init( ) {
 
 	init_gl_window( 
 		glm::ivec2( 0, 0 ), 
-		glm::ivec2( 1900, 1000 ), 
+		glm::ivec2( 1920, 1080 ), 
 		32,
 		false );
 
@@ -173,7 +173,7 @@ void DisplayMgr::init_gl_window( glm::ivec2 & pos_window, glm::ivec2 & dim_windo
 	if( !( hWnd = CreateWindowEx(
 		dwExStyle,									// Extended Style For The Window
 		L"DisplayManager",							// Class Name
-		L"Minceclone",								// Window Title
+		L"[ JAMC ]",								// Window Title
 		dwStyle |									// Defined Window Style
 		WS_CLIPSIBLINGS |							// Required Window Style
 		WS_CLIPCHILDREN,							// Required Window Style
@@ -346,7 +346,7 @@ void DisplayMgr::draw_string( Vect3< int > const & pos, std::string & string, gl
 
 
 void DisplayMgr::draw_key( int const size ) {
-	glPushMatrix( );
+	/*glPushMatrix( );
 
 	glTranslatef( dim_window.x / 2, dim_window.y / 2, -size );
 
@@ -370,7 +370,7 @@ void DisplayMgr::draw_key( int const size ) {
 
 	glEnd();
 
-	glPopMatrix( );
+	glPopMatrix( );*/
 }
 
 /*
@@ -539,12 +539,13 @@ void DisplayMgr::set_proj( ) {
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity( );
 
-	float aspect = float( dim_window.x ) / dim_window.y;
-	float fov_y = fov / aspect;
+	float aspect = float( dim_window.x ) / float( dim_window.y );
+	//float fov_y = fov / aspect;
 
-	gluPerspective( fov_y, aspect, 0.1f, 3000.0f );
-	camera.mvp_matrices.mat_perspective = glm::perspective( 
-		glm::radians( fov_y ), aspect, 0.1f, 3000.0f );
+	gluPerspective( fov, aspect, 0.1f, 3000.0f );
+
+	camera.mvp_matrices.mat_perspective = glm::perspectiveFov( 
+		glm::radians( fov ), ( float ) dim_window.x, ( float ) dim_window.y, 0.1f, 3000.0f );
 
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity( );

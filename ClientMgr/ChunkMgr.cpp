@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <filesystem>
+//#include <system_error>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -58,10 +59,36 @@ void ChunkMgr::init( ) {
 	if( !exists( path_world ) ) {
 		create_directory( path_world );
 	}
-	else { 
-		remove_all( path_world );
-		create_directory( path_world );
+
+	std::error_code error;
+
+	for( directory_iterator iter_dir( path_world ); iter_dir != directory_iterator( ); ++iter_dir ) { 
+		remove_all( iter_dir->path( ), error );
+
+		if( error ) {
+			printf( "\nError removing directory: %s\n", error.message( ).c_str( ) );
+		}
 	}
+
+	/*
+	else { 
+		std::error_code error;
+
+		remove_all( path_world, error );
+
+		if( error ) {
+			printf( "\nError removing directory: %s\n", error.message( ).c_str( ) );
+		}
+
+		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+
+		create_directory( path_world, error );
+
+		if( error ) { 
+			printf( "\nError creating directory: %s\n", error.message( ).c_str( ) );
+		}
+	}
+	*/
 
 	// Base Biome
 	{
@@ -539,18 +566,14 @@ void ChunkMgr::update( ) {
 }
 
 void ChunkMgr::render( ) {
-	static GLuint id_blocks = client.texture_mgr.get_texture_id( "Blocks" );
-
-	client.texture_mgr.bind_program( "SMTerrain" );
-	client.texture_mgr.bind_texture_array( 0, id_blocks );
-
-	render_skybox( );
-	render_exlude( );
-	render_sort( );
-	render_build( );
-	render_pass_shadow( );
-	render_pass_norm( );
-	render_debug( );
+	GL_CHECK( render_skybox( ) );
+	GL_CHECK( render_exlude( ) );
+	GL_CHECK( render_sort( ) );
+	GL_CHECK( render_build( ) );
+	GL_CHECK( render_pass_shadow( ) );
+	GL_CHECK( render_pass_solid( ) );
+	GL_CHECK( render_pass_trans( ) );
+	GL_CHECK( render_debug( ) );
 }
 
 void ChunkMgr::render_skybox( ) {
@@ -560,7 +583,7 @@ void ChunkMgr::render_skybox( ) {
 		glm::scale( glm::mat4( 1.0f ), glm::vec3( 1000.0f, 1000.0f, 1000.0f ) );
 
 	client.texture_mgr.update_uniform( "BasicPersp", "mat_model", mat_model );
-	vbo_skybox.render( client );
+	vbo_skybox.render( client, true );
 
 	auto & pos_sun = light_data.sun_data.pos_sun;
 
@@ -570,10 +593,8 @@ void ChunkMgr::render_skybox( ) {
 		glm::rotate( glm::mat4( 1.0f ), -glm::atan( pos_sun.y, pos_sun.x ), glm::vec3( 1, 0, 0 ) ) *
 		glm::scale( glm::mat4( 1.0f ), glm::vec3( 50.0f, 50.0f, 1.0f ) );
 
-	glDisable( GL_CULL_FACE );
 	client.texture_mgr.update_uniform( "BasicPersp", "mat_model", mat_model );
-	vbo_sun.render( client );
-	glEnable( GL_CULL_FACE );
+	vbo_sun.render( client, true );
 }
 
 void ChunkMgr::render_exlude( ) {
@@ -585,6 +606,7 @@ void ChunkMgr::render_exlude( ) {
 
 	auto & camera = client.display_mgr.camera;
 	float dist = 0;
+	bool in_cone = false;
 
 	client.time_mgr.begin_record( RecordStrings::RENDER_EXLUSION );
 
@@ -598,10 +620,20 @@ void ChunkMgr::render_exlude( ) {
 		);
 
 		for( GLuint i = 0; i < 8; ++i ) {
-			if( Directional::is_point_in_cone( chunk.pos_gw + pos_check[ i ], camera.pos_camera, 
-				camera.pos_camera + camera.vec_front, client.display_mgr.fov ) ||
-				dist <= 4.0f ) {
+			if( dist < 4.0f ) { 
+				list_render.push_back( &chunk );
+				break;
+			}
 
+			if( dist > ( World::size_x + World::size_z ) / 2.0f + 1 ) {
+				continue;
+			}
+
+			in_cone = Directional::is_point_in_cone(
+				chunk.pos_gw + pos_check[ i ], camera.pos_camera,
+				camera.pos_camera + camera.vec_front, client.display_mgr.fov / 3.0f * 4.0f + 10.0f );
+
+			if( in_cone ) {
 				list_render.push_back( &chunk );
 				break; 
 			}
@@ -658,66 +690,31 @@ void ChunkMgr::render_pass_shadow( ) {
 		client.texture_mgr.unbind_program( );
 		client.display_mgr.set_ortho( );
 
+		dim_shadow = { 300, 300 };
+
 		glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
 
-		glBindTexture( GL_TEXTURE_2D, id_tex_depth[ 2 ] );
+		for( GLuint i = 0; i < num_cascades; ++i ) {
+			glBindTexture( GL_TEXTURE_2D, id_tex_depth[ i ] );
 
-		dim_shadow = { 200, 200 };
-		pos_shadow = { 550, 100 };
+			pos_shadow = { 25 + ( i * dim_shadow.x + 25 ), 250 };
 
-		glBegin( GL_QUADS );
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex2f( pos_shadow.x, pos_shadow.y );
+			glBegin( GL_QUADS );
 
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y );
+			glTexCoord2f( 0.0f, 0.0f );
+			glVertex2f( pos_shadow.x, pos_shadow.y );
 
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y + dim_shadow.y );
+			glTexCoord2f( 1.0f, 0.0f );
+			glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y );
 
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex2f( pos_shadow.x, pos_shadow.y + dim_shadow.y );
+			glTexCoord2f( 1.0f, 1.0f );
+			glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y + dim_shadow.y );
 
-		glEnd( );
+			glTexCoord2f( 0.0f, 1.0f );
+			glVertex2f( pos_shadow.x, pos_shadow.y + dim_shadow.y );
 
-		glBindTexture( GL_TEXTURE_2D, id_tex_depth[ 1 ] );
-
-		dim_shadow = { 200, 200 };
-		pos_shadow = { 325, 100 };
-
-		glBegin( GL_QUADS );
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex2f( pos_shadow.x, pos_shadow.y );
-
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y );
-
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y + dim_shadow.y );
-
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex2f( pos_shadow.x, pos_shadow.y + dim_shadow.y );
-
-		glEnd( );
-
-		glBindTexture( GL_TEXTURE_2D, id_tex_depth[ 0 ] );
-
-		dim_shadow = { 200, 200 };
-		pos_shadow = { 100, 100 };
-		glBegin( GL_QUADS );
-		glTexCoord2f( 0.0f, 0.0f );
-		glVertex2f( pos_shadow.x, pos_shadow.y );
-
-		glTexCoord2f( 1.0f, 0.0f );
-		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y );
-
-		glTexCoord2f( 1.0f, 1.0f );
-		glVertex2f( pos_shadow.x + dim_shadow.x, pos_shadow.y + dim_shadow.y );
-
-		glTexCoord2f( 0.0f, 1.0f );
-		glVertex2f( pos_shadow.x, pos_shadow.y + dim_shadow.y );
-
-		glEnd( );
+			glEnd( );
+		}
 
 		client.display_mgr.set_proj( );
 	}
@@ -731,24 +728,57 @@ void ChunkMgr::render_pass_shadow( ) {
 
 		glm::mat4 mat_inv_cam = glm::inverse( client.display_mgr.camera.mvp_matrices.mat_view );
 
-		float ar =  window.x / window.y;
-		float tanh_hfov = glm::tan( glm::radians( client.display_mgr.fov / 2.0f ) );
-		float tanh_vfov = glm::tan( glm::radians( ( client.display_mgr.fov / ar ) / 2.0f ) );
+		float ar =  float( 4.0f ) / 3.0f;
+		float h_hfov = client.display_mgr.fov * ar / 2.0f;
+		float h_vfov = client.display_mgr.fov / 2.0f;
+		float tanh_hfov = glm::tan( glm::radians( h_hfov ) );
+		float tanh_vfov = glm::tan( glm::radians( h_vfov ) );
+
+		/*
+		float tanh_hfov = glm::tan( client.display_mgr.fov / 2.0f );
+		float tanh_vfov = glm::tan( ( client.display_mgr.fov / ar ) / 2.0f );
+		*/
+
+		/*
+		GLuint num_skip = 2;
+		GLuint i = ++idx_cascade % ( num_cascades * num_skip );
+
+		if( i % 3 != 0 ) { 
+			return;
+		}
+
+		i = i / num_skip;
+		*/
+
+		GLuint i = ++idx_cascade % num_cascades;
 
 		float zclip[ num_cascades + 1 ];
 		zclip[ 0 ] = 0.2f;
-		for( GLuint i = 0; i < num_cascades; ++i ) { 
-			zclip[ i + 1 ] = depth_cascades[ i ];
+		for( GLuint j = 0; j < num_cascades; ++j ) { 
+			zclip[ j + 1 ] = depth_cascades[ j ];
 		}
 
-		for( GLuint i = 0; i < num_cascades; i++ ) {
-			glm::vec3 vec_look = glm::normalize( glm::vec3( client.chunk_mgr.light_data.sun_data.pos_sun ) );
-			mat_view_light = glm::lookAt( client.display_mgr.camera.pos_camera + vec_look * 250.0f , client.display_mgr.camera.pos_camera, glm::vec3( 0.0f, 1.0f, 0.0f ) );
+		//for( GLuint i = 0; i < num_cascades; i++ ) {
+			mat_view_light = glm::lookAt( 
+				client.display_mgr.camera.pos_camera, 
+				client.display_mgr.camera.pos_camera - glm::vec3( client.chunk_mgr.light_data.sun_data.pos_sun ),
+				glm::vec3( 0.0f, 1.0f, 0.0f ) );
 
 			float xn = zclip[ i ] * tanh_hfov;
 			float xf = zclip[ i + 1 ] * tanh_hfov;
+
 			float yn = zclip[ i ] * tanh_vfov;
 			float yf = zclip[ i + 1 ] * tanh_vfov;
+
+			/*
+			auto & out = client.display_mgr.out;
+			out.str( "" );
+			out << "h_hfov: " << h_hfov << " h_vfov: " << h_vfov << "\n";
+			out << "tanh_hfov: " << tanh_hfov << " tanh_vfov: " << tanh_vfov << "\n";
+			out << "zclip0: " << zclip[ 0 ] << " zclip1: " << zclip[ 1 ] << "\n";
+			out << "xn: " << xn << " yn: " << yn << " xf: " << xf << " yf: " << yf << "\n";
+			client.gui_mgr.print_to_console( out.str( ) );
+			*/
 
 			corners_frustrum[ i ][ 0 ] = glm::vec4 { xn, yn, zclip[ i ], 1.0f };
 			corners_frustrum[ i ][ 1 ] = glm::vec4 { -xn, yn, zclip[ i ], 1.0f };
@@ -771,7 +801,10 @@ void ChunkMgr::render_pass_shadow( ) {
 
 			for( GLuint j = 0; j < 8; ++j ) {
 				corners_frustrum[ i ][ j ] = mat_inv_cam * corners_frustrum[ i ][ j ];
+				//corners_frustrum[ i ][ j ] -= glm::vec4( client.display_mgr.camera.pos_camera, 0 );
 				corners_frustrum[ i ][ j ] = mat_view_light * corners_frustrum[ i ][ j ];
+
+				//corners_frustrum[ i ][ j ] = mat_view_light * corners_frustrum[ i ][ j ];
 
 				sides_ortho[ i ][ 0 ] = std::min( sides_ortho[ i ][ 0 ], corners_frustrum[ i ][ j ].x );
 				sides_ortho[ i ][ 1 ] = std::max( sides_ortho[ i ][ 1 ], corners_frustrum[ i ][ j ].x );
@@ -785,22 +818,36 @@ void ChunkMgr::render_pass_shadow( ) {
 
 			//printf( "z: %f to %f\n", minZ, maxZ );
 			//printf( "x: %f to %f, y: %f to %f, z: %f to %f\n", minX, maxX, minY, maxY, minZ, maxZ );
+			
 			mat_ortho_light[ i ] = glm::ortho( 
-				-sides_ortho[ i ][ 0 ], 
+				-sides_ortho[ i ][ 0 ],
 				-sides_ortho[ i ][ 1 ],
 				-sides_ortho[ i ][ 2 ],
 				-sides_ortho[ i ][ 3 ],
-				0.5f , Chunk::size_z * float( World::size_z * 2 + 1 ) 
+				-768.0f, 768.0f
+				//sides_ortho[ i ][ 4 ], 
+				//sides_ortho[ i ][ 5 ]
+				//sides_ortho[ i ][ 4 ], sides_ortho[ i ][ 5 ]
 			) * mat_view_light;
-		}
+			
+
+			/*
+			mat_ortho_light[ i ] = glm::ortho(
+				-10.0f, 10.0f,
+				-10.0f, 10.0f,
+				-500.0f, 500.0f
+				//sides_ortho[ i ][ 4 ], sides_ortho[ i ][ 5 ]
+			) * mat_view_light;
+			*/
+		//}
 
 		glCullFace( GL_FRONT );
 
 		glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
 		glBindFramebuffer( GL_FRAMEBUFFER, id_depth_fbo );
 
-		for( GLuint i = 0; i < num_cascades; i++ ) {
-			client.texture_mgr.bind_texture( 1 + i, id_tex_depth[ i ] );
+		//for( GLuint i = 0; i < num_cascades; i++ ) {
+			client.texture_mgr.bind_texture( i + 1, id_tex_depth[ i ] );
 			glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, id_tex_depth[ i ], 0 );
 
 			glViewport( 0, 0, SHADOW_WIDTH, SHADOW_HEIGHT );
@@ -823,7 +870,7 @@ void ChunkMgr::render_pass_shadow( ) {
 			glEnable( GL_CULL_FACE );
 
 			client.entity_mgr.render( );
-		}
+		//}
 
 		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
@@ -840,22 +887,22 @@ void ChunkMgr::render_pass_shadow( ) {
 
 		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	}
-}
-
-void ChunkMgr::render_pass_norm( ) {
-	static GLuint id_blocks = client.texture_mgr.get_texture_id( "Blocks" );
-	static GLuint idx_mat_light = glGetUniformLocation( client.texture_mgr.get_program_id( "SMTerrain" ), "mat_light" );
-
-	client.texture_mgr.bind_program( "SMTerrain" );
-	client.texture_mgr.bind_texture_array( 0, id_blocks );
-
-	glUniformMatrix4fv( idx_mat_light, num_cascades, GL_FALSE, glm::value_ptr( mat_ortho_light[ 0 ] ) );
 
 	client.display_mgr.resize_window( client.display_mgr.get_window ( ) );
+}
 
-	//glDisable( GL_BLEND );
+void ChunkMgr::render_pass_solid( ) {
+	client.texture_mgr.bind_program( "SMTerrain" );
+	client.texture_mgr.bind_texture_array( 0, client.texture_mgr.get_texture_id( "Blocks" ) );
+	client.texture_mgr.update_uniform( "SMTerrain", "mat_light", mat_ortho_light );
+
 	shared_mesh.render_range( client, 0, idx_solid );
-	//glEnable( GL_BLEND );
+}
+
+void ChunkMgr::render_pass_trans( ) {
+	client.texture_mgr.bind_program( "SMTerrain" );
+	client.texture_mgr.bind_texture_array( 0, client.texture_mgr.get_texture_id( "Blocks" ) );
+	client.texture_mgr.update_uniform( "SMTerrain", "mat_light", mat_ortho_light );
 
 	glDisable( GL_CULL_FACE );
 	shared_mesh.render_range( client, idx_solid, idx_trans - idx_solid );
@@ -863,9 +910,7 @@ void ChunkMgr::render_pass_norm( ) {
 }
 
 void ChunkMgr::render_debug( ) {
-	//vbo.render( client );
-
-	if( is_chunk_debug ) {
+	/*if( is_chunk_debug ) {
 		glLoadIdentity( );
 		client.display_mgr.set_camera( );
 
@@ -888,19 +933,14 @@ void ChunkMgr::render_debug( ) {
 			glm::mat4 mat_model = glm::translate( glm::mat4( 1.0f ), glm::vec3( chunk->pos_gw ) );
 			glUniformMatrix4fv( idx_model, 1, GL_FALSE, glm::value_ptr( mat_model ) );
 
-			if( chunk->cnt_adj != 6 ) {
-				glDrawArrays( GL_LINES, 0, size_chunk_outline / 3 );
-			}
-			else {
-				glDrawArrays( GL_LINES, 0, size_chunk_outline / 3 );
-			}
+			glDrawArrays( GL_LINES, 0, size_chunk_outline * 2 );
 		}
 
 		glDisableClientState( GL_VERTEX_ARRAY );
 		glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
 		glDisable( GL_VERTEX_ARRAY );
-	}
+	}*/
 }
 
 void ChunkMgr::end( ) { 
@@ -908,6 +948,11 @@ void ChunkMgr::end( ) {
 
 void ChunkMgr::sec( ) {
 
+}
+
+void ChunkMgr::next_skybox( ) {
+	id_skybox++;
+	mesh_skybox( );
 }
 
 int const level_sea = Chunk::size_y / 2;
@@ -938,7 +983,7 @@ void ChunkMgr::init_light( ) {
 }
 
 float const max_amb = 0.5f;
-float const min_amb = 0.1f;
+float const min_amb = 0.2f;
 
 void ChunkMgr::calc_light( ) {
 	float time_game = client.time_mgr.get_time( TimeStrings::GAME );
@@ -983,74 +1028,115 @@ void ChunkMgr::calc_light( ) {
 
 void ChunkMgr::init_skybox( ) { 
 	vbo_skybox.init( );
-
-	vbo_skybox.push_set( VBO::IndexSet(
-		VBO::TypeGeometry::TG_Triangles,
-		"BasicPersp",
-		client.texture_mgr.id_skybox,
-		std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 } ) );
-
-	float dx = 1.0f / 3600.0f;
-	float dy = 1.0f / 2700.0f;
-	glm::vec4 color = { 0.5f, 0.5f, 0.5f, 1.0f };
-
-	//Front
-	vbo_skybox.push_data( { { 1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.0f + dx / 2, 0.3333f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { -1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.25f - dx / 2, 0.3333f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { -1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.25f - dx / 2, 0.6666f - dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { 1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.0f + dx / 2, 0.6666f - dy / 2, 1.0f } } );
-
-	//Back
-	vbo_skybox.push_data( { { -1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.5f + dx / 2, 0.3333f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { 1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.75f - dx / 2, 0.3333f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { 1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.75f - dx / 2, 0.6666f - dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { -1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 0, -1 }, { 0.5f + dx / 2, 0.6666f - dy / 2, 1.0f } } );
-
-	//Right
-	vbo_skybox.push_data( { { -1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 1, 0, 0 }, { 0.25f + dx / 2, 0.333f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { -1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 1, 0, 0 }, { 0.5f - dx / 2, 0.333f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { -1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 1, 0, 0 }, { 0.5f - dx / 2, 0.6666f - dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { -1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 1, 0, 0 }, { 0.25f + dx / 2, 0.6666f - dy / 2, 1.0f } } );
-
-	//Left
-	vbo_skybox.push_data( { { 1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { -1, 0, 0 }, { 0.75f + dx / 2, 0.3333f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { 1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { -1, 0, 0 }, { 1.0f - dx / 2, 0.3333f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { 1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { -1, 0, 0 }, { 1.0f - dx / 2, 0.6666f - dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { 1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { -1, 0, 0 }, { 0.75f + dx / 2, 0.6666f - dy / 2, 1.0f } } );
-
-	//Top
-	vbo_skybox.push_data( { { -1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, -1, 0 }, { 0.25f + dx / 2, 0.6666f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { -1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, -1, 0 }, { 0.5f - dx / 2, 0.6666f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { 1, 1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, -1, 0 }, { 0.5f - dx / 2, 1.0f - dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { 1, 1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, -1, 0 }, { 0.25f + dx / 2, 1.0f - dy / 2, 1.0f } } );
-
-	//Bot
-	vbo_skybox.push_data( { { 1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 1, 0 }, { 0.25f + dx / 2, 0.0f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { 1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 1, 0 }, { 0.5f - dx / 2, 0.0f + dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { -1, -1, -1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 1, 0 }, { 0.5f - dx / 2, 0.3333f - dy / 2, 1.0f } } );
-	vbo_skybox.push_data( { { -1, -1, 1, }, { 0.5f, 0.5f, 0.5f, 1.0f }, { 0, 1, 0 }, { 0.25f + dx / 2, 0.3333f - dy / 2, 1.0f } } );
-
-	vbo_skybox.finalize_set( );
-
-	vbo_skybox.buffer( );
-
 	vbo_sun.init( );
+	id_skybox = 0;
+	mesh_skybox( );
+}
 
-	vbo_sun.push_set( VBO::IndexSet(
-		VBO::TypeGeometry::TG_Triangles,
-		"BasicPersp",
-		client.texture_mgr.id_skybox,
-		std::vector< GLuint > { 0, 1, 2, 2, 3, 0 } 
-	) );
+void ChunkMgr::mesh_skybox( ) { 
+	client.thread_mgr.task_main( 5, [ & ] ( ) {
+		vbo_skybox.clear( );
 
-	vbo_sun.push_data( { { 1, -1, 0 }, { 0.5, 0.5f, 0.5f, 1.0f }, { 0, 0, 1 }, { 0.0f + dx / 2, 0.0f + dy / 2, 1.0f } } );
-	vbo_sun.push_data( { { -1, -1, 0 }, { 0.5, 0.5f, 0.5f, 1.0f }, { 0, 0, 1 }, { 0.25f - dx / 2, 0.0f + dy / 2, 1.0f } } );
-	vbo_sun.push_data( { { -1, 1, 0 }, { 0.5, 0.5f, 0.5f, 1.0f }, { 0, 0, 1 }, { 0.25f - dx / 2, 0.3333f - dy / 2, 1.0f } } );
-	vbo_sun.push_data( { { 1, 1, 0 }, { 0.5, 0.5f, 0.5f, 1.0f }, { 0, 0, 1 }, { 0.0f + dx / 2, 0.3333f - dy / 2, 1.0f } } );
+		vbo_skybox.push_set( VBO::IndexSet(
+			VBO::TypeGeometry::TG_Triangles,
+			"BasicPersp",
+			client.texture_mgr.get_texture_id( "Skyboxes" ),
+			std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 } ) );
 
-	vbo_sun.finalize_set( );
+		float constexpr dx = 1.0f / 1024.0f;
+		float constexpr dy = 1.0f / 1024.0f;
 
-	vbo_sun.buffer( );
+		static std::vector< std::string > const name_skyboxes = { 
+			"Default",
+			"Grimm Night",
+			"Interstellar Day",
+			"Interstellar Night",
+			"Miramar Day",
+			"Stormy Day"
+		};
+
+		static glm::vec4 const color = { 0.5f, 0.5f, 0.5f, 1.0f };
+		static glm::vec2 const uvs[ 4 ] = {
+			{ 0.0f + dx / 2, 0.0f + dy / 2 },
+			{ 1.0f - dx / 2, 0.0f + dy / 2 },
+			{ 1.0f - dx / 2, 1.0f - dy / 2 },
+			{ 0.0f + dx / 2, 1.0f - dy / 2 }
+		};
+
+		client.gui_mgr.print_to_console( "Setting skybox to:" + name_skyboxes[ id_skybox % name_skyboxes.size( ) ] );
+
+		std::string name_subtex;
+		GLfloat id_subtex;
+
+		name_subtex = name_skyboxes[ id_skybox % name_skyboxes.size( ) ];
+		id_subtex = ( GLfloat ) client.texture_mgr.get_texture_layer( "Skyboxes", name_subtex + "/Front" );
+
+		//Front
+		id_subtex = client.texture_mgr.get_texture_layer( "Skyboxes", name_subtex + "/Front" );
+		vbo_skybox.push_data( { { 1, -1, 1, }, color, { 0, 0, -1 }, { uvs[ 0 ].x, uvs[ 0 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { -1, -1, 1, }, color, { 0, 0, -1 }, { uvs[ 1 ].x, uvs[ 1 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { -1, 1, 1, }, color, { 0, 0, -1 }, { uvs[ 2 ].x, uvs[ 2 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { 1, 1, 1, }, color, { 0, 0, -1 }, { uvs[ 3 ].x, uvs[ 3 ].y, id_subtex } } );
+
+		//Back
+		id_subtex = client.texture_mgr.get_texture_layer( "Skyboxes", name_subtex + "/Back" );
+		vbo_skybox.push_data( { { -1, -1, -1, }, color, { 0, 0, -1 }, { uvs[ 0 ].x, uvs[ 0 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { 1, -1, -1, }, color, { 0, 0, -1 }, { uvs[ 1 ].x, uvs[ 1 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { 1, 1, -1, }, color, { 0, 0, -1 }, { uvs[ 2 ].x, uvs[ 2 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { -1, 1, -1, }, color, { 0, 0, -1 }, { uvs[ 3 ].x, uvs[ 3 ].y, id_subtex } } );
+
+		//Right
+		id_subtex = client.texture_mgr.get_texture_layer( "Skyboxes", name_subtex + "/Right" );
+		vbo_skybox.push_data( { { -1, -1, 1, }, color, { 1, 0, 0 }, { uvs[ 0 ].x, uvs[ 0 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { -1, -1, -1, }, color, { 1, 0, 0 }, { uvs[ 1 ].x, uvs[ 1 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { -1, 1, -1, }, color, { 1, 0, 0 }, { uvs[ 2 ].x, uvs[ 2 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { -1, 1, 1, }, color, { 1, 0, 0 }, { uvs[ 3 ].x, uvs[ 3 ].y, id_subtex } } );
+
+		//Left
+		id_subtex = client.texture_mgr.get_texture_layer( "Skyboxes", name_subtex + "/Left" );
+		vbo_skybox.push_data( { { 1, -1, -1, }, color, { -1, 0, 0 }, { uvs[ 0 ].x, uvs[ 0 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { 1, -1, 1, }, color, { -1, 0, 0 }, { uvs[ 1 ].x, uvs[ 1 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { 1, 1, 1, }, color, { -1, 0, 0 }, { uvs[ 2 ].x, uvs[ 2 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { 1, 1, -1, }, color, { -1, 0, 0 }, { uvs[ 3 ].x, uvs[ 3 ].y, id_subtex } } );
+
+		//Top
+		id_subtex = client.texture_mgr.get_texture_layer( "Skyboxes", name_subtex + "/Up" );
+		vbo_skybox.push_data( { { -1, 1, 1, }, color, { 0, -1, 0 }, { uvs[ 0 ].x, uvs[ 0 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { -1, 1, -1, }, color, { 0, -1, 0 }, { uvs[ 1 ].x, uvs[ 1 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { 1, 1, -1, }, color, { 0, -1, 0 }, { uvs[ 2 ].x, uvs[ 2 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { 1, 1, 1, }, color, { 0, -1, 0 }, { uvs[ 3 ].x, uvs[ 3 ].y, id_subtex } } );
+
+		//Bot
+		id_subtex = client.texture_mgr.get_texture_layer( "Skyboxes", name_subtex + "/Down" );
+		vbo_skybox.push_data( { { 1, -1, 1, }, color, { 0, 1, 0 }, { uvs[ 0 ].x, uvs[ 0 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { 1, -1, -1, }, color, { 0, 1, 0 }, { uvs[ 1 ].x, uvs[ 1 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { -1, -1, -1, }, color, { 0, 1, 0 }, { uvs[ 2 ].x, uvs[ 2 ].y, id_subtex } } );
+		vbo_skybox.push_data( { { -1, -1, 1, }, color, { 0, 1, 0 }, { uvs[ 3 ].x, uvs[ 3 ].y, id_subtex } } );
+
+		vbo_skybox.finalize_set( );
+
+		vbo_skybox.buffer( );
+
+		vbo_sun.clear( );
+
+		vbo_sun.push_set( VBO::IndexSet(
+			VBO::TypeGeometry::TG_Triangles,
+			"BasicPersp",
+			client.texture_mgr.get_texture_id( "Skyboxes" ),
+			std::vector< GLuint > { 0, 1, 2, 2, 3, 0 }
+		) );
+
+		name_subtex = "Sun/Basic";
+		id_subtex = client.texture_mgr.get_texture_layer( "Skyboxes", name_subtex );
+		vbo_sun.push_data( { { 1, -1, 0 }, color, { 0, 0, 1 }, { uvs[ 0 ].x, uvs[ 0 ].y, ( GLfloat ) id_subtex } } );
+		vbo_sun.push_data( { { -1, -1, 0 }, color, { 0, 0, 1 }, { uvs[ 1 ].x, uvs[ 1 ].y, ( GLfloat ) id_subtex } } );
+		vbo_sun.push_data( { { -1, 1, 0 }, color, { 0, 0, 1 }, { uvs[ 2 ].x, uvs[ 2 ].y, ( GLfloat ) id_subtex } } );
+		vbo_sun.push_data( { { 1, 1, 0 }, color, { 0, 0, 1 }, { uvs[ 3 ].x, uvs[ 3 ].y, ( GLfloat ) id_subtex } } );
+
+		vbo_sun.finalize_set( );
+
+		vbo_sun.buffer( );
+	} );
 }
 
 void ChunkMgr::init_shadowmap( ) { 
@@ -1079,14 +1165,17 @@ void ChunkMgr::init_shadowmap( ) {
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	GLint idx_cascades[ ] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+	for( GLuint i = 0; i < num_cascades; ++i ) { 
+		depth_cascades[ i ] = 0;
+	}
 	depth_cascades[ 0 ] = 16.0f;
-	depth_cascades[ 1 ] = 32.0f;
-	depth_cascades[ 2 ] = 64.0f;
-	depth_cascades[ 3 ] = 128.0f;
-	depth_cascades[ 4 ] = 256.0f;
-	depth_cascades[ 5 ] = 512.0f;
-	depth_cascades[ 6 ] = 1024.0;
-	depth_cascades[ 7 ] = 2048.0f;
+	depth_cascades[ 1 ] = 64.0f;
+	depth_cascades[ 2 ] = 256.0f;
+	depth_cascades[ 3 ] = 512.0f;
+	//depth_cascades[ 4 ] = 256.0f;
+	//depth_cascades[ 5 ] = 512.0f;
+	//depth_cascades[ 6 ] = 1024.0;
+	//depth_cascades[ 7 ] = 2048.0f;
 
 	client.texture_mgr.update_uniform( "SMShadowMapSolid", "frag_sampler", ( GLint ) 0 );
 	client.texture_mgr.update_uniform( "SMShadowMapTrans", "frag_sampler", ( GLint ) 0 );
@@ -1105,46 +1194,47 @@ void ChunkMgr::init_debug( ) {
 	glGenBuffers( 1, &id_vbo_chunk_outline );
 	glBindBuffer( GL_ARRAY_BUFFER, id_vbo_chunk_outline );
 
-	std::vector< GLfloat > temp_verts;
-	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( padding );
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( padding );
+	std::vector< glm::vec3 > temp_verts;
 
-	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
+	temp_verts.push_back( { padding, padding, padding } );
+	temp_verts.push_back( { Chunk::size_x - padding, padding, padding } );
 
-	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( { padding, Chunk::size_y - padding, padding } );
+	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, padding } );
 
-	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( { padding, padding, Chunk::size_z - padding } );
+	temp_verts.push_back( { Chunk::size_x - padding, padding, Chunk::size_z - padding } );
 
-	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( padding );
-	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( { padding, Chunk::size_y - padding, Chunk::size_z - padding } );
+	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, Chunk::size_z - padding } );
 
-	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
-	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( { padding, padding, padding } );
+	temp_verts.push_back( { padding, padding, Chunk::size_z - padding } );
 
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( padding );
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( { padding, Chunk::size_y - padding, padding } );
+	temp_verts.push_back( { padding, Chunk::size_y - padding, Chunk::size_z - padding } );
 
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( { Chunk::size_x - padding, padding, padding } );
+	temp_verts.push_back( { Chunk::size_x - padding, padding, Chunk::size_z - padding } );
 
-	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( padding );
-	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
+	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, padding } );
+	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, Chunk::size_z - padding } );
 
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( padding );
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( padding );
+	temp_verts.push_back( { padding, padding, padding } );
+	temp_verts.push_back( { padding, Chunk::size_y - padding, padding } );
 
-	temp_verts.push_back( padding );					temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
-	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( { Chunk::size_x - padding, padding, padding } );
+	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, padding } );
 
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( padding );					temp_verts.push_back( Chunk::size_z - padding );
-	temp_verts.push_back( Chunk::size_x - padding );	temp_verts.push_back( Chunk::size_y - padding );	temp_verts.push_back( Chunk::size_z - padding );
+	temp_verts.push_back( { padding, padding, Chunk::size_z - padding } );
+	temp_verts.push_back( { padding, Chunk::size_y - padding, Chunk::size_z - padding } );
+
+	temp_verts.push_back( { Chunk::size_x - padding, padding, Chunk::size_z - padding } );
+	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, Chunk::size_z - padding } );
 
 	size_chunk_outline = ( int ) temp_verts.size( );
 
-	glBufferData( GL_ARRAY_BUFFER, size_chunk_outline * sizeof( GLfloat ), temp_verts.data( ), GL_STATIC_DRAW );
+	glBufferData( GL_ARRAY_BUFFER, size_chunk_outline * sizeof( glm::vec3 ), temp_verts.data( ), GL_STATIC_DRAW );
 }
 
 void ChunkMgr::proc_set_state( SetState & state ) {
@@ -3740,25 +3830,105 @@ inline void put_face(
 	GLuint idx_inds = ( GLuint ) handle.ptr_buffer->list_verts.size( );
 
 	handle.push_verts( {
-		{ { pos.x + face.verts[ 0 ].x, pos.y + face.verts[ 0 ].y, pos.z + face.verts[ 0 ].z },
-		{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
-		{ face.norms[ 0 ].x, face.norms[ 0 ].y, face.norms[ 0 ].z },
-		{ face.uvs[ 0 ].x, face.uvs[ 0 ].y, face.uvs[ 0 ].z } },
+		// Bot Left
+		{ 
+			{ 
+				( GLubyte ) ( pos.x + face.verts[ 0 ].x ), 
+				( GLubyte ) ( pos.y + face.verts[ 0 ].y ),
+				( GLubyte ) ( pos.z + face.verts[ 0 ].z )
+			},
+			{ 
+				( GLubyte ) ( color.r * face.color.r * 255 ),
+				( GLubyte ) ( color.g * face.color.g * 255 ),
+				( GLubyte ) ( color.b * face.color.b * 255 ),
+				( GLubyte ) ( color.a * face.color.a * 255 )
+			},
+			{ 
+				( GLbyte ) ( face.norms[ 0 ].x ), 
+				( GLbyte ) ( face.norms[ 0 ].y ), 
+				( GLbyte ) ( face.norms[ 0 ].z ) 
+			},
+			{ 
+				( GLubyte ) ( face.uvs[ 0 ].x ),
+				( GLubyte ) ( face.uvs[ 0 ].y ),
+				( GLubyte ) ( face.uvs[ 0 ].z )
+			} 
+		},
 
-		{ { pos.x + face.verts[ 1 ].x, pos.y + face.verts[ 1 ].y, pos.z + face.verts[ 1 ].z },
-		{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
-		{ face.norms[ 1 ].x, face.norms[ 1 ].y, face.norms[ 1 ].z },
-		{ face.uvs[ 1 ].x, face.uvs[ 1 ].y, face.uvs[ 1 ].z } },
+		//Bot Right
+		{ 
+			{ 
+				( GLubyte ) ( pos.x + face.verts[ 1 ].x ), 
+				( GLubyte ) ( pos.y + face.verts[ 1 ].y ), 
+				( GLubyte ) ( pos.z + face.verts[ 1 ].z ) 
+			},
+			{ 
+				( GLubyte ) ( color.r * face.color.r * 255 ), 
+				( GLubyte ) ( color.g * face.color.g * 255 ), 
+				( GLubyte ) ( color.b * face.color.b * 255 ), 
+				( GLubyte ) ( color.a * face.color.a * 255 ) 
+			},
+			{ 
+				( GLbyte ) ( face.norms[ 1 ].x ),
+				( GLbyte ) ( face.norms[ 1 ].y ),
+				( GLbyte ) ( face.norms[ 1 ].z )
+			},
+			{ 
+				( GLubyte ) ( face.uvs[ 1 ].x ), 
+				( GLubyte ) ( face.uvs[ 1 ].y ), 
+				( GLubyte ) ( face.uvs[ 1 ].z ) 
+			} 
+		},
 
-		{ { pos.x + face.verts[ 2 ].x, pos.y + face.verts[ 2 ].y, pos.z + face.verts[ 2 ].z },
-		{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
-		{ face.norms[ 2 ].x, face.norms[ 2 ].y, face.norms[ 2 ].z },
-		{ face.uvs[ 2 ].x, face.uvs[ 2 ].y, face.uvs[ 2 ].z } },
+		//Top Right
+		{ 
+			{ 
+				( GLubyte ) ( pos.x + face.verts[ 2 ].x ), 
+				( GLubyte ) ( pos.y + face.verts[ 2 ].y ), 
+				( GLubyte ) ( pos.z + face.verts[ 2 ].z ) 
+			},
+			{ 
+				( GLubyte ) ( color.r * face.color.r * 255 ), 
+				( GLubyte ) ( color.g * face.color.g * 255 ), 
+				( GLubyte ) ( color.b * face.color.b * 255 ), 
+				( GLubyte ) ( color.a * face.color.a * 255 ) 
+			},
+			{ 
+				( GLbyte ) ( face.norms[ 2 ].x ),
+				( GLbyte ) ( face.norms[ 2 ].y ),
+				( GLbyte ) ( face.norms[ 2 ].z )
+			},
+			{ 
+				( GLubyte ) ( face.uvs[ 2 ].x ), 
+				( GLubyte ) ( face.uvs[ 2 ].y ), 
+				( GLubyte ) ( face.uvs[ 2 ].z ) 
+			} 
+		},
 		
-		{ { pos.x + face.verts[ 3 ].x, pos.y + face.verts[ 3 ].y, pos.z + face.verts[ 3 ].z },
-		{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
-		{ face.norms[ 3 ].x, face.norms[ 3 ].y, face.norms[ 3 ].z },
-		{ face.uvs[ 3 ].x, face.uvs[ 3 ].y, face.uvs[ 3 ].z } }
+		//Top Left
+		{ 
+			{ 
+				( GLubyte ) ( pos.x + face.verts[ 3 ].x ), 
+				( GLubyte ) ( pos.y + face.verts[ 3 ].y ), 
+				( GLubyte ) ( pos.z + face.verts[ 3 ].z ) 
+			},
+			{ 
+				( GLubyte ) ( color.r * face.color.r * 255 ), 
+				( GLubyte ) ( color.g * face.color.g * 255 ), 
+				( GLubyte ) ( color.b * face.color.b * 255 ), 
+				( GLubyte ) ( color.a * face.color.a * 255 ) 
+			},
+			{ 
+				( GLbyte ) ( face.norms[ 3 ].x ),
+				( GLbyte ) ( face.norms[ 3 ].y ),
+				( GLbyte ) ( face.norms[ 3 ].z )
+			},
+			{ 
+				( GLubyte ) ( face.uvs[ 3 ].x ), 
+				( GLubyte ) ( face.uvs[ 3 ].y ), 
+				( GLubyte ) ( face.uvs[ 3 ].z ) 
+			} 
+		},
 	} );
 
 	handle.push_inds( {
@@ -3775,25 +3945,101 @@ inline void put_face(
 	GLuint idx_inds = ( GLuint ) handle.ptr_buffer->list_verts.size( );
 
 	handle.push_verts( {
-		{ { pos.x + face.verts[ 0 ].x * scale_verts.x, pos.y + face.verts[ 0 ].y * scale_verts.y, pos.z + face.verts[ 0 ].z * scale_verts.z },
-		{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
-		{ face.norms[ 0 ].x, face.norms[ 0 ].y, face.norms[ 0 ].z },
-		{ face.uvs[ 0 ].x, face.uvs[ 0 ].y,face.uvs[ 0 ].z } },
+		{ 
+			{ 
+				( GLubyte ) ( pos.x + face.verts[ 0 ].x * scale_verts.x ), 
+				( GLubyte ) ( pos.y + face.verts[ 0 ].y * scale_verts.y ), 
+				( GLubyte ) ( pos.z + face.verts[ 0 ].z * scale_verts.z ) 
+			},
+			{ 
+				( GLubyte ) ( color.r * face.color.r * 255 ), 
+				( GLubyte ) ( color.g * face.color.g * 255 ),
+				( GLubyte ) ( color.b * face.color.b * 255 ),
+				( GLubyte ) ( color.a * face.color.a * 255 )
+			},
+			{ 
+				( GLbyte ) ( face.norms[ 0 ].x ),
+				( GLbyte ) ( face.norms[ 0 ].y ),
+				( GLbyte ) ( face.norms[ 0 ].z )
+			},
+			{ 
+				( GLubyte ) ( face.uvs[ 0 ].x ), 
+				( GLubyte ) ( face.uvs[ 0 ].y ), 
+				( GLubyte ) ( face.uvs[ 0 ].z ) 
+			} 
+		},
 
-		{ { pos.x + face.verts[ 1 ].x * scale_verts.x, pos.y + face.verts[ 1 ].y * scale_verts.y, pos.z + face.verts[ 1 ].z * scale_verts.z },
-		{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
-		{ face.norms[ 1 ].x, face.norms[ 1 ].y, face.norms[ 1 ].z },
-		{ face.uvs[ 1 ].x + ( ( scale_uvs.x - 1 ) * 1.0f ), face.uvs[ 1 ].y, face.uvs[ 1 ].z } },
+		{ 
+			{ 
+				( GLubyte ) ( pos.x + face.verts[ 1 ].x * scale_verts.x ),
+				( GLubyte ) ( pos.y + face.verts[ 1 ].y * scale_verts.y ),
+				( GLubyte ) ( pos.z + face.verts[ 1 ].z * scale_verts.z )
+			},
+			{ 
+				( GLubyte ) ( color.r * face.color.r * 255 ),
+				( GLubyte ) ( color.g * face.color.g * 255 ),
+				( GLubyte ) ( color.b * face.color.b * 255 ),
+				( GLubyte ) ( color.a * face.color.a * 255 )
+			},
+			{ 
+				( GLbyte ) ( face.norms[ 1 ].x ),
+				( GLbyte ) ( face.norms[ 1 ].y ),
+				( GLbyte ) ( face.norms[ 1 ].z )
+			},
+			{ 
+				( GLubyte ) ( face.uvs[ 1 ].x + ( ( scale_uvs.x - 1 ) * 1.0f ) ),
+				( GLubyte ) ( face.uvs[ 1 ].y ),
+				( GLubyte ) ( face.uvs[ 1 ].z )
+			} 
+		},
 
-		{ { pos.x + face.verts[ 2 ].x * scale_verts.x, pos.y + face.verts[ 2 ].y * scale_verts.y, pos.z + face.verts[ 2 ].z * scale_verts.z },
-		{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
-		{ face.norms[ 2 ].x, face.norms[ 2 ].y, face.norms[ 2 ].z },
-		{ face.uvs[ 2 ].x + ( ( scale_uvs.x - 1 ) * 1.0f ), face.uvs[ 2 ].y + ( ( scale_uvs.y - 1 ) * 1.0f ), face.uvs[ 2 ].z } },
+		{ 
+			{ 
+				( GLubyte ) ( pos.x + face.verts[ 2 ].x * scale_verts.x ),
+				( GLubyte ) ( pos.y + face.verts[ 2 ].y * scale_verts.y ),
+				( GLubyte ) ( pos.z + face.verts[ 2 ].z * scale_verts.z )
+			},
+			{ 
+				( GLubyte ) ( color.r * face.color.r * 255 ),
+				( GLubyte ) ( color.g * face.color.g * 255 ),
+				( GLubyte ) ( color.b * face.color.b * 255 ),
+				( GLubyte ) ( color.a * face.color.a * 255 )
+			},
+			{ 
+				( GLbyte ) ( face.norms[ 2 ].x ),
+				( GLbyte ) ( face.norms[ 2 ].y ),
+				( GLbyte ) ( face.norms[ 2 ].z )
+			},
+			{ 
+				( GLubyte ) ( face.uvs[ 2 ].x + ( ( scale_uvs.x - 1 ) * 1.0f ) ),
+				( GLubyte ) ( face.uvs[ 2 ].y + ( ( scale_uvs.y - 1 ) * 1.0f ) ),
+				( GLubyte ) ( face.uvs[ 2 ].z )
+			} 
+		},
 
-		{ { pos.x + face.verts[ 3 ].x * scale_verts.x, pos.y + face.verts[ 3 ].y * scale_verts.y, pos.z + face.verts[ 3 ].z * scale_verts.z },
-		{ color.r * face.color.r, color.g * face.color.g, color.b * face.color.b, color.a * face.color.a },
-		{ face.norms[ 3 ].x, face.norms[ 3 ].y, face.norms[ 3 ].z },
-		{ face.uvs[ 3 ].x, face.uvs[ 3 ].y + ( ( scale_uvs.y - 1 ) * 1.0f ), face.uvs[ 3 ].z } }
+		{ 
+			{ 
+				( GLubyte ) ( pos.x + face.verts[ 3 ].x * scale_verts.x ),
+				( GLubyte ) ( pos.y + face.verts[ 3 ].y * scale_verts.y ),
+				( GLubyte ) ( pos.z + face.verts[ 3 ].z * scale_verts.z )
+			},
+			{ 
+				( GLubyte ) ( color.r * face.color.r * 255 ),
+				( GLubyte ) ( color.g * face.color.g * 255 ),
+				( GLubyte ) ( color.b * face.color.b * 255 ),
+				( GLubyte ) ( color.a * face.color.a * 255 )
+			},
+			{ 
+				( GLbyte ) ( face.norms[ 3 ].x ),
+				( GLbyte ) ( face.norms[ 3 ].y ),
+				( GLbyte ) ( face.norms[ 3 ].z )
+			},
+			{ 
+				( GLubyte ) ( face.uvs[ 3 ].x ),
+				( GLubyte ) ( face.uvs[ 3 ].y + ( ( scale_uvs.y - 1 ) * 1.0f ) ),
+				( GLubyte ) ( face.uvs[ 3 ].z )
+			} 
+		}
 	} );
 
 	handle.push_inds( {

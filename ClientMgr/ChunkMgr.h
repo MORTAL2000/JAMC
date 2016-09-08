@@ -176,7 +176,9 @@ private:
 	GLuint idx_solid;
 	GLuint idx_trans;
 
-	static GLuint constexpr num_cascades = 6;
+	GLuint idx_cascade = 0;
+
+	static GLuint constexpr num_cascades = 3;
 
 	glm::mat4 mat_model;
 	glm::mat3 mat_norm;
@@ -202,7 +204,9 @@ private:
 	void calc_light( );
 
 	// Skybox functions
+	GLuint id_skybox;
 	void init_skybox( );
+	void mesh_skybox( );
 
 	// ShadowMap functions
 	void init_shadowmap( );
@@ -221,7 +225,8 @@ private:
 	void render_sort( );
 	void render_build( );
 	void render_pass_shadow( );
-	void render_pass_norm( );
+	void render_pass_solid( );
+	void render_pass_trans( );
 	void render_debug( );
 
 	void chunk_update( Chunk & chunk );
@@ -256,6 +261,8 @@ public:
 	void render( );
 	void end( );
 	void sec( );
+
+	void next_skybox( );
 
 	void toggle_chunk_debug( );
 	void toggle_shadow_debug( );

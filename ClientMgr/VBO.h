@@ -3,6 +3,7 @@
 #include "Globals.h"
 
 #include <vector>
+#include "glm\glm.hpp"
 
 class VBO {
 public:
@@ -17,10 +18,10 @@ public:
 	static GLuint const GeomGLTypeLookup[ VBO::TypeGeometry::TG_Size ];
 
 	struct Vertex {
-		GLfloat pos[ 3 ];
-		GLfloat color[ 4 ];
-		GLfloat norm[ 3 ];
-		GLfloat uv[ 3 ];
+		glm::vec3 pos;
+		glm::vec4 color;
+		glm::vec3 norm;
+		glm::vec3 uv;
 	};
 
 	class IndexSet {
@@ -77,8 +78,8 @@ public:
 	void finalize_set( );
 
 	void buffer( );
-	void render( Client & client );
-	void render_range( Client & client, GLuint index, GLuint length );
+	void render( Client & client, bool is_tex_array );
+	void render_range( Client & client, bool is_tex_array, GLuint index, GLuint length );
 
 	void clear( );
 };

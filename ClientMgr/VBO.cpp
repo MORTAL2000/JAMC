@@ -121,14 +121,14 @@ void VBO::buffer( ) {
 	last_size_ibo = ( GLuint ) list_inds.size( ) * sizeof( GLuint );
 }
 
-void VBO::render( Client & client ) {
+void VBO::render( Client & client, bool is_tex_array ) {
 	auto iter_set = list_sets.begin( );
 
 	glBindVertexArray( id_vao );
 
 	while( iter_set != list_sets.end( ) ) {
 		client.texture_mgr.bind_program( iter_set->str_prog );
-		if( iter_set->id_tex == client.texture_mgr.get_texture_id( "Blocks" ) )
+		if( is_tex_array )
 			client.texture_mgr.bind_texture_array( 0, iter_set->id_tex );
 		else
 			client.texture_mgr.bind_texture( 0, iter_set->id_tex );
@@ -143,7 +143,7 @@ void VBO::render( Client & client ) {
 	glBindVertexArray( 0 );
 }
 
-void VBO::render_range( Client & client, GLuint index, GLuint length ) {
+void VBO::render_range( Client & client, bool is_tex_array, GLuint index, GLuint length ) {
 	if( index >= list_sets.size( ) ) return;
 
 	auto iter_set = list_sets.begin( ) + index;
@@ -153,7 +153,7 @@ void VBO::render_range( Client & client, GLuint index, GLuint length ) {
 
 	while( iter_set < list_sets.end( ) && curr_length < length ) {
 		client.texture_mgr.bind_program( iter_set->str_prog );
-		if( iter_set->id_tex == client.texture_mgr.get_texture_id( "Blocks" ) )
+		if( is_tex_array )
 			client.texture_mgr.bind_texture_array( 0, iter_set->id_tex );
 		else
 			client.texture_mgr.bind_texture( 0, iter_set->id_tex );

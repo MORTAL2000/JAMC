@@ -120,9 +120,12 @@ void Page::update( ) {
 		client->thread_mgr.task_main( 5, [ & ] ( ) { 
 			vbo.clear( );
 
+			GLuint id_materials_subtex = client->texture_mgr.get_texture_layer( "Materials", "Details/Solid" );
+			GLuint id_fonts_subtex = client->texture_mgr.get_texture_layer( "Fonts", "Default/Basic" );
+
 			vbo.push_set( VBO::IndexSet(
 				VBO::TypeGeometry::TG_Triangles,
-				"BasicOrtho", client->texture_mgr.id_materials,
+				"BasicOrtho", client->texture_mgr.get_texture_id( "Materials" ),
 				std::vector< GLuint > { 0, 1, 2, 2, 3, 0 }
 			) );
 
@@ -130,12 +133,14 @@ void Page::update( ) {
 
 			for( int i = 0; i < 4; ++i ) {
 				vbo.push_data( VBO::Vertex {
-					verts_page[ i ].x * vec_dim.x,
-					verts_page[ i ].y * vec_dim.y,
-					verts_page[ i ].z,
-					color.r, color.g, color.b, color.a,
-					norm.x, norm.y, norm.z,
-					0, 0, 0
+					{
+						verts_page[ i ].x * vec_dim.x,
+						verts_page[ i ].y * vec_dim.y,
+						verts_page[ i ].z
+					},
+					color,
+					norm,
+					{ 0, 0, id_materials_subtex }
 				} );
 			}
 
@@ -147,19 +152,21 @@ void Page::update( ) {
 
 				for( int j = 0; j < 4; ++j ) {
 					vbo.push_data( VBO::Vertex {
-						comp.vec_pos.x + verts_page[ j ].x * comp.vec_dim.x,
-						comp.vec_pos.y + verts_page[ j ].y * comp.vec_dim.y,
-						verts_page[ j ].z,
-						comp.color.r, comp.color.g, comp.color.b, comp.color.a,
-						norm.x, norm.y, norm.z,
-						0, 0, 0
+						{
+							comp.vec_pos.x + verts_page[ j ].x * comp.vec_dim.x,
+							comp.vec_pos.y + verts_page[ j ].y * comp.vec_dim.y,
+							verts_page[ j ].z
+						},
+						comp.color,
+						norm,
+						{ 0, 0, id_materials_subtex }
 					} );
 				}
 			}
 
 			vbo.push_set( VBO::IndexSet(
 				VBO::TypeGeometry::TG_Triangles,
-				"BasicOrtho", client->texture_mgr.id_fonts,
+				"BasicOrtho", client->texture_mgr.get_texture_id( "Fonts" ),
 				std::vector< GLuint > { 0, 1, 2, 2, 3, 0 }
 			) );
 
@@ -179,12 +186,14 @@ void Page::update( ) {
 
 					for( int j = 0; j < 4; ++j ) {
 						vbo.push_data( VBO::Vertex {
-							vec_pos_char.x + verts_page[ j ].x * vec_size_text.x,
-							vec_pos_char.y + verts_page[ j ].y * vec_size_text.y,
-							verts_page[ j ].z,
-							0.0f, 0.0f, 0.0f, 1.0f,
-							norm.x, norm.y, norm.z,
-							uvs[ j ][ 0 ], uvs[ j ][ 1 ], 0
+							{
+								vec_pos_char.x + verts_page[ j ].x * vec_size_text.x,
+								vec_pos_char.y + verts_page[ j ].y * vec_size_text.y,
+								verts_page[ j ].z
+							},
+							{ 0.0f, 0.0f, 0.0f, 1.0f },
+							norm,
+							{ uvs[ j ][ 0 ], uvs[ j ][ 1 ], id_fonts_subtex }
 						} );
 					}
 				}
