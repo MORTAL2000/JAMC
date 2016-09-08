@@ -26,6 +26,13 @@ public:
 		GL_POINTS, GL_LINES, GL_TRIANGLES
 	};
 
+	struct Vertex {
+		GLubyte pos[ 3 ];
+		GLubyte color[ 4 ];
+		GLbyte norm[ 3 ];
+		GLubyte uv[ 3 ];
+	};
+
 	struct SharedMeshCommands {
 		GLuint count_inds;
 		GLuint count_instace;
