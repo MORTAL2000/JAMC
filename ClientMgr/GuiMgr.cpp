@@ -702,7 +702,7 @@ void GuiMgr::process_input( ) {
 			}
 
 			if( ( iter_map = map.find( list_delim[ 1 ] ) ) != map.end( ) && iter_map->second.size() == 1 ) {
-				client.chunk_mgr.set_sun_pause( ( bool ) iter_map->second[ 0 ] );
+				client.chunk_mgr.set_sun_pause( iter_map->second[ 0 ] != 0 );
 			}
 		}
 		else if( token == "setfov" ) {

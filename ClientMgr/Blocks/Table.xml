@@ -50,7 +50,7 @@
 			<B>1.0</B>
 			<A>1.0</A>
 		</Color>
-		<Occlude>Up</Occlude>
+		<Occlude>None</Occlude>
 		<SubTexture>Wood Plank/All</SubTexture>
 		<UV>
 			<X>0.0</X>

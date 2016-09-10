@@ -309,6 +309,8 @@ public:
 				return;
 			}
 
+			glBindVertexArray( ptr_parent->id_vao );
+
 			glBindBuffer( GL_ARRAY_BUFFER, ptr_parent->id_vbo );
 
 			if( idx_block_s == idx_block_e ) {
@@ -339,6 +341,8 @@ public:
 					idx_data_e * sizeof( Vertex ),
 					ptr_buffer->list_verts.data( ) + ( idx_block_e * size_vbo_block ) );
 			}
+
+			//glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
 			idx_block_s = 0;
 			idx_block_e = size_ibo / size_ibo_block;
@@ -376,6 +380,8 @@ public:
 					idx_data_e * sizeof( GLuint ),
 					ptr_buffer->list_inds.data( ) + ( idx_block_e * size_ibo_block ) );
 			}
+
+			//glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
 			std::lock_guard< std::mutex > lock( mtx_cmds );
 			list_cmds.clear( );
@@ -420,6 +426,8 @@ public:
 					}
 				}
 			}
+
+			glBindVertexArray( 0 );
 		}
 
 		void release_buffer( ) { 
@@ -747,20 +755,24 @@ public:
 
 		// Setup the VAO pointers
 		glBindVertexArray( id_vao );
-		glBindBuffer( GL_ARRAY_BUFFER, id_vbo );
 
 		glEnableVertexAttribArray( 0 );
 		glEnableVertexAttribArray( 1 );
 		glEnableVertexAttribArray( 2 );
 		glEnableVertexAttribArray( 3 );
+
 		glEnableVertexAttribArray( 4 );
+
 		glEnableVertexAttribArray( 5 );
 		glEnableVertexAttribArray( 6 );
 		glEnableVertexAttribArray( 7 );
 		glEnableVertexAttribArray( 8 );
+
 		glEnableVertexAttribArray( 9 );
 		glEnableVertexAttribArray( 10 );
 		glEnableVertexAttribArray( 11 );
+
+		glBindBuffer( GL_ARRAY_BUFFER, id_vbo );
 
 		glVertexAttribPointer( 0, 3, Vertex::get_pos_type( ), GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( offsetof( Vertex, pos ) ) ); //Vert
 		glVertexAttribPointer( 1, 4, Vertex::get_color_type( ), GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( offsetof( Vertex, color ) ) ); //Color
@@ -883,14 +895,21 @@ public:
 	void buffer_commands( ) {
 		std::lock_guard< std::mutex > lock( mtx_cmds );
 
+		glBindVertexArray( id_vao );
+
 		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 		glBufferData( GL_DRAW_INDIRECT_BUFFER, num_commands * sizeof( SMCommand ), list_commands.data( ), GL_STATIC_DRAW );
+		//glBindBuffer( GL_DRAW_INDIRECT_BUFFER, 0 );
 
 		glBindBuffer( GL_ARRAY_BUFFER, id_mats_model );
 		glBufferData( GL_ARRAY_BUFFER, num_commands * sizeof( glm::mat4 ), list_mats_model.data( ), GL_STATIC_DRAW );
+		//glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
 		glBindBuffer( GL_ARRAY_BUFFER, id_mats_norm );
 		glBufferData( GL_ARRAY_BUFFER, num_commands * sizeof( glm::mat3 ), list_mats_norm.data( ), GL_STATIC_DRAW );
+		//glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+		glBindVertexArray( 0 );
 	}
 
 
@@ -935,6 +954,7 @@ public:
 
 	void render( Client & client ) { 
 		glBindVertexArray( id_vao );
+		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 
 		glMultiDrawElementsIndirect(
 			GL_TRIANGLES, GL_UNSIGNED_INT,
@@ -947,6 +967,7 @@ public:
 
 	void render_range( Client & client, GLuint idx_start, GLuint length ) { 
 		glBindVertexArray( id_vao );
+		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 
 		glMultiDrawElementsIndirect(
 			GL_TRIANGLES, GL_UNSIGNED_INT,

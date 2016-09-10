@@ -154,7 +154,7 @@ void TimeMgr::mesh_graphs( ) {
 			for( int i = 0; i < list_render.size( ); ++i ) {
 				auto & record = get_record( *list_render[ i ] );
 
-				size_history = record.history.size( );
+				size_history = ( GLuint )record.history.size( );
 
 				if( size_history == 0 ) {
 					continue;
