@@ -9,32 +9,11 @@
 #include <mutex>
 #include <vector>
 
-struct ChunkVert {
-	GLfloat vert[ 3 ];
-	GLfloat color[ 4 ];
-	GLfloat norm[ 3 ];
-	GLfloat uv[ 3 ];
-	//GLfloat padding[ 4 ];
-};
+using ChunkVert = BaseVertex< GLubyte, GLubyte, GLbyte, GLubyte >;
+using InclusiveVert = BaseVertex< GLfloat, GLfloat, GLfloat, GLfloat >;
 
-struct ChunkFaceIndices {
-	GLuint indicies[ 6 ];
-};
-
-struct ChunkFaceVertices {
-	ChunkVert verts[ 4 ];
-};
-
-struct ChunkFaceSort { 
-	GLfloat sort;
-	GLfloat pos[ 3 ];
-	GLfloat color[ 4 ];
-	FaceDirection face;
-};
-
-struct ChunkBuffer {
-	std::vector< ChunkFaceVertices > list_faces_trans;
-};
+using SMChunk = SharedMesh< ChunkVert >;
+using SMChunkIncl = SharedMesh< InclusiveVert >;
 
 enum ChunkState {
 	CS_Init,
@@ -79,11 +58,13 @@ public:
 	std::mutex mtx_adj;
 	std::array< Chunk *, FD_Size > ptr_adj;
 
-	SharedMesh::SMHandle handle_solid;
-	SharedMesh::SMHandle handle_solid_temp;
+	SMChunk::SMHandle handle_solid;
+	SMChunk::SMHandle handle_solid_temp;
 
-	SharedMesh::SMHandle handle_trans;
-	SharedMesh::SMHandle handle_trans_temp;
+	SMChunk::SMHandle handle_trans;
+	SMChunk::SMHandle handle_trans_temp;
+
+	std::vector< std::tuple< float, GLuint, glm::ivec3 > > list_inclusive;
 
 	ChunkFile * ptr_file;
 	ChunkNoise * ptr_noise;

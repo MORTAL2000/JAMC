@@ -83,10 +83,10 @@ public:
 	}
 
 	static int get_hash( glm::ivec2 vec ) {
-		return ( ( 251 + vec.x ) * 251 ) + vec.y;
+		return ( ( 263 + vec.x ) * 257 ) + vec.y;
 	}
 
 	static int get_hash( glm::ivec3 vec ) { 
-		return ( ( ( ( 251 + vec.x ) * 251 ) + vec.y ) * 251 ) + vec.z;
+		return ( ( ( ( 263 + vec.x ) * 257 ) + vec.y ) * 251 ) + vec.z;
 	}
 };

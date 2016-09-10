@@ -22,8 +22,8 @@ void TextureMgr::init( ) {
 	printf( "\nCreating shaders and loading data...\n" );
 
 	for( auto & shader : {
-		"BasicOrtho", "BasicPersp", "SMBasic", "Terrain", "SMTerrain", "Selector", 
-		"Entity", "ShadowMap", "SMShadowMapSolid", "SMShadowMapTrans" } ) {
+		"BasicOrtho", "BasicPersp", "SMBasic", "Terrain", "SMTerrain", "SMTerrainInstance", 
+		"Selector", "Entity", "ShadowMap", "SMShadowMapSolid", "SMShadowMapTrans" } ) {
 
 		loader_add( shader );
 	}
@@ -50,21 +50,30 @@ void TextureMgr::init( ) {
 	GLuint idx_sampler;
 
 	// Link MVP Matrix UBO
-	for( auto const & shader : { "BasicOrtho", "BasicPersp", "SMBasic", "Terrain", "SMTerrain", "Entity", "Selector" } ) {
+	for( auto const & shader : { 
+		"BasicOrtho", "BasicPersp", "SMBasic", "Terrain", 
+		"SMTerrain", "SMTerrainInstance", "Entity", "Selector" } ) {
+
 		id_program = get_program_id( shader );
 		GL_CHECK( idx_block = glGetUniformBlockIndex( id_program, "mvp_matrices" ) );
 		GL_CHECK( glUniformBlockBinding( id_program, idx_block, 0 ) );
 	}
 
 	// Link Light Data UBO
-	for( auto const & shader : { "BasicPersp", "Terrain", "SMTerrain", "Entity", "Selector" } ) {
+	for( auto const & shader : { 
+		"BasicPersp", "Terrain", "SMTerrain", 
+		"SMTerrainInstance", "Entity", "Selector" } ) {
+
 		id_program = get_program_id( shader );
 		GL_CHECK( idx_block = glGetUniformBlockIndex( id_program, "light_data" ) );
 		GL_CHECK( glUniformBlockBinding( id_program, idx_block, 1 ) );
 	}
 
 	// Uniform frag_sampler
-	for( auto const & shader : { "BasicOrtho", "BasicPersp", "SMBasic", "Terrain", "SMTerrain", "Selector", "Entity" } ) { 
+	for( auto const & shader : { 
+		"BasicOrtho", "BasicPersp", "SMBasic", "Terrain",
+		"SMTerrain", "SMTerrainInstance", "Selector", "Entity" } ) { 
+
 		id_program = get_program_id( shader );
 		bind_program( id_program );
 		GL_CHECK( idx_sampler = glGetUniformLocation( id_program, "frag_sampler" ) );

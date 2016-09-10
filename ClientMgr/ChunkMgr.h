@@ -126,7 +126,11 @@ private:
 	// Mesh;
 	VBO vbo_skybox;
 	VBO vbo_sun;
-	SharedMesh shared_mesh;
+	VBO vbo_debug_chunk;
+	SMChunk shared_mesh;
+	SMChunkIncl shared_mesh_inclusive;
+
+	std::vector< SMChunkIncl::SMHandle > list_handles_inclusive;
 
 	static int const dist_sun = 750;
 	bool is_sun_pause;
@@ -249,6 +253,7 @@ private:
 
 	// Block dictionary functions
 	void load_block_data( );
+	void load_block_mesh( );
 
 public:
 	ChunkMgr( Client & client );
@@ -336,11 +341,11 @@ public:
 // Change to block pointer and face
 
 extern inline void put_face(
-	SharedMesh::SMHandle & handle, glm::ivec3 const & pos,
+	SMChunk::SMHandle & handle, glm::ivec3 const & pos,
 	glm::vec4 const & color, Face const & face );
 
 extern inline void put_face(
-	SharedMesh::SMHandle & handle, glm::ivec3 const & pos,
+	SMChunk::SMHandle & handle, glm::ivec3 const & pos,
 	glm::vec4 const & color, Face const & face,
 	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs );
 

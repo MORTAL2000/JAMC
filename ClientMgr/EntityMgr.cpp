@@ -39,7 +39,6 @@ EntityMgr::EntityMgr( Client & client ) :
 EntityMgr::~EntityMgr( ) { }
 
 static int num_entity = 10000;
-static std::vector< ChunkFaceVertices > list_faces;
 
 void EntityMgr::init( ) { 
 	printf( "\n*** EntityMgr ***\n" );
