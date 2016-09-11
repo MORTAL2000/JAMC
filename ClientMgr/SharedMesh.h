@@ -309,7 +309,7 @@ public:
 				return;
 			}
 
-			glBindVertexArray( ptr_parent->id_vao );
+			//glBindVertexArray( ptr_parent->id_vao );
 
 			glBindBuffer( GL_ARRAY_BUFFER, ptr_parent->id_vbo );
 
@@ -427,7 +427,7 @@ public:
 				}
 			}
 
-			glBindVertexArray( 0 );
+			//glBindVertexArray( 0 );
 		}
 
 		void release_buffer( ) { 
@@ -895,7 +895,7 @@ public:
 	void buffer_commands( ) {
 		std::lock_guard< std::mutex > lock( mtx_cmds );
 
-		glBindVertexArray( id_vao );
+		//glBindVertexArray( id_vao );
 
 		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 		glBufferData( GL_DRAW_INDIRECT_BUFFER, num_commands * sizeof( SMCommand ), list_commands.data( ), GL_STATIC_DRAW );
@@ -909,7 +909,7 @@ public:
 		glBufferData( GL_ARRAY_BUFFER, num_commands * sizeof( glm::mat3 ), list_mats_norm.data( ), GL_STATIC_DRAW );
 		//glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
-		glBindVertexArray( 0 );
+		//glBindVertexArray( 0 );
 	}
 
 

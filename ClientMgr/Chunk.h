@@ -64,7 +64,8 @@ public:
 	SMChunk::SMHandle handle_trans;
 	SMChunk::SMHandle handle_trans_temp;
 
-	std::vector< std::tuple< float, GLuint, glm::ivec3 > > list_inclusive;
+	std::vector< std::tuple< float, GLuint, glm::vec3 > > list_incl_solid;
+	std::vector< std::tuple< float, GLuint, glm::vec3 > > list_incl_trans;
 
 	ChunkFile * ptr_file;
 	ChunkNoise * ptr_noise;

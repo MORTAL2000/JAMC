@@ -397,6 +397,12 @@
     <None Include="Shaders\SMTerrainInstance.vert">
       <Filter>Resource Files\Shared Mesh</Filter>
     </None>
+    <None Include="Shaders\SMBasicProj.frag">
+      <Filter>Resource Files\Shared Mesh</Filter>
+    </None>
+    <None Include="Shaders\SMBasicProj.vert">
+      <Filter>Resource Files\Shared Mesh</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Blocks\Default.xml">

@@ -52,7 +52,7 @@ in vec3 diff_sun;
 // Out color
 out vec4 out_color;
 
-// Temporary vars
+// Temp vars
 vec3 diff_emitter;
 float len_emitter;
 vec3 norm_emitter;
@@ -68,19 +68,24 @@ vec2 size_texel;
 vec2 offset;
 vec2 pos_texel;
 
+const vec2 pcf_lookup[] = {
+	vec2( -1, -1 ),
+	vec2( 1, -1 ),
+	vec2( 1, 1 ),
+	vec2( -1, 1 )
+};
+
 float shadow_calc( ) {
 	float delta_view = length( vert_view.z );
-	uint idx_shadow = num_cascades;
+	uint idx_shadow = 0;
 
-	for( uint i = 0; i < num_cascades; ++i ) {
-		if( delta_view < depth_cascades[ i ] ) {
-			idx_shadow = i;
+	if( delta_view > depth_cascades[ num_cascades - 1 ] ) return 0.0;
+
+	for( uint i = num_cascades - 2; i >= 0; --i ) {
+		if( delta_view > depth_cascades[ i ] ) {
+			idx_shadow = i + 1;
 			break;
 		}
-	}
-
-	if( idx_shadow == num_cascades ) {
-		return 0.0;
 	}
 
 	proj_coord = frag_vert_light[ idx_shadow ].xyz / frag_vert_light[ idx_shadow ].w;
@@ -100,13 +105,13 @@ float shadow_calc( ) {
 	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy ).z;
 	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
 
-	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + vec2( -1, -1 ) * size_texel ).z; 
+	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 0 ] * size_texel ).z; 
 	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
-	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + vec2( 1, -1 ) * size_texel ).z; 
+	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 1 ] * size_texel ).z; 
 	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
-	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + vec2( 1, 1 ) * size_texel ).z; 
+	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 2 ] * size_texel ).z; 
 	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
-	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + vec2( -1, 1 ) * size_texel ).z; 
+	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 3 ] * size_texel ).z; 
 	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
 
 	return shadow / 5.0;

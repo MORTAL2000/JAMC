@@ -43,9 +43,9 @@ struct LightData {
 };
 
 struct World { 
-	static int const size_x = 12;
+	static int const size_x = 16;
 	static int const size_y = 4;
-	static int const size_z = 12;
+	static int const size_z = 16;
 	static glm::ivec3 const size_vect;
 	static int const num_chunks = 
 		( size_x * 2 + 1 ) * ( size_y * 2 + 1 ) * ( size_z * 2 + 1 ) + 

@@ -22,7 +22,7 @@ void TextureMgr::init( ) {
 	printf( "\nCreating shaders and loading data...\n" );
 
 	for( auto & shader : {
-		"BasicOrtho", "BasicPersp", "SMBasic", "Terrain", "SMTerrain", "SMTerrainInstance", 
+		"BasicOrtho", "BasicPersp", "SMBasic", "SMBasicProj", "Terrain", "SMTerrain", "SMTerrainInstance", 
 		"Selector", "Entity", "ShadowMap", "SMShadowMapSolid", "SMShadowMapTrans" } ) {
 
 		loader_add( shader );
@@ -51,7 +51,7 @@ void TextureMgr::init( ) {
 
 	// Link MVP Matrix UBO
 	for( auto const & shader : { 
-		"BasicOrtho", "BasicPersp", "SMBasic", "Terrain", 
+		"BasicOrtho", "BasicPersp", "SMBasic", "SMBasicProj", "Terrain",
 		"SMTerrain", "SMTerrainInstance", "Entity", "Selector" } ) {
 
 		id_program = get_program_id( shader );
@@ -71,7 +71,7 @@ void TextureMgr::init( ) {
 
 	// Uniform frag_sampler
 	for( auto const & shader : { 
-		"BasicOrtho", "BasicPersp", "SMBasic", "Terrain",
+		"BasicOrtho", "BasicPersp", "SMBasic", "SMBasicProj", "Terrain",
 		"SMTerrain", "SMTerrainInstance", "Selector", "Entity" } ) { 
 
 		id_program = get_program_id( shader );
