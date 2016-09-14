@@ -4,15 +4,32 @@
 
 #include "Directional.h"
 #include "SharedMesh.h"
+#include "SharedMeshTerrain.h"
 
 #include <array>
 #include <mutex>
 #include <vector>
 
-using ChunkVert = BaseVertex< GLubyte, GLubyte, GLbyte, GLubyte >;
-using InclusiveVert = BaseVertex< GLfloat, GLfloat, GLfloat, GLfloat >;
+struct VertTerrain {
+	uint64_t x : 5;			// 0-4
+	uint64_t y : 6;			// 5-10
+	uint64_t z : 5;			// 11-15
 
-using SMChunk = SharedMesh< ChunkVert >;
+	uint64_t r : 5;			// 16-20
+	uint64_t g : 5;			// 21-25
+	uint64_t b : 5;			// 26-30
+	uint64_t a : 5;			// 31, 0-3
+
+	uint64_t tex1 : 10;		// 4-13
+	uint64_t tex2 : 10;		// 14-23
+
+	uint64_t orient : 3;	// 24-26
+	uint64_t scale : 5;		// 27-31
+};
+
+using SMTerrain = SharedMeshTerrain< VertTerrain >;
+
+using InclusiveVert = BaseVertex< GLfloat, GLfloat, GLfloat, GLfloat >;
 using SMChunkIncl = SharedMesh< InclusiveVert >;
 
 enum ChunkState {
@@ -32,14 +49,6 @@ enum ChunkState {
 
 class Chunk {
 public:
-	static int const size_x = 32;
-	static int const size_y = 64;
-	static int const size_z = 32;
-	static glm::ivec3 const vec_size;
-	static int const size_mesh_b = sizeof( ChunkVert ) * size_x * size_y * size_z * 4 * 6;
-	static int const size_mesh_f = size_mesh_b / sizeof( GLfloat );
-
-public:
 	glm::ivec3 pos_lw;
 	glm::ivec3 pos_gw;
 
@@ -48,7 +57,7 @@ public:
 	int hash_lw;
 	int hash_lw_2d;
 
-	short id_blocks[ Chunk::size_x ][ Chunk::size_y ][ Chunk::size_z ];
+	short id_blocks[ WorldSize::Chunk::size_x ][ WorldSize::Chunk::size_y ][ WorldSize::Chunk::size_z ];
 
 	std::recursive_mutex mtx_state;
 	int cnt_states;
@@ -58,11 +67,11 @@ public:
 	std::mutex mtx_adj;
 	std::array< Chunk *, FD_Size > ptr_adj;
 
-	SMChunk::SMHandle handle_solid;
-	SMChunk::SMHandle handle_solid_temp;
+	SMTerrain::SMTHandle handle_solid;
+	SMTerrain::SMTHandle handle_solid_temp;
 
-	SMChunk::SMHandle handle_trans;
-	SMChunk::SMHandle handle_trans_temp;
+	SMTerrain::SMTHandle handle_trans;
+	SMTerrain::SMTHandle handle_trans_temp;
 
 	std::vector< std::tuple< float, GLuint, glm::vec3 > > list_incl_solid;
 	std::vector< std::tuple< float, GLuint, glm::vec3 > > list_incl_trans;

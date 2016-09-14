@@ -12,6 +12,29 @@
 #include <mutex>
 #include <sstream>
 
+/*
+template< typename T_data > static GLenum get_GL_type( );
+
+template<> static GLenum get_GL_type< GLbyte >( ) {
+	return GL_BYTE;
+}
+
+template< > static GLenum get_GL_type< GLubyte >( ) {
+	return GL_UNSIGNED_BYTE;
+}
+
+template< > static GLenum get_GL_type< GLuint >( ) {
+	return GL_UNSIGNED_INT;
+}
+
+template< > static GLenum get_GL_type< GLint >( ) {
+	return GL_INT;
+}
+
+template< > static GLenum get_GL_type< GLfloat >( ) {
+	return GL_FLOAT;
+}*/
+
 template< typename T_pos, typename T_color, typename T_norm, typename T_uvs >
 struct BaseVertex { 
 	T_pos pos[ 3 ];
@@ -19,47 +42,19 @@ struct BaseVertex {
 	T_norm norm[ 3 ];
 	T_uvs uv[ 3 ];
 
-	template< typename T >
-	static int get_GL_type( );
-
-	template<> 
-	static int get_GL_type< GLbyte >( ) {
-		return GL_BYTE;
-	}
-
-	template<> 
-	static int get_GL_type< GLubyte >( ) {
-		return GL_UNSIGNED_BYTE;
-	}
-
-	template<> 
-	static int get_GL_type< GLuint >( ) {
-		return GL_UNSIGNED_INT;
-	}
-
-	template<> 
-	static int get_GL_type< GLint >( ) {
-		return GL_INT;
-	}
-
-	template<> 
-	static int get_GL_type< GLfloat >( ) {
-		return GL_FLOAT;
-	}
-
-	static int get_pos_type( ) { 
+	static GLenum get_pos_type( ) {
 		return get_GL_type< T_pos >( );
 	}
 
-	static int get_color_type( ) { 
+	static GLenum get_color_type( ) {
 		return get_GL_type< T_color >( );
 	}
 
-	static int get_norm_type( ) { 
+	static GLenum get_norm_type( ) {
 		return get_GL_type< T_norm >( );
 	}
 
-	static int get_uvs_type( ) { 
+	static GLenum get_uvs_type( ) {
 		return get_GL_type< T_uvs >( );
 	}
 };
@@ -512,6 +507,23 @@ public:
 
 	typedef std::pair< GLuint, SMBlock * > SMBPair;
 
+	struct SharedMeshServerBuffer { 
+		GLuint id_buffer;
+		GLuint type_buffer;
+		GLuint stride_data;
+	};
+
+	typedef SharedMeshServerBuffer SMSBuffer;
+
+	struct SharedMeshAttribute { 
+		GLuint idx_buffer;
+		GLuint type_data;
+		GLuint num_data;
+		GLuint offset_data;
+	};
+
+	typedef SharedMeshAttribute SMAttribute;
+
 private:
 	// GL id handles
 	GLuint id_vao;
@@ -520,6 +532,15 @@ private:
 	GLuint id_cmd;
 	GLuint id_mats_model;
 	GLuint id_mats_norm;
+
+	// Stride information
+	GLuint size_vert;
+	GLuint size_ind;
+
+	// Buffer/Attribute containers
+	std::vector< SMSBuffer > list_instance_buffers;
+	std::vector< SMAttribute > list_vertex_attributes;
+	std::vector< SMAttribute > list_instance_attributes;
 
 	// IBO and VBO block data and lists
 	GLuint num_vbo_blocks;
@@ -714,11 +735,24 @@ private:
 	}
 
 public:
+	void attach_instace_buffer( GLenum type_buffer, GLuint stride_data ) { 
+		list_instance_buffers.push_back( { GLuint( ), type_buffer, stride } );
+	}
+
+	void attach_vertex_attribute( GLenum type_data, GLuint num_data, GLuint offset_data ) {
+		list_vertex_attributes.push_back( { 0, type_data, num_data, offset_data } );
+	}
+
+	void attach_instance_attribute( GLenum type_data, GLuint num_data, GLuint offset_data ) { 
+		if( !list_isntance_buffers.empty( ) ) {
+			list_instance_attributes.push_back( { list_instance_buffers.size( ) - 1, type_data, num_data, offset_data } );
+		}
+	}
+
 	void init( 
 		GLuint size_vbo_block, GLuint num_vbo_blocks,
 		GLuint size_ibo_block, GLuint num_ibo_blocks,
-		GLuint num_buffers,
-		GLuint size_buffer_verts, GLuint size_buffer_inds ) {
+		GLuint num_buffers, GLuint size_buffer_verts, GLuint size_buffer_inds ) {
 
 		this->num_vbo_blocks = num_vbo_blocks;
 		this->num_ibo_blocks = num_ibo_blocks;
@@ -738,72 +772,102 @@ public:
 			queue_buffer_avail.push( &list_buffers[ i ] );
 		}
 
+		
 		// Create Buffers
 		glGenVertexArrays( 1, &id_vao );
+
 		glGenBuffers( 1, &id_vbo );
 		glGenBuffers( 1, &id_ibo );
 		glGenBuffers( 1, &id_cmd );
+
 		glGenBuffers( 1, &id_mats_model );
 		glGenBuffers( 1, &id_mats_norm );
 
+		/*for( GLuint i = 0; i < list_instance_buffers.size( ); ++i ) { 
+			glGenBuffers( 1, &list_instance_buffers[ i ].id_buffer );
+		}*/
+
+		// Some size vars
+		std::cout << "Size of vertex: " << sizeof( Vertex ) << std::endl;
+		GLuint size_bytes_vbo = size_vbo_block * num_vbo_blocks * sizeof( Vertex );
+		printf( "\nSize vertices buffer: %f\n", size_bytes_vbo / 1024.0f / 1024.0f );
+		GLuint size_bytes_ibo = size_ibo_block * num_ibo_blocks * sizeof( GLuint );
+		printf( "\nSize indices buffer: %f\n", size_bytes_ibo / 1024.0f / 1024.0f );
+
+		float size_mb_total = ( size_bytes_ibo + size_bytes_vbo ) / 1024.0f / 1024.0f;
+
+		printf( "\nSize total: %f\n", size_mb_total );
+
 		// Allocate Space
 		glBindBuffer( GL_ARRAY_BUFFER, id_vbo );
-		glBufferData( GL_ARRAY_BUFFER, size_vbo_block * num_vbo_blocks * sizeof( Vertex ), nullptr, GL_STATIC_DRAW );
+		glBufferData( GL_ARRAY_BUFFER, size_bytes_vbo, nullptr, GL_STATIC_DRAW );
 
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, id_ibo );
-		glBufferData( GL_ELEMENT_ARRAY_BUFFER, size_ibo_block * num_ibo_blocks * sizeof( GLuint ), nullptr, GL_STATIC_DRAW );
+		glBufferData( GL_ELEMENT_ARRAY_BUFFER, size_bytes_ibo, nullptr, GL_STATIC_DRAW );
 
 		// Setup the VAO pointers
 		glBindVertexArray( id_vao );
 
-		glEnableVertexAttribArray( 0 );
-		glEnableVertexAttribArray( 1 );
-		glEnableVertexAttribArray( 2 );
-		glEnableVertexAttribArray( 3 );
+		// Enable attributes
+		GLuint num_attributes = ( GLuint ) list_vertex_attributes.size( ) + ( GLuint ) list_instance_attributes.size( );
+		for( GLuint i = 0; i < 10; ++i ) { 
+			glEnableVertexAttribArray( i );
+		}
 
-		glEnableVertexAttribArray( 4 );
+		GLuint offset_byte = 0;
+		GLuint idx_attrib = 0;
 
-		glEnableVertexAttribArray( 5 );
-		glEnableVertexAttribArray( 6 );
-		glEnableVertexAttribArray( 7 );
-		glEnableVertexAttribArray( 8 );
-
-		glEnableVertexAttribArray( 9 );
-		glEnableVertexAttribArray( 10 );
-		glEnableVertexAttribArray( 11 );
-
+		// Setup vertex buffer pointers
 		glBindBuffer( GL_ARRAY_BUFFER, id_vbo );
 
-		glVertexAttribPointer( 0, 3, Vertex::get_pos_type( ), GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( offsetof( Vertex, pos ) ) ); //Vert
-		glVertexAttribPointer( 1, 4, Vertex::get_color_type( ), GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( offsetof( Vertex, color ) ) ); //Color
-		glVertexAttribPointer( 2, 3, Vertex::get_norm_type( ), GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( offsetof( Vertex, norm ) ) ); //Norm
-		glVertexAttribPointer( 3, 3, Vertex::get_uvs_type( ), GL_FALSE, sizeof( Vertex ), BUFFER_OFFSET( offsetof( Vertex, uv ) ) ); //Uv
+		offset_byte = 0;
+		for( GLuint i = 0; i < list_vertex_attributes.size( ); ++i ) { 
+			auto & attrib = list_vertex_attributes[ i ];
+
+			glVertexAttribIPointer( 
+				idx_attrib, attrib.num_data, attrib.type_data,
+				sizeof( Vertex ), BUFFER_OFFSET( ( unsigned long long ) offset_byte ) );
+			std::cout << "offset: " << offset_byte << std::endl;
+
+			idx_attrib += 1;
+			offset_byte += attrib.num_data * attrib.offset_data;
+		}
 
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, id_ibo );
 
 		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 
-		glVertexAttribIPointer( 4, 1, GL_UNSIGNED_INT, sizeof( SMCommand ), BUFFER_OFFSET( 4 * sizeof( GLuint ) ) );
-		glVertexAttribDivisor( 4, 1 );
+		glVertexAttribIPointer( idx_attrib, 1, GL_UNSIGNED_INT, sizeof( SMCommand ), BUFFER_OFFSET( 4 * sizeof( GLuint ) ) );
+		glVertexAttribDivisor( idx_attrib, 1 );
+		idx_attrib += 1;
 
 		glBindBuffer( GL_ARRAY_BUFFER, id_mats_model );
-		glVertexAttribPointer( 5, 4, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 16, BUFFER_OFFSET( 0 ) );
-		glVertexAttribDivisor( 5, 1 );
-		glVertexAttribPointer( 6, 4, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 16, BUFFER_OFFSET( sizeof( GLfloat ) * 4 ) );
-		glVertexAttribDivisor( 6, 1 );
-		glVertexAttribPointer( 7, 4, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 16, BUFFER_OFFSET( sizeof( GLfloat ) * 8 ) );
-		glVertexAttribDivisor( 7, 1 );
-		glVertexAttribPointer( 8, 4, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 16, BUFFER_OFFSET( sizeof( GLfloat ) * 12 ) );
-		glVertexAttribDivisor( 8, 1 );
+		glVertexAttribPointer( idx_attrib, 4, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 16, BUFFER_OFFSET( 0 ) );
+		glVertexAttribDivisor( idx_attrib, 1 );
+		idx_attrib += 1;
+		glVertexAttribPointer( idx_attrib, 4, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 16, BUFFER_OFFSET( sizeof( GLfloat ) * 4 ) );
+		glVertexAttribDivisor( idx_attrib, 1 );
+		idx_attrib += 1;
+		glVertexAttribPointer( idx_attrib, 4, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 16, BUFFER_OFFSET( sizeof( GLfloat ) * 8 ) );
+		glVertexAttribDivisor( idx_attrib, 1 );
+		idx_attrib += 1;
+		glVertexAttribPointer( idx_attrib, 4, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 16, BUFFER_OFFSET( sizeof( GLfloat ) * 12 ) );
+		glVertexAttribDivisor( idx_attrib, 1 );
+		idx_attrib += 1;
 
 		glBindBuffer( GL_ARRAY_BUFFER, id_mats_norm );
-		glVertexAttribPointer( 9, 3, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 9, BUFFER_OFFSET( 0 ) );
-		glVertexAttribDivisor( 9, 1 );
-		glVertexAttribPointer( 10, 3, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 9, BUFFER_OFFSET( sizeof( GLfloat ) * 3 ) );
-		glVertexAttribDivisor( 10, 1 );
-		glVertexAttribPointer( 11, 3, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 9, BUFFER_OFFSET( sizeof( GLfloat ) * 6 ) );
-		glVertexAttribDivisor( 11, 1 );
+		glVertexAttribPointer( idx_attrib, 3, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 9, BUFFER_OFFSET( 0 ) );
+		glVertexAttribDivisor( idx_attrib, 1 );
+		idx_attrib += 1;
+		glVertexAttribPointer( idx_attrib, 3, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 9, BUFFER_OFFSET( sizeof( GLfloat ) * 3 ) );
+		glVertexAttribDivisor( idx_attrib, 1 );
+		idx_attrib += 1;
+		glVertexAttribPointer( idx_attrib, 3, GL_FLOAT, GL_FALSE, sizeof( GLfloat ) * 9, BUFFER_OFFSET( sizeof( GLfloat ) * 6 ) );
+		glVertexAttribDivisor( idx_attrib, 1 );
+		idx_attrib += 1;
 
+		std::cout << "idx_attrib:" << idx_attrib << std::endl;
+		
 		glBindVertexArray( 0 );
 
 		// Setup VBO Blocks

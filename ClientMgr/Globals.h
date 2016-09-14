@@ -110,7 +110,7 @@ static inline void checkOpenGLError( const char* stmt, const char* fname, int li
 	}
 }
 
-#define GL_DEBUG
+//#define GL_DEBUG
 
 #if defined( GL_DEBUG ) || defined( _DEBUG )
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)

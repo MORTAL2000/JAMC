@@ -1,5 +1,7 @@
 #include "GuiMgr.h"
 #include "Client.h"
+#include "WorldSize.h"
+
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
@@ -460,7 +462,7 @@ void GuiMgr::process_input( ) {
 
 		if( token == "resetpos" ) {
 			auto & pos = client.entity_mgr.entity_player->h_state.get( ).pos;
-			pos = glm::vec3( 0, Chunk::size_y / 2 + 5.0f, 0 );
+			pos = glm::vec3( 0, WorldSize::Chunk::size_y / 2 + 5.0f, 0 );
 			out << "Command: Resetting position to " << Directional::print_vec( pos );
 			print_to_console( out.str( ) );
 		}

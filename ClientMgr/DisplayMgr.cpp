@@ -6,7 +6,7 @@
 #include <iostream>
 
 Camera::Camera( ) :
-	pos_camera( 0, Chunk::size_y * 2 / 3, 0 ),
+	pos_camera( 0, WorldSize::Chunk::size_y * 2 / 3, 0 ),
 	rot_camera( 0.0f, 180.0f, 0.0f ) { }
 
 DisplayMgr::DisplayMgr( Client & client ) :
@@ -346,7 +346,7 @@ void DisplayMgr::draw_string( Vect3< int > const & pos, std::string & string, gl
 
 
 void DisplayMgr::draw_key( int const size ) {
-	/*glPushMatrix( );
+	glPushMatrix( );
 
 	glTranslatef( dim_window.x / 2, dim_window.y / 2, -size );
 
@@ -370,7 +370,7 @@ void DisplayMgr::draw_key( int const size ) {
 
 	glEnd();
 
-	glPopMatrix( );*/
+	glPopMatrix( );
 }
 
 /*

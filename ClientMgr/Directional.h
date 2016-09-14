@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Globals.h"
+#include "WorldSize.h"
 
 #include "glm/glm.hpp"
 #include <array>
@@ -49,17 +50,65 @@ public:
 	static bool is_point_in_cone( glm::ivec3 & point, glm::vec3 & cone_apex, glm::vec3 & cone_base, float aperture );
 
 	// Vec morph functions
-	static void pos_gw_to_lc( glm::ivec3 const & pos_gw, glm::ivec3 & pos_lc );
-	static void pos_gw_to_lc( glm::vec3 const & pos_gw, glm::ivec3 & pos_lc );
+	static inline void Directional::pos_gw_to_lc( glm::ivec3 const & pos_gw, glm::ivec3 & pos_lc ) {
+		pos_lc.x = pos_gw.x % WorldSize::Chunk::size_x;
+		pos_lc.y = pos_gw.y % WorldSize::Chunk::size_y;
+		pos_lc.z = pos_gw.z % WorldSize::Chunk::size_z;
 
-	static void pos_gw_to_lw( glm::ivec3 const & pos_gw, glm::ivec3 & pos_lw );
-	static void pos_gw_to_lw( glm::vec3 const & pos_gw, glm::ivec3 & pos_lw );
+		if( pos_lc.x < 0 ) pos_lc.x += WorldSize::Chunk::size_x;
+		if( pos_lc.y < 0 ) pos_lc.y += WorldSize::Chunk::size_y;
+		if( pos_lc.z < 0 ) pos_lc.z += WorldSize::Chunk::size_z;
+	}
 
-	static void pos_lw_to_r( glm::ivec3 const & pos_lw, glm::ivec3 & pos_r );
-	static void pos_lw_to_lr( glm::ivec3 const & pos_lw, glm::ivec3 & pos_lr );
+	static inline void Directional::pos_gw_to_lc( glm::vec3 const & pos_gw, glm::ivec3 & pos_lc ) {
+		pos_lc.x = int( floor( pos_gw.x ) ) % WorldSize::Chunk::size_x;
+		pos_lc.y = int( floor( pos_gw.y ) ) % WorldSize::Chunk::size_y;
+		pos_lc.z = int( floor( pos_gw.z ) ) % WorldSize::Chunk::size_z;
 
-	static void pos_trim( glm::vec3 & pos_gw, glm::ivec3 & pos_trim );
-	static void pos_trim( glm::vec3 & pos_gw, glm::vec3 & pos_trim );
+		if( pos_lc.x < 0 ) pos_lc.x += WorldSize::Chunk::size_x;
+		if( pos_lc.y < 0 ) pos_lc.y += WorldSize::Chunk::size_y;
+		if( pos_lc.z < 0 ) pos_lc.z += WorldSize::Chunk::size_z;
+	}
+
+	static inline void Directional::pos_gw_to_lw( glm::ivec3 const & pos_gw, glm::ivec3 & pos_lw ) {
+		pos_lw.x = floor( float( pos_gw.x ) / WorldSize::Chunk::size_x );
+		pos_lw.y = floor( float( pos_gw.y ) / WorldSize::Chunk::size_y );
+		pos_lw.z = floor( float( pos_gw.z ) / WorldSize::Chunk::size_z );
+	}
+
+	static inline void Directional::pos_gw_to_lw( glm::vec3 const & pos_gw, glm::ivec3 & pos_lw ) {
+		pos_lw.x = floor( pos_gw.x / WorldSize::Chunk::size_x );
+		pos_lw.y = floor( pos_gw.y / WorldSize::Chunk::size_y );
+		pos_lw.z = floor( pos_gw.z / WorldSize::Chunk::size_z );
+	}
+
+	static inline void Directional::pos_lw_to_r( glm::ivec3 const & pos_lw, glm::ivec3 & pos_r ) {
+		pos_r.x = floor( float( pos_lw.x ) / WorldSize::Region::size_x );
+		pos_r.y = floor( float( pos_lw.y ) / WorldSize::Region::size_y );
+		pos_r.z = floor( float( pos_lw.z ) / WorldSize::Region::size_z );
+	}
+
+	static inline void Directional::pos_lw_to_lr( glm::ivec3 const & pos_lw, glm::ivec3 & pos_lr ) {
+		pos_lr.x = pos_lw.x % WorldSize::Region::size_x;
+		pos_lr.y = pos_lw.y % WorldSize::Region::size_y;
+		pos_lr.z = pos_lw.z % WorldSize::Region::size_z;
+
+		if( pos_lr.x < 0 ) pos_lr.x += WorldSize::Region::size_x;
+		if( pos_lr.y < 0 ) pos_lr.y += WorldSize::Region::size_y;
+		if( pos_lr.z < 0 ) pos_lr.z += WorldSize::Region::size_z;
+	}
+
+	static inline void Directional::pos_trim( glm::vec3 & pos_gw, glm::ivec3 & pos_trim ) {
+		pos_trim.x = floor( pos_gw.x );
+		pos_trim.y = floor( pos_gw.y );
+		pos_trim.z = floor( pos_gw.z );
+	}
+
+	static inline void Directional::pos_trim( glm::vec3 & pos_gw, glm::vec3 & pos_trim ) {
+		pos_trim.x = floor( pos_gw.x );
+		pos_trim.y = floor( pos_gw.y );
+		pos_trim.z = floor( pos_gw.z );
+	}
 
 	// Vec Range functions
 	static bool is_within_range( glm::ivec3 const & point, glm::ivec3  const & range, glm::ivec3  const & check );

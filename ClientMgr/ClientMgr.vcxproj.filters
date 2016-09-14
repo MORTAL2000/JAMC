@@ -210,14 +210,14 @@
     <ClCompile Include="BlockSelector.cpp">
       <Filter>Source Files\Managers\GuiMgr</Filter>
     </ClCompile>
-    <ClCompile Include="SharedMesh.cpp">
-      <Filter>Source Files\Objects</Filter>
-    </ClCompile>
     <ClCompile Include="WormBlock.cpp">
       <Filter>Source Files\Managers\EntityMgr\Entities</Filter>
     </ClCompile>
     <ClCompile Include="WaterBlock.cpp">
       <Filter>Source Files\Managers\EntityMgr\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="WorldSize.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -329,6 +329,12 @@
     <ClInclude Include="WaterBlock.h">
       <Filter>Header Files\Managers\EntityMgr\Entities</Filter>
     </ClInclude>
+    <ClInclude Include="SharedMeshTerrain.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="WorldSize.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\SMBasic.frag">
@@ -401,6 +407,12 @@
       <Filter>Resource Files\Shared Mesh</Filter>
     </None>
     <None Include="Shaders\SMBasicProj.vert">
+      <Filter>Resource Files\Shared Mesh</Filter>
+    </None>
+    <None Include="Shaders\SMTerrainComp.frag">
+      <Filter>Resource Files\Shared Mesh</Filter>
+    </None>
+    <None Include="Shaders\SMTerrainComp.vert">
       <Filter>Resource Files\Shared Mesh</Filter>
     </None>
   </ItemGroup>

@@ -1,6 +1,7 @@
 #include "Player.h"
 #include "WormBlock.h"
 #include "Client.h"
+#include "WorldSize.h"
 
 Player::Player( ) :
 	EntityLoader {
@@ -16,7 +17,7 @@ Player::Player( ) :
 			ec_state.is_gravity = true;
 			ec_state.dim = { 0.8f, 1.8f, 0.8f };
 
-			ec_state.pos = { 0.0f, Chunk::size_y / 2.0f + 5.0f, 0.0f };
+			ec_state.pos = { 0.0f, WorldSize::Chunk::size_y / 2.0f + 5.0f, 0.0f };
 			ec_state.rot.y = 45;
 			entity.is_visible = false;
 

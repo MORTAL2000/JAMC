@@ -2,6 +2,7 @@
 
 #include "Client.h"
 #include "Tnt.h"
+#include "WorldSize.h"
 
 #include <iostream>
 
@@ -137,7 +138,7 @@ void InputMgr::process_input( ) {
 			client.display_mgr.out << "Returning home!!!";
 			client.gui_mgr.print_to_console( client.display_mgr.out.str( ) );
 
-			client.display_mgr.camera.pos_camera = glm::vec3( 0, Chunk::size_y / 2 + 5, 0 );
+			client.display_mgr.camera.pos_camera = glm::vec3( 0, WorldSize::Chunk::size_y / 2 + 5, 0 );
 			time_last_cmd = time;
 		}
 		else if( is_key( '4' ) ) {

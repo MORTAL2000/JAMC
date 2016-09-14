@@ -34,7 +34,7 @@ LineBlock::LineBlock( ) :
 
 			if( entity.id == client.chunk_mgr.get_block_data( "Tnt" ).id ) {
 				client.thread_mgr.task_main( 6,[ &, pos = ec_state.pos ]( ) {
-					client.chunk_mgr.explode_sphere( pos, 7 );
+					client.chunk_mgr.explode_sphere( pos, 10 );
 				} );
 			}
 			else {

@@ -15,8 +15,6 @@
 
 #include "simplexnoise.h"
 
-glm::ivec3 const World::size_vect( World::size_x, World::size_y, World::size_z );
-
 ChunkMgr::ChunkMgr( Client & client ) :
 	Manager( client ),
 	SHADOW_WIDTH( 4096 ), SHADOW_HEIGHT( 4096 ),
@@ -28,28 +26,41 @@ ChunkMgr::~ChunkMgr( ) { }
 void ChunkMgr::init( ) {
 	printf( "\n*** ChunkMgr ***\n" );
 
-	client.resource_mgr.reg_pool< Chunk >( World::num_chunks );
+	client.resource_mgr.reg_pool< Chunk >( WorldSize::World::num_chunks );
 
-	map_chunks.reserve( World::num_chunks );
-	map_dirty.reserve( World::num_chunks );
-	map_noise.reserve( ( World::size_x * 2 + 1 ) * ( World::size_z * 2 + 1 ) + 32 );
+	map_chunks.reserve( WorldSize::World::num_chunks );
+	map_dirty.reserve( WorldSize::World::num_chunks );
+	map_noise.reserve( ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) + 32 );
 
 	pos_center_chunk_lw = glm::ivec3( 0, 0, 0 );
 
 	load_block_data( );
 
-	shared_mesh.init(
-		Chunk::size_x * Chunk::size_z * 4 / 2, ( World::size_x * 2 + 1 ) * ( World::size_z * 2 + 1 ) * 8,
-		Chunk::size_x * Chunk::size_z * 6 / 2, ( World::size_x * 2 + 1 ) * ( World::size_z * 2 + 1 ) * 8,
-		256, Chunk::size_x * Chunk::size_z * 4 * 2, Chunk::size_x * Chunk::size_z * 6 * 2 );
+	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4;
+	GLuint size_inds = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 6;
 
+	GLuint num_verts = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 8;
+	GLuint num_inds = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 8;
+
+	GLuint num_buff = 1024;
+	GLuint size_buff_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4 * 2;
+	GLuint size_buff_inds = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 6 * 2;
+
+	std::cout << "Vert size: " << sizeof( VertTerrain ) << std::endl;
+	std::cout << "Uint size: " << sizeof( GLuint ) << std::endl;
+
+	sm_terrain.init(
+		size_verts, num_verts, size_inds, num_inds,
+		num_buff, size_buff_verts, size_buff_inds );
+
+	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade", ( GLfloat ) WorldSize::Chunk::size_x * ( WorldSize::World::size_x - 1 ) );
+	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade_cutoff", ( GLfloat ) WorldSize::Chunk::size_x * WorldSize::World::size_x );
+
+	/*
 	shared_mesh_inclusive.init(
 		4 * 6 * 50, ( GLuint ) list_block_data.size( ),
 		6 * 6 * 50, ( GLuint ) list_block_data.size( ),
 		4, 4 * 6 * 50, 6 * 6 * 50 );
-
-	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade", ( GLfloat ) Chunk::size_x * ( World::size_x - 1 ) );
-	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade_cutoff", ( GLfloat ) Chunk::size_x * World::size_x );
 
 	load_block_mesh( );
 
@@ -60,6 +71,7 @@ void ChunkMgr::init( ) {
 	}
 
 	shared_mesh_inclusive.buffer_commands( );
+	*/
 
 	GL_CHECK( init_light( ) );
 	GL_CHECK( init_skybox( ) );
@@ -450,7 +462,7 @@ void ChunkMgr::update( ) {
 					&& chunk.is_loaded
 					&& !chunk.is_shutdown ) {
 
-					if( !Directional::is_within_range( chunk.pos_lw, World::size_vect, pos_center_chunk_lw ) ) {
+					if( !Directional::is_within_range( chunk.pos_lw, WorldSize::World::vec_size, pos_center_chunk_lw ) ) {
 						chunk_state( chunk, ChunkState::CS_Save, true );
 						chunk_state( chunk, ChunkState::CS_Remove, true );
 						chunk.is_shutdown = true;
@@ -462,7 +474,7 @@ void ChunkMgr::update( ) {
 							if( chunk.ptr_adj[ i ] == nullptr ) {
 								pos_adj = chunk.pos_lw + Directional::get_vec_dir_i( ( FaceDirection ) i );
 
-								if( Directional::is_within_range( pos_adj, World::size_vect, pos_center_chunk_lw ) ) {
+								if( Directional::is_within_range( pos_adj, WorldSize::World::vec_size, pos_center_chunk_lw ) ) {
 									chunk_add( pos_adj );
 								}
 							}
@@ -553,20 +565,20 @@ void ChunkMgr::update( ) {
 
 	out.str( "" );
 	out << "[Shared Mesh Buffers]" <<
-		" avail: " << shared_mesh.size_buffer_avail( ) <<
-		" live: " << shared_mesh.size_buffer_live( );
+		" avail: " << sm_terrain.size_buffer_avail( ) <<
+		" live: " << sm_terrain.size_buffer_live( );
 	client.gui_mgr.print_to_static( out.str( ) );
 
 	out.str( "" );
 	out << "[Shared Mesh Vbo]" <<
-		" live: " << shared_mesh.size_vbo_live( ) <<
-		" avail: " << shared_mesh.size_vbo_avail( );
+		" live: " << sm_terrain.size_vbo_live( ) <<
+		" avail: " << sm_terrain.size_vbo_avail( );
 	client.gui_mgr.print_to_static( out.str( ) );
 
 	out.str( "" );
 	out << "[Shared Mesh Ibo]" <<
-		" live: " << shared_mesh.size_ibo_live( ) <<
-		" avail: " << shared_mesh.size_ibo_avail( );
+		" live: " << sm_terrain.size_ibo_live( ) <<
+		" avail: " << sm_terrain.size_ibo_avail( );
 	client.gui_mgr.print_to_static( out.str( ) );
 
 	out.str( "" );
@@ -590,10 +602,11 @@ void ChunkMgr::render( ) {
 }
 
 void ChunkMgr::render_skybox( ) {
+	GLuint dim_skybox = ( WorldSize::World::size_x + 1 ) * WorldSize::Chunk::size_x;
 	glm::mat4 mat_model = 
 		glm::translate( glm::mat4( 1.0f ), client.display_mgr.camera.pos_camera ) * 
 		glm::rotate( glm::mat4( 1.0f ), glm::radians( client.time_mgr.get_time( TimeStrings::GAME ) / 1000.0f ), glm::vec3( 0, 1, 0 ) ) *
-		glm::scale( glm::mat4( 1.0f ), glm::vec3( 1000.0f, 1000.0f, 1000.0f ) );
+		glm::scale( glm::mat4( 1.0f ), glm::vec3( dim_skybox, dim_skybox, dim_skybox ) );
 
 	client.texture_mgr.update_uniform( "BasicPersp", "mat_model", mat_model );
 	vbo_skybox.render( client, true );
@@ -612,9 +625,9 @@ void ChunkMgr::render_skybox( ) {
 
 void ChunkMgr::render_exlude( ) {
 	static glm::ivec3 pos_check[ 8 ] = { 
-		{ 0, 0, 0 }, { Chunk::vec_size.x, 0, 0 }, { Chunk::vec_size.x, Chunk::vec_size.y, 0 }, 
-		{ 0, Chunk::vec_size.y, 0 }, { 0, 0, Chunk::vec_size.z }, { Chunk::vec_size.x, 0, Chunk::vec_size.z },
-		{ Chunk::vec_size.x, Chunk::vec_size.y, Chunk::vec_size.z }, { 0, Chunk::vec_size.y, Chunk::vec_size.z }
+		{ 0, 0, 0 }, { WorldSize::Chunk::vec_size.x, 0, 0 }, { WorldSize::Chunk::vec_size.x, WorldSize::Chunk::vec_size.y, 0 }, 
+		{ 0, WorldSize::Chunk::vec_size.y, 0 }, { 0, 0, WorldSize::Chunk::vec_size.z }, { WorldSize::Chunk::vec_size.x, 0, WorldSize::Chunk::vec_size.z },
+		{ WorldSize::Chunk::vec_size.x, WorldSize::Chunk::vec_size.y, WorldSize::Chunk::vec_size.z }, { 0, WorldSize::Chunk::vec_size.y, WorldSize::Chunk::vec_size.z }
 	};
 
 	auto & camera = client.display_mgr.camera;
@@ -638,7 +651,7 @@ void ChunkMgr::render_exlude( ) {
 				break;
 			}
 
-			if( dist > ( World::size_x + World::size_z ) / 2.0f + 1 ) {
+			if( dist > ( WorldSize::World::size_x + WorldSize::World::size_z ) / 2.0f + 1 ) {
 				continue;
 			}
 
@@ -661,8 +674,8 @@ void ChunkMgr::render_sort( ) {
 	client.time_mgr.begin_record( RecordStrings::RENDER_SORT );
 
 	std::sort( list_render.begin( ), list_render.end( ), [ & ] ( Chunk * lro, Chunk * rho ) {
-		return	glm::length( client.display_mgr.camera.pos_camera - glm::vec3( lro->pos_gw + Chunk::vec_size / 2 ) ) >
-			glm::length( client.display_mgr.camera.pos_camera - glm::vec3( rho->pos_gw + Chunk::vec_size / 2 ) );
+		return	glm::length( client.display_mgr.camera.pos_camera - glm::vec3( lro->pos_gw + WorldSize::Chunk::vec_size / 2 ) ) >
+			glm::length( client.display_mgr.camera.pos_camera - glm::vec3( rho->pos_gw + WorldSize::Chunk::vec_size / 2 ) );
 	} );
 
 	client.time_mgr.end_record( RecordStrings::RENDER_SORT );
@@ -676,21 +689,21 @@ void ChunkMgr::render_build( ) {
 	num_cmds = 0;
 	num_triangles = 0;
 
-	shared_mesh.clear_commands( );
+	sm_terrain.clear_commands( );
 
 	for( auto chunk : list_render ) {
-		chunk->handle_solid.submit_commands( chunk->mat_model );
+		chunk->handle_solid.submit_commands( chunk->pos_gw );
 	}
 
-	idx_solid = shared_mesh.size_commands( );
+	idx_solid = sm_terrain.size_commands( );
 
 	for( auto chunk : list_render ) {
-		chunk->handle_trans.submit_commands( chunk->mat_model );
+		chunk->handle_trans.submit_commands( chunk->pos_gw );
 	}
 
-	idx_trans = shared_mesh.size_commands( );
+	idx_trans = sm_terrain.size_commands( );
 
-	shared_mesh.buffer_commands( );
+	sm_terrain.buffer_commands( );
 
 	/*
 	shared_mesh_inclusive.clear_commands( );
@@ -707,8 +720,8 @@ void ChunkMgr::render_build( ) {
 	shared_mesh_inclusive.buffer_commands( );
 	*/
 
-	num_cmds += shared_mesh.size_commands( );
-	num_triangles += shared_mesh.num_primitives( );
+	num_cmds += sm_terrain.size_commands( );
+	num_triangles += sm_terrain.num_primitives( );
 }
 
 void ChunkMgr::render_pass_shadow( ) {
@@ -887,14 +900,14 @@ void ChunkMgr::render_pass_shadow( ) {
 			client.texture_mgr.bind_texture_array( 0, id_blocks );
 
 			glDisable( GL_BLEND );
-			shared_mesh.render_range( client, 0, idx_solid );
+			sm_terrain.render_range( client, 0, idx_solid );
 			glEnable( GL_BLEND );
 
 			client.texture_mgr.bind_program( "SMShadowMapTrans" );
 			glUniformMatrix4fv( idx_mat_light_trans, 1, GL_FALSE, glm::value_ptr( mat_ortho_light[ i ] ) );
 
 			glDisable( GL_CULL_FACE );
-			shared_mesh.render_range( client, idx_solid, idx_trans - idx_solid );
+			sm_terrain.render_range( client, idx_solid, idx_trans - idx_solid );
 			glEnable( GL_CULL_FACE );
 
 			client.entity_mgr.render( );
@@ -920,22 +933,24 @@ void ChunkMgr::render_pass_shadow( ) {
 }
 
 void ChunkMgr::render_pass_solid( ) {
-	client.texture_mgr.bind_program( "SMBasicProj" );
+	client.texture_mgr.bind_program( "SMTerrain" );
 	client.texture_mgr.bind_texture_array( 0, client.texture_mgr.get_texture_id( "Blocks" ) );
-	//client.texture_mgr.update_uniform( "SMTerrain", "mat_light", mat_ortho_light );
+	client.texture_mgr.update_uniform( "SMTerrain", "mat_light", mat_ortho_light );
 
-	shared_mesh.render_range( client, 0, idx_solid );
+	//glDisable( GL_CULL_FACE );
+	sm_terrain.render_range( client, 0, idx_solid );
+	//glEnable( GL_CULL_FACE );
 }
 
 void ChunkMgr::render_pass_trans( ) {
-	client.texture_mgr.bind_program( "SMBasicProj" );
+	client.texture_mgr.bind_program( "SMTerrain" );
 	client.texture_mgr.bind_texture_array( 0, client.texture_mgr.get_texture_id( "Blocks" ) );
-	//client.texture_mgr.update_uniform( "SMTerrain", "mat_light", mat_ortho_light );
+	client.texture_mgr.update_uniform( "SMTerrain", "mat_light", mat_ortho_light );
 
 	glDisable( GL_CULL_FACE );
 
-	GL_CHECK( shared_mesh.render_range( client, idx_solid, idx_trans - idx_solid ) );
-	GL_CHECK( shared_mesh_inclusive.render( client ) );
+	GL_CHECK( sm_terrain.render_range( client, idx_solid, idx_trans - idx_solid ) );
+	//GL_CHECK( shared_mesh_inclusive.render( client ) );
 
 	glEnable( GL_CULL_FACE );
 }
@@ -988,7 +1003,7 @@ void ChunkMgr::next_skybox( ) {
 	mesh_skybox( );
 }
 
-int const level_sea = Chunk::size_y / 2;
+int const level_sea = WorldSize::Chunk::size_y / 2;
 
 GLfloat amb_light[ ] = { 0.0f, 0.0f, 0.0f, 1.0f };
 GLfloat diff_light[ ] = { 0.5f, 0.5f, 0.5f, 1.0f };
@@ -1087,7 +1102,8 @@ void ChunkMgr::mesh_skybox( ) {
 			"Miramar Day",
 			"Miramar Day NS",
 			"Stormy Day",
-			"Summer Sky"
+			"Summer Sky",
+			"The Wizard"
 		};
 
 		static glm::vec4 const color = { 0.5f, 0.5f, 0.5f, 1.0f };
@@ -1239,40 +1255,40 @@ void ChunkMgr::init_debug( ) {
 	std::vector< glm::vec3 > temp_verts;
 
 	temp_verts.push_back( { padding, padding, padding } );
-	temp_verts.push_back( { Chunk::size_x - padding, padding, padding } );
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, padding, padding } );
 
-	temp_verts.push_back( { padding, Chunk::size_y - padding, padding } );
-	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, padding } );
+	temp_verts.push_back( { padding, WorldSize::Chunk::size_y - padding, padding } );
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, WorldSize::Chunk::size_y - padding, padding } );
 
-	temp_verts.push_back( { padding, padding, Chunk::size_z - padding } );
-	temp_verts.push_back( { Chunk::size_x - padding, padding, Chunk::size_z - padding } );
+	temp_verts.push_back( { padding, padding, WorldSize::Chunk::size_z - padding } );
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, padding, WorldSize::Chunk::size_z - padding } );
 
-	temp_verts.push_back( { padding, Chunk::size_y - padding, Chunk::size_z - padding } );
-	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, Chunk::size_z - padding } );
-
-	temp_verts.push_back( { padding, padding, padding } );
-	temp_verts.push_back( { padding, padding, Chunk::size_z - padding } );
-
-	temp_verts.push_back( { padding, Chunk::size_y - padding, padding } );
-	temp_verts.push_back( { padding, Chunk::size_y - padding, Chunk::size_z - padding } );
-
-	temp_verts.push_back( { Chunk::size_x - padding, padding, padding } );
-	temp_verts.push_back( { Chunk::size_x - padding, padding, Chunk::size_z - padding } );
-
-	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, padding } );
-	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, Chunk::size_z - padding } );
+	temp_verts.push_back( { padding, WorldSize::Chunk::size_y - padding, WorldSize::Chunk::size_z - padding } );
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, WorldSize::Chunk::size_y - padding, WorldSize::Chunk::size_z - padding } );
 
 	temp_verts.push_back( { padding, padding, padding } );
-	temp_verts.push_back( { padding, Chunk::size_y - padding, padding } );
+	temp_verts.push_back( { padding, padding, WorldSize::Chunk::size_z - padding } );
 
-	temp_verts.push_back( { Chunk::size_x - padding, padding, padding } );
-	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, padding } );
+	temp_verts.push_back( { padding, WorldSize::Chunk::size_y - padding, padding } );
+	temp_verts.push_back( { padding, WorldSize::Chunk::size_y - padding, WorldSize::Chunk::size_z - padding } );
 
-	temp_verts.push_back( { padding, padding, Chunk::size_z - padding } );
-	temp_verts.push_back( { padding, Chunk::size_y - padding, Chunk::size_z - padding } );
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, padding, padding } );
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, padding, WorldSize::Chunk::size_z - padding } );
 
-	temp_verts.push_back( { Chunk::size_x - padding, padding, Chunk::size_z - padding } );
-	temp_verts.push_back( { Chunk::size_x - padding, Chunk::size_y - padding, Chunk::size_z - padding } );
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, WorldSize::Chunk::size_y - padding, padding } );
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, WorldSize::Chunk::size_y - padding, WorldSize::Chunk::size_z - padding } );
+
+	temp_verts.push_back( { padding, padding, padding } );
+	temp_verts.push_back( { padding, WorldSize::Chunk::size_y - padding, padding } );
+
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, padding, padding } );
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, WorldSize::Chunk::size_y - padding, padding } );
+
+	temp_verts.push_back( { padding, padding, WorldSize::Chunk::size_z - padding } );
+	temp_verts.push_back( { padding, WorldSize::Chunk::size_y - padding, WorldSize::Chunk::size_z - padding } );
+
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, padding, WorldSize::Chunk::size_z - padding } );
+	temp_verts.push_back( { WorldSize::Chunk::size_x - padding, WorldSize::Chunk::size_y - padding, WorldSize::Chunk::size_z - padding } );
 
 	vbo_debug_chunk.push_data( temp_verts );
 
@@ -1391,7 +1407,7 @@ void ChunkMgr::chunk_add( glm::ivec3 const & pos_lw ) {
 	chunk->pos_lw = pos_lw;
 	chunk->hash_lw = hash;
 	chunk->hash_lw_2d = Directional::get_hash( glm::ivec2( pos_lw.x, pos_lw.z ) );
-	chunk->pos_gw = pos_lw * Chunk::vec_size;
+	chunk->pos_gw = pos_lw * WorldSize::Chunk::vec_size;
 
 	chunk->mat_model = glm::translate( glm::mat4( 1.0f ), glm::vec3( chunk->pos_gw ) );
 
@@ -1441,11 +1457,11 @@ void ChunkMgr::chunk_add( glm::ivec3 const & pos_lw ) {
 		}
 	}
 	
-	shared_mesh.request_handle( chunk->handle_solid );
-	shared_mesh.request_handle( chunk->handle_solid_temp );
+	sm_terrain.request_handle( chunk->handle_solid );
+	sm_terrain.request_handle( chunk->handle_solid_temp );
 
-	shared_mesh.request_handle( chunk->handle_trans );
-	shared_mesh.request_handle( chunk->handle_trans_temp );
+	sm_terrain.request_handle( chunk->handle_trans );
+	sm_terrain.request_handle( chunk->handle_trans_temp );
 
 	chunk->handle_solid.release_buffer( );
 	chunk->handle_solid_temp.release_buffer( );
@@ -1480,7 +1496,7 @@ void ChunkMgr::chunk_init( Chunk & chunk ) {
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
 	int priority = 0;
-	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Init, false );
@@ -1498,8 +1514,8 @@ void ChunkMgr::chunk_init( Chunk & chunk ) {
 
 			auto & biome_base = list_biomes[ 0 ];
 
-			for( int i = 0; i < Chunk::size_x; i++ ) {
-				for( int j = 0; j < Chunk::size_z; j++ ) {
+			for( int i = 0; i < WorldSize::Chunk::size_x; i++ ) {
+				for( int j = 0; j < WorldSize::Chunk::size_z; j++ ) {
 					noise_total = 0;
 
 					for( auto & layer_noise : biome_base.list_noise ) { 
@@ -1615,7 +1631,7 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
 	int priority = 0;
-	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
 	client.thread_mgr.task_io( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Read, false );
@@ -1660,8 +1676,8 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 			chunk.ptr_file->cnt_using++;
 
 			int index_region =
-				Region::size_x * Region::size_z * pos_lr.y +
-				Region::size_x * pos_lr.z +
+				WorldSize::Region::size_x * WorldSize::Region::size_z * pos_lr.y +
+				WorldSize::Region::size_x * pos_lr.z +
 				pos_lr.x;
 
 			int index_section;
@@ -1689,9 +1705,9 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 					chunk.cnt_air += num_block;
 				}
 
-				for( int i = 0; i < Chunk::size_y; i++ ) {
-					for( int j = 0; j < Chunk::size_z; j++ ) {
-						for( int k = 0; k < Chunk::size_x; k++ ) {
+				for( int i = 0; i < WorldSize::Chunk::size_y; i++ ) {
+					for( int j = 0; j < WorldSize::Chunk::size_z; j++ ) {
+						for( int k = 0; k < WorldSize::Chunk::size_x; k++ ) {
 							if( num_block == 0 ) {
 								index_buffer += 2;
 								num_block = buffer_section[ index_buffer ];
@@ -1756,7 +1772,7 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
 	int priority = 0;
-	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Load, false );
@@ -1769,14 +1785,14 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 
 		float noise_cobble;
 
-		for( int i = 0; i < Chunk::size_x; i++ ) {
-			for( int k = 0; k < Chunk::size_z; k++ ) {
+		for( int i = 0; i < WorldSize::Chunk::size_x; i++ ) {
+			for( int k = 0; k < WorldSize::Chunk::size_z; k++ ) {
 				noise_height = chunk.ptr_noise->height[ i ][ k ];
 				noise_biome = chunk.ptr_noise->biome[ i ][ k ];
 				auto & biome = list_biomes[ noise_biome ];
 				noise_cobble = 10 + raw_noise_2d( ( chunk.pos_gw.x + i ) * 0.01f, ( chunk.pos_gw.z + k ) * 0.01f ) * 5.0f;
 
-				for( int j = 0; j < Chunk::size_y; j++ ) {
+				for( int j = 0; j < WorldSize::Chunk::size_y; j++ ) {
 					if( chunk.pos_gw.y + j < noise_height ) {
 						if( chunk.pos_gw.y + j < noise_height - noise_cobble ) {
 							chunk.id_blocks[ i ][ j ][ k ] = block_cobble.id;
@@ -1789,7 +1805,7 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 						chunk.id_blocks[ i ][ j ][ k ] = biome.id_block_surface;
 					}
 					else {
-						if( chunk.pos_gw.y + j <= World::level_sea &&
+						if( chunk.pos_gw.y + j <= WorldSize::World::level_sea &&
 							noise_biome != map_biome_name[ "Cobblestone Chasm" ] ) {
 							chunk.id_blocks[ i ][ j ][ k ] = block_water.id;
 						}
@@ -1822,7 +1838,7 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
 	int priority = 0;
-	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Gen, false );
@@ -1840,35 +1856,35 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 		auto & biome_grass_hill = map_biome_name[ "Grass Hill" ];
 		auto & biome_grass_plateau = map_biome_name[ "Grass Plateau" ];
 
-		for( int i = 0; i < Chunk::size_x; i++ ) {
-			for( int j = 0; j < Chunk::size_z; j++ ) {
-				if( chunk.ptr_noise->height[ i ][ j ] >= World::level_sea &&
+		for( int i = 0; i < WorldSize::Chunk::size_x; i++ ) {
+			for( int j = 0; j < WorldSize::Chunk::size_z; j++ ) {
+				if( chunk.ptr_noise->height[ i ][ j ] >= WorldSize::World::level_sea &&
 					chunk.ptr_noise->height[ i ][ j ] >= chunk.pos_gw.y &&
-					chunk.ptr_noise->height[ i ][ j ] < chunk.pos_gw.y + Chunk::size_y ) {
+					chunk.ptr_noise->height[ i ][ j ] < chunk.pos_gw.y + WorldSize::Chunk::size_y ) {
 
 					if( chunk.ptr_noise->biome[ i ][ j ] == biome_base ||
 						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_hill ||
 						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_plateau ) {
-						if( rand( ) % 1000 < 3 ) {
+						if( rand( ) % 1000 < 10 ) {
 							set_tree(
 								glm::ivec3( chunk.pos_gw.x, 0, chunk.pos_gw.z ) +
 								glm::ivec3( i, chunk.ptr_noise->height[ i ][ j ] + 1, j ),
 								state, 
 								rand( ) % 3 );
 						}
-						else if( rand( ) % 1000 < 3 ) {
+						else if( rand( ) % 1000 < 10 ) {
 							set_block(
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
 								block_gleaves.id );
 						}
-						else if( rand( ) % 1000 < 3 ) {
+						else if( rand( ) % 1000 < 10 ) {
 							set_block(
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
 								block_dgleaves.id );
 						}
-						else if( rand( ) % 1000 < 3 ) {
+						else if( rand( ) % 1000 < 10 ) {
 							set_block( 
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
@@ -1882,20 +1898,20 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 						}
 					}
 					else if( chunk.ptr_noise->biome[ i ][ j ] == map_biome_name[ "Sand Plateau" ] ) {
-						if( rand( ) % 1000 < 2 ) {
+						if( rand( ) % 1000 < 10 ) {
 							set_tree(
 								glm::ivec3( chunk.pos_gw.x, 0, chunk.pos_gw.z ) +
 								glm::ivec3( i, chunk.ptr_noise->height[ i ][ j ] + 1, j ),
 								state, 
 								3 + rand( ) % 2 );
 						}
-						else if( rand( ) % 1000 < 2 ) {
+						else if( rand( ) % 1000 < 10 ) {
 							set_block(
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
 								block_pumpkin.id );
 						}
-						else if( rand( ) % 1000 < 3 ) {
+						else if( rand( ) % 1000 < 10 ) {
 							set_block(
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
@@ -1945,7 +1961,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
 	int priority = 3;
-	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
 		static FaceDirection list_face_z[ ] = { FD_Up, FD_Down, FD_Left, FD_Right };
@@ -1965,7 +1981,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 		glm::ivec3 pos_curr_x;
 		glm::ivec3 pos_adj;
 		glm::ivec3 pos_min( 0, 0, 0 );
-		glm::ivec3 pos_max( Chunk::size_x - 1, Chunk::size_y - 1, Chunk::size_z - 1 );
+		glm::ivec3 pos_max( WorldSize::Chunk::size_x - 1, WorldSize::Chunk::size_y - 1, WorldSize::Chunk::size_z - 1 );
 
 		int id_curr, id_adj;
 
@@ -1990,9 +2006,8 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			chunk.handle_solid_temp.ptr_buffer->list_verts.clear( );
 			chunk.handle_solid_temp.ptr_buffer->list_inds.clear( );
 
-			chunk.handle_solid_temp.push_set( SMChunk::SMGSet(
-				SMChunk::TypeGeometry::TG_Triangles,
-				glm::mat4( 1.0f ),
+			chunk.handle_solid_temp.push_set( SMTerrain::SMTGSet(
+				SMTerrain::TypeGeometry::TG_Triangles,
 				client.texture_mgr.get_program_id( "SMTerrain" ),
 				client.texture_mgr.get_texture_id( "Blocks" )
 			) );
@@ -2004,9 +2019,9 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 				list_block_last[ dir_face ] = nullptr;
 			}
 
-			for( pos_curr.x = 0; pos_curr.x < Chunk::size_x; pos_curr.x++ ) {
-				for( pos_curr.y = 0; pos_curr.y < Chunk::size_y; pos_curr.y++ ) {
-					for( pos_curr.z = 0; pos_curr.z < Chunk::size_z; pos_curr.z++ ) {
+			for( pos_curr.x = 0; pos_curr.x < WorldSize::Chunk::size_x; pos_curr.x++ ) {
+				for( pos_curr.y = 0; pos_curr.y < WorldSize::Chunk::size_y; pos_curr.y++ ) {
+					for( pos_curr.z = 0; pos_curr.z < WorldSize::Chunk::size_z; pos_curr.z++ ) {
 						id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
 
 						if( id_curr == -1 || id_curr == -2 ) {
@@ -2041,7 +2056,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							chunk_adj = &chunk;
 
 							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
-								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
+								pos_adj -= Directional::get_vec_dir_i( dir_face )  * WorldSize::Chunk::vec_size;
 
 								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
 								chunk_adj = chunk.ptr_adj[ dir_face ];
@@ -2067,6 +2082,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 										put_face(
 											chunk.handle_solid_temp,
 											list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+											dir_face,
 											list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 											glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
 											glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
@@ -2097,6 +2113,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 											put_face(
 												chunk.handle_solid_temp,
 												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+												dir_face,
 												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
 												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
@@ -2146,7 +2163,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							chunk_adj = &chunk;
 
 							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
-								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
+								pos_adj -= Directional::get_vec_dir_i( dir_face )  * WorldSize::Chunk::vec_size;
 
 								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
 								chunk_adj = chunk.ptr_adj[ dir_face ];
@@ -2172,6 +2189,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 										put_face(
 											chunk.handle_solid_temp,
 											list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+											dir_face,
 											list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 											glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
 											glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
@@ -2202,6 +2220,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 											put_face(
 												chunk.handle_solid_temp,
 												list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+												dir_face,
 												list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 												glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
 												glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
@@ -2235,6 +2254,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 					put_face(
 						chunk.handle_solid_temp,
 						list_pos_last[ dir_face ], list_block_last[ dir_face ]->color,
+						dir_face,
 						list_block_last[ dir_face ]->faces[ list_block_last[ dir_face ]->occlude_lookup[ dir_face ][ 0 ] ],
 						glm::max( glm::vec3( 1, 1, 1 ), list_scale_verts[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ),
 						glm::max( glm::vec2( 1, 1 ), list_scale_uvs[ dir_face ] * ( float ) list_cnt_last[ dir_face ] ) );
@@ -2273,16 +2293,15 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			buffer.list_temp.clear( );
 			buffer.list_sort.clear( );
 
-			chunk.handle_trans_temp.push_set( SMChunk::SMGSet(
-				SMChunk::TypeGeometry::TG_Triangles,
-				glm::mat4( 1.0f ),
+			chunk.handle_trans_temp.push_set( SMTerrain::SMTGSet(
+				SMTerrain::TypeGeometry::TG_Triangles,
 				client.texture_mgr.get_program_id( "SMTerrain" ),
 				client.texture_mgr.get_texture_id( "Blocks" )
 			) );
 
-			for( pos_curr.x = 0; pos_curr.x < Chunk::size_x; pos_curr.x++ ) {
-				for( pos_curr.y = 0; pos_curr.y < Chunk::size_y; pos_curr.y++ ) {
-					for( pos_curr.z = 0; pos_curr.z < Chunk::size_z; pos_curr.z++ ) {
+			for( pos_curr.x = 0; pos_curr.x < WorldSize::Chunk::size_x; pos_curr.x++ ) {
+				for( pos_curr.y = 0; pos_curr.y < WorldSize::Chunk::size_y; pos_curr.y++ ) {
+					for( pos_curr.z = 0; pos_curr.z < WorldSize::Chunk::size_z; pos_curr.z++ ) {
 						id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
 
 						if( id_curr == -1 ) {
@@ -2308,7 +2327,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							chunk_adj = &chunk;
 
 							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
-								pos_adj -= Directional::get_vec_dir_i( dir_face )  * Chunk::vec_size;
+								pos_adj -= Directional::get_vec_dir_i( dir_face )  * WorldSize::Chunk::vec_size;
 
 								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
 								chunk_adj = chunk.ptr_adj[ dir_face ];
@@ -2328,6 +2347,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 								put_face(
 									chunk.handle_trans_temp,
 									pos_curr, block_curr->color,
+									dir_face,
 									block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ] );
 
 								put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + pos_curr ),
@@ -2342,6 +2362,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 									put_face(
 										chunk.handle_trans_temp,
 										pos_curr, block_curr->color,
+										dir_face,
 										block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ] );
 
 									put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + pos_curr ),
@@ -2399,7 +2420,7 @@ void ChunkMgr::chunk_buffer( Chunk & chunk ) {
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
 	int priority = 3;
-	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
 	client.thread_mgr.task_main( priority, [ & ] ( ) {
 		if( chunk.states[ ChunkState::CS_SBuffer ] ) {
@@ -2434,7 +2455,7 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
 	int priority = 2;
-	priority = priority + ( float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	priority = priority + ( float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
 	client.thread_mgr.task_io( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Save, false );
@@ -2446,8 +2467,8 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 			//client.time_mgr.begin_record( std::string( "SAVE" ) );
 			std::lock_guard< std::mutex > lock( mtx_file );
 
-			int index_region = Region::size_x * Region::size_z * pos_lr.y +
-				Region::size_x * pos_lr.z + pos_lr.x;
+			int index_region = WorldSize::Region::size_x * WorldSize::Region::size_z * pos_lr.y +
+				WorldSize::Region::size_x * pos_lr.z + pos_lr.x;
 
 			int index_section;
 			int index_start;
@@ -2459,9 +2480,9 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 			index_buffer = 0;
 			index_section = 0;
 
-			for( int i = 0; i < Chunk::size_y; i++ ) {
-				for( int j = 0; j < Chunk::size_z; j++ ) {
-					for( int k = 0; k < Chunk::size_x; k++ ) {
+			for( int i = 0; i < WorldSize::Chunk::size_y; i++ ) {
+				for( int j = 0; j < WorldSize::Chunk::size_z; j++ ) {
+					for( int k = 0; k < WorldSize::Chunk::size_x; k++ ) {
 						if( id == chunk.id_blocks[ k ][ i ][ j ] ) {
 							num_block++;
 						}
@@ -2529,7 +2550,7 @@ void ChunkMgr::chunk_remove( Chunk & chunk ) {
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
 	int priority = 2;
-	priority = priority + ( float( max_dir ) / Directional::get_max( World::size_vect ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	priority = priority + ( float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Remove, false );
@@ -2569,11 +2590,11 @@ void ChunkMgr::chunk_remove( Chunk & chunk ) {
 			map_render.erase( chunk.hash_lw );
 		}
 
-		shared_mesh.release_handle( chunk.handle_solid );
-		shared_mesh.release_handle( chunk.handle_solid_temp );
+		sm_terrain.release_handle( chunk.handle_solid );
+		sm_terrain.release_handle( chunk.handle_solid_temp );
 
-		shared_mesh.release_handle( chunk.handle_trans );
-		shared_mesh.release_handle( chunk.handle_trans_temp );
+		sm_terrain.release_handle( chunk.handle_trans );
+		sm_terrain.release_handle( chunk.handle_trans_temp );
 
 		chunk_state_clear( chunk );
 
@@ -2897,7 +2918,7 @@ void ChunkMgr::load_block_mesh( ) {
 
 		handle.clear( );
 
-		shared_mesh_inclusive.request_handle( handle );
+		sm_inclusive.request_handle( handle );
 
 		handle.push_set( SMChunkIncl::SMGSet(
 			SMChunkIncl::TypeGeometry::TG_Triangles,
@@ -3008,7 +3029,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, int const id ) {
 			chunk_state( *chunk.ptr_adj[ FD_Right ], ChunkState::CS_SMesh, true );
 			chunk_state( *chunk.ptr_adj[ FD_Right ], ChunkState::CS_TMesh, true );
 		}
-		else if( pos_lc.x == Chunk::size_x - 1 && chunk.ptr_adj[ FD_Left ] != nullptr ) {
+		else if( pos_lc.x == WorldSize::Chunk::size_x - 1 && chunk.ptr_adj[ FD_Left ] != nullptr ) {
 			chunk_state( *chunk.ptr_adj[ FD_Left ], ChunkState::CS_SMesh, true );
 			chunk_state( *chunk.ptr_adj[ FD_Left ], ChunkState::CS_TMesh, true );
 		}
@@ -3017,7 +3038,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, int const id ) {
 			chunk_state( *chunk.ptr_adj[ FD_Down ], ChunkState::CS_SMesh, true );
 			chunk_state( *chunk.ptr_adj[ FD_Down ], ChunkState::CS_TMesh, true );
 		}
-		else if( pos_lc.y == Chunk::size_y - 1 && chunk.ptr_adj[ FD_Up ] != nullptr ) {
+		else if( pos_lc.y == WorldSize::Chunk::size_y - 1 && chunk.ptr_adj[ FD_Up ] != nullptr ) {
 			chunk_state( *chunk.ptr_adj[ FD_Up ], ChunkState::CS_SMesh, true );
 			chunk_state( *chunk.ptr_adj[ FD_Up ], ChunkState::CS_TMesh, true );
 		}
@@ -3026,7 +3047,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, int const id ) {
 			chunk_state( *chunk.ptr_adj[ FD_Back ], ChunkState::CS_SMesh, true );
 			chunk_state( *chunk.ptr_adj[ FD_Back ], ChunkState::CS_TMesh, true );
 		}
-		else if( pos_lc.z == Chunk::size_z - 1 && chunk.ptr_adj[ FD_Front ] != nullptr ) {
+		else if( pos_lc.z == WorldSize::Chunk::size_z - 1 && chunk.ptr_adj[ FD_Front ] != nullptr ) {
 			chunk_state( *chunk.ptr_adj[ FD_Front ], ChunkState::CS_SMesh, true );
 			chunk_state( *chunk.ptr_adj[ FD_Front ], ChunkState::CS_TMesh, true );
 		}
@@ -3057,7 +3078,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 					Directional::get_hash( chunk.ptr_adj[ FD_Right ]->pos_lw ),
 					*chunk.ptr_adj[ FD_Right ] } );
 			}
-			else if( state.pos_lc.x == Chunk::size_x - 1 && chunk.ptr_adj[ FD_Left ] != nullptr ) {
+			else if( state.pos_lc.x == WorldSize::Chunk::size_x - 1 && chunk.ptr_adj[ FD_Left ] != nullptr ) {
 				state.map_queue_dirty.insert( {
 					Directional::get_hash( chunk.ptr_adj[ FD_Left ]->pos_lw ),
 					*chunk.ptr_adj[ FD_Left ] } );
@@ -3068,7 +3089,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 					Directional::get_hash( chunk.ptr_adj[ FD_Down ]->pos_lw ),
 					*chunk.ptr_adj[ FD_Down ] } );
 			}
-			else if( state.pos_lc.y == Chunk::size_y - 1 && chunk.ptr_adj[ FD_Up ] != nullptr ) {
+			else if( state.pos_lc.y == WorldSize::Chunk::size_y - 1 && chunk.ptr_adj[ FD_Up ] != nullptr ) {
 				state.map_queue_dirty.insert( {
 					Directional::get_hash( chunk.ptr_adj[ FD_Up ]->pos_lw ),
 					*chunk.ptr_adj[ FD_Up ] } );
@@ -3079,7 +3100,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 					Directional::get_hash( chunk.ptr_adj[ FD_Back ]->pos_lw ),
 					*chunk.ptr_adj[ FD_Back ] } );
 			}
-			else if( state.pos_lc.z == Chunk::size_z - 1 && chunk.ptr_adj[ FD_Front ] != nullptr ) {
+			else if( state.pos_lc.z == WorldSize::Chunk::size_z - 1 && chunk.ptr_adj[ FD_Front ] != nullptr ) {
 				state.map_queue_dirty.insert( {
 					Directional::get_hash( chunk.ptr_adj[ FD_Front ]->pos_lw ),
 					*chunk.ptr_adj[ FD_Front ] } );
@@ -3104,7 +3125,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 						Directional::get_hash( chunk.ptr_adj[ FD_Right ]->pos_lw ),
 						*chunk.ptr_adj[ FD_Right ] } );
 				}
-				else if( state.pos_lc.x == Chunk::size_x - 1 && chunk.ptr_adj[ FD_Left ] != nullptr ) {
+				else if( state.pos_lc.x == WorldSize::Chunk::size_x - 1 && chunk.ptr_adj[ FD_Left ] != nullptr ) {
 					state.map_queue_dirty.insert( {
 						Directional::get_hash( chunk.ptr_adj[ FD_Left ]->pos_lw ),
 						*chunk.ptr_adj[ FD_Left ] } );
@@ -3115,7 +3136,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 						Directional::get_hash( chunk.ptr_adj[ FD_Down ]->pos_lw ),
 						*chunk.ptr_adj[ FD_Down ] } );
 				}
-				else if( state.pos_lc.y == Chunk::size_y - 1 && chunk.ptr_adj[ FD_Up ] != nullptr ) {
+				else if( state.pos_lc.y == WorldSize::Chunk::size_y - 1 && chunk.ptr_adj[ FD_Up ] != nullptr ) {
 					state.map_queue_dirty.insert( {
 						Directional::get_hash( chunk.ptr_adj[ FD_Up ]->pos_lw ),
 						*chunk.ptr_adj[ FD_Up ] } );
@@ -3126,7 +3147,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 						Directional::get_hash( chunk.ptr_adj[ FD_Back ]->pos_lw ),
 						*chunk.ptr_adj[ FD_Back ] } );
 				}
-				else if( state.pos_lc.z == Chunk::size_z - 1 && chunk.ptr_adj[ FD_Front ] != nullptr ) {
+				else if( state.pos_lc.z == WorldSize::Chunk::size_z - 1 && chunk.ptr_adj[ FD_Front ] != nullptr ) {
 					state.map_queue_dirty.insert( {
 						Directional::get_hash( chunk.ptr_adj[ FD_Front ]->pos_lw ),
 						*chunk.ptr_adj[ FD_Front ] } );
@@ -3527,7 +3548,7 @@ void ChunkMgr::print_dirty( ) {
 void ChunkMgr::print_prio( int const range, int const base_prio ) {
 	auto & out = client.display_mgr.out;
 	glm::ivec3 pos_chunk;
-	int max_world = Directional::get_max( World::size_vect );
+	int max_world = Directional::get_max( WorldSize::World::vec_size );
 	int max_dir;
 	int priority;
 	int num_print = 0;
@@ -3598,113 +3619,23 @@ void ChunkMgr::print_center_chunk_mesh( ) {
 }
 
 inline void put_face(
-	SMChunk::SMHandle & handle, glm::ivec3 const & pos,
-	glm::vec4 const & color, Face const & face ) {
+	SMTerrain::SMTHandle & handle, glm::ivec3 const & pos,
+	glm::vec4 const & color, FaceDirection dir, Face const & face ) {
 
 	GLuint idx_inds = ( GLuint ) handle.ptr_buffer->list_verts.size( );
 
+	VertTerrain vert {
+		( GLuint ) ( pos.x ), ( GLuint ) ( pos.y ), ( GLuint ) ( pos.z ),
+		( GLuint ) ( color.r * 32 ), ( GLuint ) ( color.g * 32 ),
+		( GLuint ) ( color.b * 32 ), ( GLuint ) ( color.a * 32 ),
+		( GLuint ) face.id_subtex, ( GLuint ) 0,
+		( GLuint ) dir, ( GLuint ) 0
+	};
+
 	handle.push_verts( {
-		// Bot Left
-		{ 
-			{ 
-				( GLubyte ) ( pos.x + face.verts[ 0 ].x ), 
-				( GLubyte ) ( pos.y + face.verts[ 0 ].y ),
-				( GLubyte ) ( pos.z + face.verts[ 0 ].z )
-			},
-			{ 
-				( GLubyte ) ( color.r * face.color.r * 255 ),
-				( GLubyte ) ( color.g * face.color.g * 255 ),
-				( GLubyte ) ( color.b * face.color.b * 255 ),
-				( GLubyte ) ( color.a * face.color.a * 255 )
-			},
-			{ 
-				( GLbyte ) ( face.norms[ 0 ].x ), 
-				( GLbyte ) ( face.norms[ 0 ].y ), 
-				( GLbyte ) ( face.norms[ 0 ].z ) 
-			},
-			{ 
-				( GLubyte ) ( face.uvs[ 0 ].x ),
-				( GLubyte ) ( face.uvs[ 0 ].y ),
-				( GLubyte ) ( face.uvs[ 0 ].z )
-			} 
-		},
-
-		//Bot Right
-		{ 
-			{ 
-				( GLubyte ) ( pos.x + face.verts[ 1 ].x ), 
-				( GLubyte ) ( pos.y + face.verts[ 1 ].y ), 
-				( GLubyte ) ( pos.z + face.verts[ 1 ].z ) 
-			},
-			{ 
-				( GLubyte ) ( color.r * face.color.r * 255 ), 
-				( GLubyte ) ( color.g * face.color.g * 255 ), 
-				( GLubyte ) ( color.b * face.color.b * 255 ), 
-				( GLubyte ) ( color.a * face.color.a * 255 ) 
-			},
-			{ 
-				( GLbyte ) ( face.norms[ 1 ].x ),
-				( GLbyte ) ( face.norms[ 1 ].y ),
-				( GLbyte ) ( face.norms[ 1 ].z )
-			},
-			{ 
-				( GLubyte ) ( face.uvs[ 1 ].x ), 
-				( GLubyte ) ( face.uvs[ 1 ].y ), 
-				( GLubyte ) ( face.uvs[ 1 ].z ) 
-			} 
-		},
-
-		//Top Right
-		{ 
-			{ 
-				( GLubyte ) ( pos.x + face.verts[ 2 ].x ), 
-				( GLubyte ) ( pos.y + face.verts[ 2 ].y ), 
-				( GLubyte ) ( pos.z + face.verts[ 2 ].z ) 
-			},
-			{ 
-				( GLubyte ) ( color.r * face.color.r * 255 ), 
-				( GLubyte ) ( color.g * face.color.g * 255 ), 
-				( GLubyte ) ( color.b * face.color.b * 255 ), 
-				( GLubyte ) ( color.a * face.color.a * 255 ) 
-			},
-			{ 
-				( GLbyte ) ( face.norms[ 2 ].x ),
-				( GLbyte ) ( face.norms[ 2 ].y ),
-				( GLbyte ) ( face.norms[ 2 ].z )
-			},
-			{ 
-				( GLubyte ) ( face.uvs[ 2 ].x ), 
-				( GLubyte ) ( face.uvs[ 2 ].y ), 
-				( GLubyte ) ( face.uvs[ 2 ].z ) 
-			} 
-		},
-		
-		//Top Left
-		{ 
-			{ 
-				( GLubyte ) ( pos.x + face.verts[ 3 ].x ), 
-				( GLubyte ) ( pos.y + face.verts[ 3 ].y ), 
-				( GLubyte ) ( pos.z + face.verts[ 3 ].z ) 
-			},
-			{ 
-				( GLubyte ) ( color.r * face.color.r * 255 ), 
-				( GLubyte ) ( color.g * face.color.g * 255 ), 
-				( GLubyte ) ( color.b * face.color.b * 255 ), 
-				( GLubyte ) ( color.a * face.color.a * 255 ) 
-			},
-			{ 
-				( GLbyte ) ( face.norms[ 3 ].x ),
-				( GLbyte ) ( face.norms[ 3 ].y ),
-				( GLbyte ) ( face.norms[ 3 ].z )
-			},
-			{ 
-				( GLubyte ) ( face.uvs[ 3 ].x ), 
-				( GLubyte ) ( face.uvs[ 3 ].y ), 
-				( GLubyte ) ( face.uvs[ 3 ].z ) 
-			} 
-		},
-	} );
-
+		vert, vert, vert, vert
+	}  );
+	
 	handle.push_inds( {
 		idx_inds + 0, idx_inds + 1, idx_inds + 2,
 		idx_inds + 2, idx_inds + 3, idx_inds + 0
@@ -3712,110 +3643,26 @@ inline void put_face(
 }
 
 inline void put_face(
-	SMChunk::SMHandle & handle, glm::ivec3 const & pos,
-	glm::vec4 const & color, Face const & face,
+	SMTerrain::SMTHandle & handle, glm::ivec3 const & pos,
+	glm::vec4 const & color, FaceDirection dir, Face const & face,
 	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs ) {
 
 	GLuint idx_inds = ( GLuint ) handle.ptr_buffer->list_verts.size( );
 
+	GLuint scale = Directional::get_max( scale_verts );
+
+	VertTerrain vert{ 
+		( GLuint ) ( pos.x ), ( GLuint ) ( pos.y ), ( GLuint ) ( pos.z ),
+		( GLuint ) ( color.r * 32 ), ( GLuint ) ( color.g * 32 ), 
+		( GLuint ) ( color.b * 32 ), ( GLuint ) ( color.a * 32 ),
+		( GLuint ) face.id_subtex, ( GLuint ) 0,
+		( GLuint ) dir, ( GLuint ) scale - 1 
+	};
+
 	handle.push_verts( {
-		{ 
-			{ 
-				( GLubyte ) ( pos.x + face.verts[ 0 ].x * scale_verts.x ), 
-				( GLubyte ) ( pos.y + face.verts[ 0 ].y * scale_verts.y ), 
-				( GLubyte ) ( pos.z + face.verts[ 0 ].z * scale_verts.z ) 
-			},
-			{ 
-				( GLubyte ) ( color.r * face.color.r * 255 ), 
-				( GLubyte ) ( color.g * face.color.g * 255 ),
-				( GLubyte ) ( color.b * face.color.b * 255 ),
-				( GLubyte ) ( color.a * face.color.a * 255 )
-			},
-			{ 
-				( GLbyte ) ( face.norms[ 0 ].x ),
-				( GLbyte ) ( face.norms[ 0 ].y ),
-				( GLbyte ) ( face.norms[ 0 ].z )
-			},
-			{ 
-				( GLubyte ) ( face.uvs[ 0 ].x ), 
-				( GLubyte ) ( face.uvs[ 0 ].y ), 
-				( GLubyte ) ( face.uvs[ 0 ].z ) 
-			} 
-		},
-
-		{ 
-			{ 
-				( GLubyte ) ( pos.x + face.verts[ 1 ].x * scale_verts.x ),
-				( GLubyte ) ( pos.y + face.verts[ 1 ].y * scale_verts.y ),
-				( GLubyte ) ( pos.z + face.verts[ 1 ].z * scale_verts.z )
-			},
-			{ 
-				( GLubyte ) ( color.r * face.color.r * 255 ),
-				( GLubyte ) ( color.g * face.color.g * 255 ),
-				( GLubyte ) ( color.b * face.color.b * 255 ),
-				( GLubyte ) ( color.a * face.color.a * 255 )
-			},
-			{ 
-				( GLbyte ) ( face.norms[ 1 ].x ),
-				( GLbyte ) ( face.norms[ 1 ].y ),
-				( GLbyte ) ( face.norms[ 1 ].z )
-			},
-			{ 
-				( GLubyte ) ( face.uvs[ 1 ].x + ( ( scale_uvs.x - 1 ) * 1.0f ) ),
-				( GLubyte ) ( face.uvs[ 1 ].y ),
-				( GLubyte ) ( face.uvs[ 1 ].z )
-			} 
-		},
-
-		{ 
-			{ 
-				( GLubyte ) ( pos.x + face.verts[ 2 ].x * scale_verts.x ),
-				( GLubyte ) ( pos.y + face.verts[ 2 ].y * scale_verts.y ),
-				( GLubyte ) ( pos.z + face.verts[ 2 ].z * scale_verts.z )
-			},
-			{ 
-				( GLubyte ) ( color.r * face.color.r * 255 ),
-				( GLubyte ) ( color.g * face.color.g * 255 ),
-				( GLubyte ) ( color.b * face.color.b * 255 ),
-				( GLubyte ) ( color.a * face.color.a * 255 )
-			},
-			{ 
-				( GLbyte ) ( face.norms[ 2 ].x ),
-				( GLbyte ) ( face.norms[ 2 ].y ),
-				( GLbyte ) ( face.norms[ 2 ].z )
-			},
-			{ 
-				( GLubyte ) ( face.uvs[ 2 ].x + ( ( scale_uvs.x - 1 ) * 1.0f ) ),
-				( GLubyte ) ( face.uvs[ 2 ].y + ( ( scale_uvs.y - 1 ) * 1.0f ) ),
-				( GLubyte ) ( face.uvs[ 2 ].z )
-			} 
-		},
-
-		{ 
-			{ 
-				( GLubyte ) ( pos.x + face.verts[ 3 ].x * scale_verts.x ),
-				( GLubyte ) ( pos.y + face.verts[ 3 ].y * scale_verts.y ),
-				( GLubyte ) ( pos.z + face.verts[ 3 ].z * scale_verts.z )
-			},
-			{ 
-				( GLubyte ) ( color.r * face.color.r * 255 ),
-				( GLubyte ) ( color.g * face.color.g * 255 ),
-				( GLubyte ) ( color.b * face.color.b * 255 ),
-				( GLubyte ) ( color.a * face.color.a * 255 )
-			},
-			{ 
-				( GLbyte ) ( face.norms[ 3 ].x ),
-				( GLbyte ) ( face.norms[ 3 ].y ),
-				( GLbyte ) ( face.norms[ 3 ].z )
-			},
-			{ 
-				( GLubyte ) ( face.uvs[ 3 ].x ),
-				( GLubyte ) ( face.uvs[ 3 ].y + ( ( scale_uvs.y - 1 ) * 1.0f ) ),
-				( GLubyte ) ( face.uvs[ 3 ].z )
-			} 
-		}
+		vert, vert, vert, vert
 	} );
-
+	
 	handle.push_inds( {
 		idx_inds + 0, idx_inds + 1, idx_inds + 2,
 		idx_inds + 2, idx_inds + 3, idx_inds + 0

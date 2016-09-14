@@ -5,6 +5,7 @@
 #include "Manager.h"
 #include "Block.h"
 #include "Chunk.h"
+#include "WorldSize.h"
 #include "ResPool.h" 
 #include "VBO.h"
 
@@ -42,23 +43,6 @@ struct LightData {
 	glm::vec4 list_radius[ max_emitters ];
 };
 
-struct World { 
-	static int const size_x = 16;
-	static int const size_y = 4;
-	static int const size_z = 16;
-	static glm::ivec3 const size_vect;
-	static int const num_chunks = 
-		( size_x * 2 + 1 ) * ( size_y * 2 + 1 ) * ( size_z * 2 + 1 ) + 
-		( size_x * 2 + 1 ) * ( size_z * 2 + 1 );
-	static int const level_sea = 0;
-};
-
-struct Region { 
-	static int const size_x = 16;
-	static int const size_y = 4;
-	static int const size_z = 16;
-};
-
 struct SectionIndex { 
 	static int const size_section_bytes = 4096;
 	static int const num_sections = 64;
@@ -68,7 +52,7 @@ struct SectionIndex {
 
 struct FileHeader { 
 	static int const num_regions = 
-		Region::size_x * Region::size_y * Region::size_z;
+		WorldSize::Region::size_x * WorldSize::Region::size_y * WorldSize::Region::size_z;
 	
 	SectionIndex array_index[ num_regions ];
 	int idx_last = 0;
@@ -102,9 +86,9 @@ struct Biome {
 
 struct ChunkNoise {
 	int cnt_using = 0;
-	int height[ Chunk::size_x ][ Chunk::size_z ];
-	int biome[ Chunk::size_x ][ Chunk::size_z ];
-	int envir[ Chunk::size_x ][ Chunk::size_z ];
+	int height[ WorldSize::Chunk::size_x ][ WorldSize::Chunk::size_z ];
+	int biome[ WorldSize::Chunk::size_x ][ WorldSize::Chunk::size_z ];
+	int envir[ WorldSize::Chunk::size_x ][ WorldSize::Chunk::size_z ];
 };
 
 static int const size_buffer = SectionIndex::size_section_bytes / sizeof( int );
@@ -127,12 +111,13 @@ private:
 	VBO vbo_skybox;
 	VBO vbo_sun;
 	VBO vbo_debug_chunk;
-	SMChunk shared_mesh;
-	SMChunkIncl shared_mesh_inclusive;
+	SMTerrain sm_terrain;
+	SMChunkIncl sm_inclusive;
 
 	std::vector< SMChunkIncl::SMHandle > list_handles_inclusive;
 
-	static int const dist_sun = 750;
+	static int const dist_sun = 
+		WorldSize::Chunk::size_x * WorldSize::World::size_x;
 	bool is_sun_pause;
 	float pos_deg_light;
 
@@ -341,11 +326,11 @@ public:
 // Change to block pointer and face
 
 extern inline void put_face(
-	SMChunk::SMHandle & handle, glm::ivec3 const & pos,
-	glm::vec4 const & color, Face const & face );
+	SMTerrain::SMTHandle & handle, glm::ivec3 const & pos,
+	glm::vec4 const & color, FaceDirection dir, Face const & face );
 
 extern inline void put_face(
-	SMChunk::SMHandle & handle, glm::ivec3 const & pos,
-	glm::vec4 const & color, Face const & face,
+	SMTerrain::SMTHandle & handle, glm::ivec3 const & pos,
+	glm::vec4 const & color, FaceDirection dir, Face const & face,
 	glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs );
 

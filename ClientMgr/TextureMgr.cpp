@@ -61,7 +61,7 @@ void TextureMgr::init( ) {
 
 	// Link Light Data UBO
 	for( auto const & shader : { 
-		"BasicPersp", "Terrain", "SMTerrain", 
+		"BasicPersp", "Terrain", "SMTerrain",
 		"SMTerrainInstance", "Entity", "Selector" } ) {
 
 		id_program = get_program_id( shader );

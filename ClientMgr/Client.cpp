@@ -148,7 +148,9 @@ void Client::update( ) {
 	gui_mgr.clear_static( );
 	auto & out = display_mgr.out;
 	out.str( "" );
-	out << "[FRAMES] Update: " << std::setw( 4 ) << update_last << " Render: " << std::setw( 4 ) << render_last;
+	out << "[FRAMES] Update: " << std::setw( 4 ) << update_last << 
+		" Render: " << std::setw( 4 ) << render_last << 
+		" MS: " << std::setw( 4 ) << ( 1000.0f / render_last );
 	gui_mgr.print_to_static( out.str( ) );
 
 	GL_CHECK( input_mgr.update( ) );

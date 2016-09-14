@@ -67,6 +67,8 @@ void TimeMgr::init() {
 	list_render.push_back( &RecordStrings::UPDATE_GUI );
 	list_render.push_back( &RecordStrings::RENDER );
 	list_render.push_back( &RecordStrings::RENDER_DRAW );
+	list_render.push_back( &RecordStrings::RENDER_EXLUSION );
+	list_render.push_back( &RecordStrings::RENDER_SORT );
 	list_render.push_back( &RecordStrings::RENDER_SWAP );
 	list_render.push_back( &RecordStrings::SLEEP );
 
