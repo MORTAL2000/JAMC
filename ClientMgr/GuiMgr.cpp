@@ -856,6 +856,9 @@ void GuiMgr::process_input( ) {
 		else if( token == "togglevsync" ) {
 			client.display_mgr.toggle_vsync( );
 		}
+		else if( token == "toggleflatshade" ) {
+			client.chunk_mgr.toggle_flatshade( );
+		}
 		else if( token == "printglerror" ) { 
 			auto & out = client.display_mgr.out;
 			out.str( "" );

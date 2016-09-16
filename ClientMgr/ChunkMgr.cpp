@@ -56,6 +56,9 @@ void ChunkMgr::init( ) {
 	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade", ( GLfloat ) WorldSize::Chunk::size_x * ( WorldSize::World::size_x - 1 ) );
 	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade_cutoff", ( GLfloat ) WorldSize::Chunk::size_x * WorldSize::World::size_x );
 
+	client.texture_mgr.update_uniform( "SMTerrainBasic", "dist_fade", ( GLfloat ) WorldSize::Chunk::size_x * ( WorldSize::World::size_x - 1 ) );
+	client.texture_mgr.update_uniform( "SMTerrainBasic", "dist_fade_cutoff", ( GLfloat ) WorldSize::Chunk::size_x * WorldSize::World::size_x );
+
 	/*
 	shared_mesh_inclusive.init(
 		4 * 6 * 50, ( GLuint ) list_block_data.size( ),
@@ -933,9 +936,12 @@ void ChunkMgr::render_pass_shadow( ) {
 }
 
 void ChunkMgr::render_pass_solid( ) {
-	client.texture_mgr.bind_program( "SMTerrain" );
-	client.texture_mgr.bind_texture_array( 0, client.texture_mgr.get_texture_id( "Blocks" ) );
 	client.texture_mgr.update_uniform( "SMTerrain", "mat_light", mat_ortho_light );
+	if( is_flatshade )
+		client.texture_mgr.bind_program( "SMTerrainBasic" );
+	else
+		client.texture_mgr.bind_program( "SMTerrain" );
+	client.texture_mgr.bind_texture_array( 0, client.texture_mgr.get_texture_id( "Blocks" ) );
 
 	//glDisable( GL_CULL_FACE );
 	sm_terrain.render_range( client, 0, idx_solid );
@@ -943,9 +949,12 @@ void ChunkMgr::render_pass_solid( ) {
 }
 
 void ChunkMgr::render_pass_trans( ) {
-	client.texture_mgr.bind_program( "SMTerrain" );
-	client.texture_mgr.bind_texture_array( 0, client.texture_mgr.get_texture_id( "Blocks" ) );
 	client.texture_mgr.update_uniform( "SMTerrain", "mat_light", mat_ortho_light );
+	if( is_flatshade )
+		client.texture_mgr.bind_program( "SMTerrainBasic" );
+	else
+		client.texture_mgr.bind_program( "SMTerrain" );
+	client.texture_mgr.bind_texture_array( 0, client.texture_mgr.get_texture_id( "Blocks" ) );
 
 	glDisable( GL_CULL_FACE );
 
@@ -2986,6 +2995,10 @@ void ChunkMgr::toggle_shadow_debug( ) {
 
 void ChunkMgr::toggle_shadows( ) { 
 	is_shadows = !is_shadows;
+}
+
+void ChunkMgr::toggle_flatshade( ) { 
+	is_flatshade = !is_flatshade;
 }
 
 int ChunkMgr::get_block( glm::vec3 const & pos_gw ) {

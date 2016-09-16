@@ -22,7 +22,7 @@ void TextureMgr::init( ) {
 	printf( "\nCreating shaders and loading data...\n" );
 
 	for( auto & shader : {
-		"BasicOrtho", "BasicPersp", "SMBasic", "SMBasicProj", "Terrain", "SMTerrain", "SMTerrainInstance", 
+		"BasicOrtho", "BasicPersp", "SMBasic", "SMBasicProj", "Terrain", "SMTerrain", "SMTerrainBasic", "SMTerrainInstance", 
 		"Selector", "Entity", "ShadowMap", "SMShadowMapSolid", "SMShadowMapTrans" } ) {
 
 		loader_add( shader );
@@ -52,7 +52,7 @@ void TextureMgr::init( ) {
 	// Link MVP Matrix UBO
 	for( auto const & shader : { 
 		"BasicOrtho", "BasicPersp", "SMBasic", "SMBasicProj", "Terrain",
-		"SMTerrain", "SMTerrainInstance", "Entity", "Selector" } ) {
+		"SMTerrain", "SMTerrainBasic", "SMTerrainInstance", "Entity", "Selector" } ) {
 
 		id_program = get_program_id( shader );
 		GL_CHECK( idx_block = glGetUniformBlockIndex( id_program, "mvp_matrices" ) );
@@ -61,7 +61,7 @@ void TextureMgr::init( ) {
 
 	// Link Light Data UBO
 	for( auto const & shader : { 
-		"BasicPersp", "Terrain", "SMTerrain",
+		"BasicPersp", "Terrain", "SMTerrain", "SMTerrainBasic",
 		"SMTerrainInstance", "Entity", "Selector" } ) {
 
 		id_program = get_program_id( shader );
@@ -72,7 +72,7 @@ void TextureMgr::init( ) {
 	// Uniform frag_sampler
 	for( auto const & shader : { 
 		"BasicOrtho", "BasicPersp", "SMBasic", "SMBasicProj", "Terrain",
-		"SMTerrain", "SMTerrainInstance", "Selector", "Entity" } ) { 
+		"SMTerrain", "SMTerrainBasic", "SMTerrainInstance", "Selector", "Entity" } ) {
 
 		id_program = get_program_id( shader );
 		bind_program( id_program );

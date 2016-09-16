@@ -124,6 +124,7 @@ private:
 	bool is_chunk_debug;
 	bool is_shadow_debug;
 	bool is_shadows;
+	bool is_flatshade;
 
 	GLuint id_vbo_chunk_outline;
 	int size_chunk_outline;
@@ -257,6 +258,7 @@ public:
 	void toggle_chunk_debug( );
 	void toggle_shadow_debug( );
 	void toggle_shadows( );
+	void toggle_flatshade( );
 
 	int get_block( glm::vec3 const & pos_gw );
 

@@ -409,10 +409,10 @@
     <None Include="Shaders\SMBasicProj.vert">
       <Filter>Resource Files\Shared Mesh</Filter>
     </None>
-    <None Include="Shaders\SMTerrainComp.frag">
+    <None Include="Shaders\SMTerrainBasic.frag">
       <Filter>Resource Files\Shared Mesh</Filter>
     </None>
-    <None Include="Shaders\SMTerrainComp.vert">
+    <None Include="Shaders\SMTerrainBasic.vert">
       <Filter>Resource Files\Shared Mesh</Filter>
     </None>
   </ItemGroup>
