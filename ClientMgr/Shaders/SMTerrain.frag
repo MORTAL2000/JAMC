@@ -58,13 +58,13 @@ float shadow_calc( ) {
 	float delta_view = length( frag_out.vert_view.z );
 	uint idx_shadow = 0;
 
-	if( delta_view > depth_cascades[ 2 ] ) {
+	if( delta_view > 96.0f ) {
 		return 0.0;
 	}
-	else if( delta_view > depth_cascades[ 1 ] ) {
+	else if( delta_view > 24.0f ) {
 		idx_shadow = 2;
 	}
-	else if( delta_view > depth_cascades[ 0 ] ) {
+	else if( delta_view > 12.0f ) {
 		idx_shadow = 1;
 	}
 	else {
@@ -88,16 +88,22 @@ float shadow_calc( ) {
 	float depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy ).z;
 	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
 
-	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 0 ] * size_texel ).z; 
-	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
-	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 1 ] * size_texel ).z; 
-	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
-	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 2 ] * size_texel ).z; 
-	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
-	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 3 ] * size_texel ).z; 
-	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+	if( uint( proj_coord.x * 2048 ) % 2 == uint( proj_coord.y * 2048 ) % 2 ) {
+		depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 0 ] * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
 
-	return shadow / 5.0;
+		depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 2 ] * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+	}
+	else {
+		depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 1 ] * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+
+		depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 3 ] * size_texel ).z; 
+		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+	}
+
+	return shadow / 3.0f;
 }
 
 const float size_torch = 25.0;

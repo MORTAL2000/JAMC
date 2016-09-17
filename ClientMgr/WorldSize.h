@@ -12,9 +12,9 @@ public:
 	};
 
 	struct World {
-		static int const size_x = 16;
+		static int const size_x = 32;
 		static int const size_y = 4;
-		static int const size_z = 16;
+		static int const size_z = 32;
 		static glm::ivec3 const vec_size;
 		static int const num_chunks =
 			( size_x * 2 + 1 ) * ( size_y * 2 + 1 ) * ( size_z * 2 + 1 ) +

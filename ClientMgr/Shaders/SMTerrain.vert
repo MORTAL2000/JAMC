@@ -107,15 +107,15 @@ void main() {
 	int id_vert = gl_VertexID % 4;
 
 	// Extract data
-	vert.x = float( ( data1 >> 0 ) & 31 );
-	vert.y = float( ( data1 >> 5 ) & 63 );
-	vert.z = float( ( data1 >> 11 ) & 31 );
+	vert.x = float( ( data1 >> 0u ) & 31u );
+	vert.y = float( ( data1 >> 5u ) & 63u );
+	vert.z = float( ( data1 >> 11u ) & 31u );
 	vert.w = 1;
 
-	color.r = float( ( data1 >> 16u ) & 31u ) / 32.0;
-	color.g = float( ( data1 >> 21u ) & 31u ) / 32.0;
-	color.b = float( ( data1 >> 26u ) & 31u ) / 32.0;
-	color.a = 1.0; /*float( ( ( ( data1 >> 31u ) & 1u ) ) + ( ( ( data2 >> 0u ) & 15u ) << 1u ) ) / 32.0;*/
+	color.r = float( ( data1 >> 16u ) & 31u ) / 31.0f;
+	color.g = float( ( data1 >> 21u ) & 31u ) / 31.0f;
+	color.b = float( ( data1 >> 26u ) & 31u ) / 31.0f;
+	color.a = float( ( ( data1 >> 31u ) & 1u ) + ( ( ( data2 >> 0u ) & 15u ) << 1u ) ) / 31.0f;
 
 	tex1 = ( data2 >> 4 ) & 1023;
 	tex2 = ( data2 >> 14 ) & 1023; 
@@ -130,14 +130,10 @@ void main() {
 	frag_out.vert_model = vec4( vec_model, 0 ) + vert;
 	frag_out.vert_view = mat_view * frag_out.vert_model;
 	gl_Position = mat_perspective * frag_out.vert_view;
-
+	   
 	frag_out.vert_light[ 0 ] = mat_light[ 0 ] * frag_out.vert_model;
 	frag_out.vert_light[ 1 ] = mat_light[ 1 ] * frag_out.vert_model;
 	frag_out.vert_light[ 2 ] = mat_light[ 2 ] * frag_out.vert_model;
-
-	//for( uint i = 0; i < num_cascades; ++i ) {
-	//	frag_out.vert_light[ i ] = mat_light[ i ] * frag_out.vert_model;
-	//}
 
 	// Tex calc
 	frag_out.frag_uvs[ 0 ] = vec3( uvs_face[ id_vert ] * ( vec2( 1, 1 ) + scale_uvs[ orient ] * scale ), tex1 );

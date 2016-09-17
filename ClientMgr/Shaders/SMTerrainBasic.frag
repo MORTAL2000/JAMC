@@ -41,7 +41,7 @@ out vec4 out_color;
 const float size_torch = 25.0;
 
 void main() {
-	out_color = ambient + diffuse;
+	out_color = ambient + frag_out.frag_diffuse;
 
 	vec3 diff_emitter = vec3( pos_camera - frag_out.vert_model );
 	float len_emitter = length( diff_emitter );

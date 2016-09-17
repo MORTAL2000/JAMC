@@ -17,7 +17,7 @@
 
 ChunkMgr::ChunkMgr( Client & client ) :
 	Manager( client ),
-	SHADOW_WIDTH( 4096 ), SHADOW_HEIGHT( 4096 ),
+	SHADOW_WIDTH( 2048 ), SHADOW_HEIGHT( 2048 ),
 	dim_shadow { 200.0f, 200.0f },
 	pos_shadow { 0.0f, 0.0f } { }
 
@@ -1228,14 +1228,9 @@ void ChunkMgr::init_shadowmap( ) {
 	for( GLuint i = 0; i < num_cascades; ++i ) { 
 		depth_cascades[ i ] = 0;
 	}
-	depth_cascades[ 0 ] = 16.0f;
-	depth_cascades[ 1 ] = 64.0f;
-	depth_cascades[ 2 ] = 256.0f;
-	depth_cascades[ 3 ] = 512.0f;
-	//depth_cascades[ 4 ] = 256.0f;
-	//depth_cascades[ 5 ] = 512.0f;
-	//depth_cascades[ 6 ] = 1024.0;
-	//depth_cascades[ 7 ] = 2048.0f;
+	depth_cascades[ 0 ] = 12.0f;
+	depth_cascades[ 1 ] = 24.0f;
+	depth_cascades[ 2 ] = 96.0f;
 
 	client.texture_mgr.update_uniform( "SMShadowMapSolid", "frag_sampler", ( GLint ) 0 );
 	client.texture_mgr.update_uniform( "SMShadowMapTrans", "frag_sampler", ( GLint ) 0 );
@@ -2999,6 +2994,12 @@ void ChunkMgr::toggle_shadows( ) {
 
 void ChunkMgr::toggle_flatshade( ) { 
 	is_flatshade = !is_flatshade;
+	if( is_flatshade ) { 
+		is_shadows = false;
+	}
+	else { 
+		is_shadows = true;
+	}
 }
 
 int ChunkMgr::get_block( glm::vec3 const & pos_gw ) {
@@ -3084,44 +3085,43 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 		if( chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] != id ) {
 			chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] = id;
 
-			state.map_queue_dirty.insert( { Directional::get_hash( state.pos_lw ), chunk } );
+			state.map_queue_dirty.insert( { chunk.hash_lw, chunk } );
 			std::lock_guard< std::mutex > lock( chunk.mtx_adj );
 			if( state.pos_lc.x == 0 && chunk.ptr_adj[ FD_Right ] != nullptr ) {
 				state.map_queue_dirty.insert( {
-					Directional::get_hash( chunk.ptr_adj[ FD_Right ]->pos_lw ),
+					chunk.ptr_adj[ FD_Right ]->hash_lw,
 					*chunk.ptr_adj[ FD_Right ] } );
 			}
 			else if( state.pos_lc.x == WorldSize::Chunk::size_x - 1 && chunk.ptr_adj[ FD_Left ] != nullptr ) {
 				state.map_queue_dirty.insert( {
-					Directional::get_hash( chunk.ptr_adj[ FD_Left ]->pos_lw ),
+					chunk.ptr_adj[ FD_Left ]->hash_lw,
 					*chunk.ptr_adj[ FD_Left ] } );
 			}
 
 			if( state.pos_lc.y == 0 && chunk.ptr_adj[ FD_Down ] != nullptr ) {
 				state.map_queue_dirty.insert( {
-					Directional::get_hash( chunk.ptr_adj[ FD_Down ]->pos_lw ),
+					chunk.ptr_adj[ FD_Down ]->hash_lw,
 					*chunk.ptr_adj[ FD_Down ] } );
 			}
 			else if( state.pos_lc.y == WorldSize::Chunk::size_y - 1 && chunk.ptr_adj[ FD_Up ] != nullptr ) {
 				state.map_queue_dirty.insert( {
-					Directional::get_hash( chunk.ptr_adj[ FD_Up ]->pos_lw ),
+					chunk.ptr_adj[ FD_Up ]->hash_lw,
 					*chunk.ptr_adj[ FD_Up ] } );
 			}
 
 			if( state.pos_lc.z == 0 && chunk.ptr_adj[ FD_Back ] != nullptr ) {
 				state.map_queue_dirty.insert( {
-					Directional::get_hash( chunk.ptr_adj[ FD_Back ]->pos_lw ),
+					chunk.ptr_adj[ FD_Back ]->hash_lw,
 					*chunk.ptr_adj[ FD_Back ] } );
 			}
 			else if( state.pos_lc.z == WorldSize::Chunk::size_z - 1 && chunk.ptr_adj[ FD_Front ] != nullptr ) {
 				state.map_queue_dirty.insert( {
-					Directional::get_hash( chunk.ptr_adj[ FD_Front ]->pos_lw ),
+					chunk.ptr_adj[ FD_Front ]->hash_lw,
 					*chunk.ptr_adj[ FD_Front ] } );
 			}
 		}
 	}
 	else {
-
 		std::lock_guard< std::recursive_mutex > lock( mtx_chunks );
 		state.iter = map_chunks.find( Directional::get_hash( state.pos_lw ) );
 		if( state.iter != map_chunks.end( ) ) {
@@ -3135,34 +3135,34 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 				std::lock_guard< std::mutex > lock( chunk.mtx_adj );
 				if( state.pos_lc.x == 0 && chunk.ptr_adj[ FD_Right ] != nullptr ) {
 					state.map_queue_dirty.insert( {
-						Directional::get_hash( chunk.ptr_adj[ FD_Right ]->pos_lw ),
+						chunk.ptr_adj[ FD_Right ]->hash_lw,
 						*chunk.ptr_adj[ FD_Right ] } );
 				}
 				else if( state.pos_lc.x == WorldSize::Chunk::size_x - 1 && chunk.ptr_adj[ FD_Left ] != nullptr ) {
 					state.map_queue_dirty.insert( {
-						Directional::get_hash( chunk.ptr_adj[ FD_Left ]->pos_lw ),
+						chunk.ptr_adj[ FD_Left ]->hash_lw,
 						*chunk.ptr_adj[ FD_Left ] } );
 				}
 
 				if( state.pos_lc.y == 0 && chunk.ptr_adj[ FD_Down ] != nullptr ) {
 					state.map_queue_dirty.insert( {
-						Directional::get_hash( chunk.ptr_adj[ FD_Down ]->pos_lw ),
+						chunk.ptr_adj[ FD_Down ]->hash_lw,
 						*chunk.ptr_adj[ FD_Down ] } );
 				}
 				else if( state.pos_lc.y == WorldSize::Chunk::size_y - 1 && chunk.ptr_adj[ FD_Up ] != nullptr ) {
 					state.map_queue_dirty.insert( {
-						Directional::get_hash( chunk.ptr_adj[ FD_Up ]->pos_lw ),
+						chunk.ptr_adj[ FD_Up ]->hash_lw,
 						*chunk.ptr_adj[ FD_Up ] } );
 				}
 
 				if( state.pos_lc.z == 0 && chunk.ptr_adj[ FD_Back ] != nullptr ) {
 					state.map_queue_dirty.insert( {
-						Directional::get_hash( chunk.ptr_adj[ FD_Back ]->pos_lw ),
+						chunk.ptr_adj[ FD_Back ]->hash_lw,
 						*chunk.ptr_adj[ FD_Back ] } );
 				}
 				else if( state.pos_lc.z == WorldSize::Chunk::size_z - 1 && chunk.ptr_adj[ FD_Front ] != nullptr ) {
 					state.map_queue_dirty.insert( {
-						Directional::get_hash( chunk.ptr_adj[ FD_Front ]->pos_lw ),
+						chunk.ptr_adj[ FD_Front ]->hash_lw,
 						*chunk.ptr_adj[ FD_Front ] } );
 				}
 			}
@@ -3271,8 +3271,8 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		int const height_min = 6, height_max = 10;
 		int const radius_min = 3, radius_max = 6;
 
-		auto & block_leaves = get_block_data( std::string( "Leaves Light Green" ) );
-		auto & block_log = get_block_data( std::string( "Log" ) );
+		auto & block_leaves = get_block_data( "Leaves Light Green" );
+		auto & block_log = get_block_data( "Log" );
 		int tree_height;
 		int tree_radius;
 
@@ -3303,8 +3303,8 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		int const height_min = 10, height_max = 16;
 		int const radius_min = 5, radius_max = 9;
 
-		auto & block_leaves = get_block_data( std::string( "Leaves Green" ) );
-		auto & block_log = get_block_data( std::string( "Birch Log" ) );
+		auto & block_leaves = get_block_data( "Leaves Green" );
+		auto & block_log = get_block_data( "Birch Log" );
 
 		float scale_radius;
 		int tree_height;
@@ -3340,8 +3340,8 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		int const height_min = 12, height_max = 18;
 		int const radius_min = 4, radius_max = 8;
 
-		auto & block_leaves = get_block_data( std::string( "Leaves Red" ) );
-		auto & block_log = get_block_data( std::string( "Birch Log" ) );
+		auto & block_leaves = get_block_data( "Leaves Red" );
+		auto & block_log = get_block_data( "Birch Log" );
 
 		int tree_height;
 		int tree_radius;
@@ -3374,7 +3374,7 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		float noise_scale = 0.006f;
 		int const height_min = 3, height_max = 6;
 
-		auto & block_log = get_block_data( std::string( "Cactus" ) );
+		auto & block_log = get_block_data( "Cactus" );
 
 		int tree_height;
 
@@ -3394,8 +3394,8 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		int const height_min = 10, height_max = 16;
 		int const radius_min = 5, radius_max = 9;
 
-		auto & block_leaves = get_block_data( std::string( "Leaves Brown" ) );
-		auto & block_log = get_block_data( std::string( "Birch Log" ) );
+		auto & block_leaves = get_block_data( "Leaves Brown" );
+		auto & block_log = get_block_data( "Birch Log" );
 
 		float scale_radius;
 		int tree_height;
@@ -3438,8 +3438,8 @@ void ChunkMgr::explode_sphere_recur( glm::vec3 const & pos_gw, int const size, i
 	glm::ivec3 pos_check;
 	glm::vec3 vec_fwd;
 	int id_curr = 0;
-	auto & block_water = get_block_data( std::string( "Water" ) );
-	auto & block_tnt = get_block_data( std::string( "Tnt" ) );
+	auto & block_water = get_block_data( "Water" );
+	auto & block_tnt = get_block_data( "Tnt" );
 
 	depth++;
 
@@ -3639,8 +3639,8 @@ inline void put_face(
 
 	VertTerrain vert {
 		( GLuint ) ( pos.x ), ( GLuint ) ( pos.y ), ( GLuint ) ( pos.z ),
-		( GLuint ) ( color.r * 32 ), ( GLuint ) ( color.g * 32 ),
-		( GLuint ) ( color.b * 32 ), ( GLuint ) ( color.a * 32 ),
+		( GLuint ) ( color.r * 31 ), ( GLuint ) ( color.g * 31 ),
+		( GLuint ) ( color.b * 31 ), ( GLuint ) ( color.a * 31 ),
 		( GLuint ) face.id_subtex, ( GLuint ) 0,
 		( GLuint ) dir, ( GLuint ) 0
 	};
@@ -3666,8 +3666,8 @@ inline void put_face(
 
 	VertTerrain vert{ 
 		( GLuint ) ( pos.x ), ( GLuint ) ( pos.y ), ( GLuint ) ( pos.z ),
-		( GLuint ) ( color.r * 32 ), ( GLuint ) ( color.g * 32 ), 
-		( GLuint ) ( color.b * 32 ), ( GLuint ) ( color.a * 32 ),
+		( GLuint ) ( color.r * 31 ), ( GLuint ) ( color.g * 31 ), 
+		( GLuint ) ( color.b * 31 ), ( GLuint ) ( color.a * 31 ),
 		( GLuint ) face.id_subtex, ( GLuint ) 0,
 		( GLuint ) dir, ( GLuint ) scale - 1 
 	};

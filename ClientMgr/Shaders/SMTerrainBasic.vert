@@ -106,10 +106,10 @@ void main() {
 	vert.z = float( ( data1 >> 11 ) & 31 );
 	vert.w = 1;
 
-	color.r = float( ( data1 >> 16u ) & 31u ) / 32.0;
-	color.g = float( ( data1 >> 21u ) & 31u ) / 32.0;
-	color.b = float( ( data1 >> 26u ) & 31u ) / 32.0;
-	color.a = 1.0; /*float( ( ( ( data1 >> 31u ) & 1u ) ) + ( ( ( data2 >> 0u ) & 15u ) << 1u ) ) / 32.0;*/
+	color.r = float( ( data1 >> 16u ) & 31u ) / 31.0;
+	color.g = float( ( data1 >> 21u ) & 31u ) / 31.0;
+	color.b = float( ( data1 >> 26u ) & 31u ) / 31.0;
+	color.a = float( ( ( data1 >> 31u ) & 1u ) + ( ( ( data2 >> 0u ) & 15u ) << 1u ) ) / 31.0f;
 
 	tex1 = ( data2 >> 4 ) & 1023;
 	tex2 = ( data2 >> 14 ) & 1023; 
@@ -128,6 +128,12 @@ void main() {
 	// Tex calc
 	frag_out.frag_uvs[ 0 ] = vec3( uvs_face[ id_vert ] * ( vec2( 1, 1 ) + scale_uvs[ orient ] * scale ), tex1 );
 	frag_out.frag_uvs[ 1 ] = vec3( uvs_face[ id_vert ] * ( vec2( 1, 1 ) + scale_uvs[ orient ] * scale ), tex2 );
+
+	// Color calc
+	frag_out.frag_norm = norm;
+	frag_out.dir_sun = normalize( vec3( pos_sun ) );
+	float grad_diffuse = clamp( dot( frag_out.frag_norm, frag_out.dir_sun ), 0.0, 1.0 );
+	frag_out.frag_diffuse = diffuse * vec4( grad_diffuse, grad_diffuse, grad_diffuse, 1.0 );
 
 	float grad_fade = max( 0, distance( frag_out.vert_model.xz, pos_camera.xz ) - dist_fade );
 	grad_fade = min( 1, grad_fade / ( dist_fade_cutoff - dist_fade ) );
