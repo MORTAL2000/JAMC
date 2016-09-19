@@ -346,7 +346,7 @@ void DisplayMgr::draw_string( Vect3< int > const & pos, std::string & string, gl
 
 
 void DisplayMgr::draw_key( int const size ) {
-	/*glPushMatrix( );
+	glPushMatrix( );
 
 	glTranslatef( dim_window.x / 2, dim_window.y / 2, -size );
 
@@ -370,7 +370,7 @@ void DisplayMgr::draw_key( int const size ) {
 
 	glEnd();
 
-	glPopMatrix( );*/
+	glPopMatrix( );
 }
 
 /*

@@ -87,12 +87,13 @@ uniform float dist_fade_cutoff = 300.0;
 
 // Out Data
 out FRAG_OUT {
-	vec3 dir_sun;
-	vec4 frag_diffuse;
+	//flat vec3 dir_sun;
+	float dot_sun_norm;
+	flat vec4 frag_diffuse;
 
 	vec3 frag_uvs[ 2 ];
 	vec4 frag_color;
-	vec3 frag_norm;
+	flat vec3 frag_norm;
 
 	vec4 vert_model;
 	vec4 vert_view;
@@ -141,8 +142,9 @@ void main() {
 
 	// Color calc
 	frag_out.frag_norm = norm;
-	frag_out.dir_sun = normalize( vec3( pos_sun ) );
-	float grad_diffuse = clamp( dot( frag_out.frag_norm, frag_out.dir_sun ), 0.0, 1.0 );
+	//frag_out.dir_sun = normalize( pos_sun.xyz );
+	frag_out.dot_sun_norm = dot( frag_out.frag_norm, normalize( pos_sun.xyz ) );
+	float grad_diffuse = clamp( frag_out.dot_sun_norm, 0.0, 1.0 );
 	frag_out.frag_diffuse = diffuse * vec4( grad_diffuse, grad_diffuse, grad_diffuse, 1.0 );
 
 	float grad_fade = max( 0, distance( frag_out.vert_model.xz, pos_camera.xz ) - dist_fade );

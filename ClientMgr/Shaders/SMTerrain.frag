@@ -40,12 +40,13 @@ const vec2 pcf_lookup[ 4 ] = {
 };
 
 in FRAG_OUT {
-	vec3 dir_sun;
-	vec4 frag_diffuse;
+	//flat vec3 dir_sun;
+	float dot_sun_norm;
+	flat vec4 frag_diffuse;
 
 	vec3 frag_uvs[ 2 ];
 	vec4 frag_color;
-	vec3 frag_norm;
+	flat vec3 frag_norm;
 
 	vec4 vert_model;
 	vec4 vert_view;
@@ -58,13 +59,13 @@ float shadow_calc( ) {
 	float delta_view = length( frag_out.vert_view.z );
 	uint idx_shadow = 0;
 
-	if( delta_view > 96.0f ) {
+	if( delta_view > 256.0f ) {
 		return 0.0;
 	}
-	else if( delta_view > 24.0f ) {
+	else if( delta_view > 64.0f ) {
 		idx_shadow = 2;
 	}
-	else if( delta_view > 12.0f ) {
+	else if( delta_view > 16.0f ) {
 		idx_shadow = 1;
 	}
 	else {
@@ -81,14 +82,14 @@ float shadow_calc( ) {
 	vec2 size_texel = 1.0 / textureSize( frag_shadow[ idx_shadow ], 0 );
 
 	float depth_curr = proj_coord.z;
-	float bias = max( bias_h * ( 1.0 - dot( frag_out.frag_norm, frag_out.dir_sun ) ), bias_l );
+	float bias = max( bias_h * ( 1.0 - frag_out.dot_sun_norm ), bias_l );
 
 	float shadow = 0.0;
 
 	float depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy ).z;
 	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
 
-	if( uint( proj_coord.x * 2048 ) % 2 == uint( proj_coord.y * 2048 ) % 2 ) {
+	if( uint( proj_coord.x * 4096 ) % 2 == uint( proj_coord.y * 4096 ) % 2 ) {
 		depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 0 ] * size_texel ).z; 
 		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
 
@@ -114,7 +115,7 @@ void main() {
 	out_color = ambient;
 	out_color += frag_out.frag_diffuse * shadow;
 
-	vec3 diff_emitter = vec3( pos_camera - frag_out.vert_model );
+	vec3 diff_emitter = pos_camera.xyz - frag_out.vert_model.xyz;
 	float len_emitter = length( diff_emitter );
 
 	if( len_emitter <= size_torch ) {

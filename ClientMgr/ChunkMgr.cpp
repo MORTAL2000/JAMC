@@ -17,7 +17,7 @@
 
 ChunkMgr::ChunkMgr( Client & client ) :
 	Manager( client ),
-	SHADOW_WIDTH( 2048 ), SHADOW_HEIGHT( 2048 ),
+	SHADOW_WIDTH( 4096 ), SHADOW_HEIGHT( 4096 ),
 	dim_shadow { 200.0f, 200.0f },
 	pos_shadow { 0.0f, 0.0f } { }
 
@@ -1228,9 +1228,9 @@ void ChunkMgr::init_shadowmap( ) {
 	for( GLuint i = 0; i < num_cascades; ++i ) { 
 		depth_cascades[ i ] = 0;
 	}
-	depth_cascades[ 0 ] = 12.0f;
-	depth_cascades[ 1 ] = 24.0f;
-	depth_cascades[ 2 ] = 96.0f;
+	depth_cascades[ 0 ] = 16.0f;
+	depth_cascades[ 1 ] = 64.0f;
+	depth_cascades[ 2 ] = 256.0f;
 
 	client.texture_mgr.update_uniform( "SMShadowMapSolid", "frag_sampler", ( GLint ) 0 );
 	client.texture_mgr.update_uniform( "SMShadowMapTrans", "frag_sampler", ( GLint ) 0 );
