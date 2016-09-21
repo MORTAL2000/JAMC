@@ -28,7 +28,7 @@ struct GetState {
 };
 
 struct LightData {
-	static int const max_emitters = 128;
+	static int const max_emitters = 8;
 
 	struct SunData {
 		glm::vec4 pos_sun;

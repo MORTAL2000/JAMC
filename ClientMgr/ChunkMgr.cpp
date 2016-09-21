@@ -36,22 +36,14 @@ void ChunkMgr::init( ) {
 
 	load_block_data( );
 
-	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4;
-	GLuint size_inds = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 6;
+	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 6;
 
 	GLuint num_verts = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 8;
-	GLuint num_inds = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 8;
 
 	GLuint num_buff = 1024;
 	GLuint size_buff_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4 * 2;
-	GLuint size_buff_inds = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 6 * 2;
 
-	std::cout << "Vert size: " << sizeof( VertTerrain ) << std::endl;
-	std::cout << "Uint size: " << sizeof( GLuint ) << std::endl;
-
-	sm_terrain.init(
-		size_verts, num_verts, size_inds, num_inds,
-		num_buff, size_buff_verts, size_buff_inds );
+	sm_terrain.init( size_verts, num_verts, num_buff, size_buff_verts );
 
 	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade", ( GLfloat ) WorldSize::Chunk::size_x * ( WorldSize::World::size_x - 1 ) );
 	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade_cutoff", ( GLfloat ) WorldSize::Chunk::size_x * WorldSize::World::size_x );
@@ -579,12 +571,6 @@ void ChunkMgr::update( ) {
 	client.gui_mgr.print_to_static( out.str( ) );
 
 	out.str( "" );
-	out << "[Shared Mesh Ibo]" <<
-		" live: " << sm_terrain.size_ibo_live( ) <<
-		" avail: " << sm_terrain.size_ibo_avail( );
-	client.gui_mgr.print_to_static( out.str( ) );
-
-	out.str( "" );
 	out << "[Sun] Deg:" << pos_deg_light;
 	client.gui_mgr.print_to_static( out.str( ) );
 
@@ -932,6 +918,8 @@ void ChunkMgr::render_pass_shadow( ) {
 		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	}
 
+	//glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
+	//glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
 	client.display_mgr.resize_window( client.display_mgr.get_window ( ) );
 }
 
@@ -2008,7 +1996,6 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 
 			chunk.handle_solid_temp.clear( );
 			chunk.handle_solid_temp.ptr_buffer->list_verts.clear( );
-			chunk.handle_solid_temp.ptr_buffer->list_inds.clear( );
 
 			chunk.handle_solid_temp.push_set( SMTerrain::SMTGSet(
 				SMTerrain::TypeGeometry::TG_Triangles,
@@ -2267,7 +2254,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 
 			chunk.handle_solid_temp.finalize_set( );
 
-			if( chunk.handle_solid_temp.get_size_ibo( ) ) {
+			if( chunk.handle_solid_temp.get_size_vbo( ) ) {
 				chunk_state( chunk, ChunkState::CS_SBuffer, true );
 
 				std::unique_lock< std::recursive_mutex > lock( mtx_render );
@@ -2293,7 +2280,6 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			auto & buffer = *chunk.handle_trans_temp.ptr_buffer;
 
 			buffer.list_verts.clear( );
-			buffer.list_inds.clear( );
 			buffer.list_temp.clear( );
 			buffer.list_sort.clear( );
 
@@ -2386,20 +2372,20 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			);
 
 
-			buffer.list_temp.reserve( buffer.list_inds.size( ) );
+			buffer.list_temp.reserve( buffer.list_verts.size( ) );
 
 			for( GLuint i = 0; i < buffer.list_sort.size( ); ++i ) {
 				buffer.list_temp.insert( buffer.list_temp.end( ),
-					std::make_move_iterator( buffer.list_inds.begin( ) + buffer.list_sort[ i ].second * 6 ),
-					std::make_move_iterator( buffer.list_inds.begin( ) + buffer.list_sort[ i ].second * 6 + 6 )
+					std::make_move_iterator( buffer.list_verts.begin( ) + buffer.list_sort[ i ].second * 6 ),
+					std::make_move_iterator( buffer.list_verts.begin( ) + buffer.list_sort[ i ].second * 6 + 6 )
 				);
 			}
 
-			buffer.list_inds = std::move( buffer.list_temp );
+			buffer.list_verts = std::move( buffer.list_temp );
 
 			chunk.handle_trans_temp.finalize_set( );
 
-			if( chunk.handle_trans_temp.get_size_ibo( ) ) {
+			if( chunk.handle_trans_temp.get_size_vbo( ) ) {
 				chunk_state( chunk, ChunkState::CS_TBuffer, true );
 
 				std::unique_lock< std::recursive_mutex > lock( mtx_render );
@@ -3623,8 +3609,6 @@ void ChunkMgr::print_center_chunk_mesh( ) {
 		"pos_gw: " << Directional::print_vec( chunk.pos_gw ) << "\n\n" <<
 		"num_vbo_blcks: " << chunk.handle_solid.get_size_vbo( ) << "\n" <<
 		chunk.handle_solid.print_vbo( ) << "\n" << 
-		"num_ibo_blocks: " << chunk.handle_solid.get_size_ibo( ) << "\n" <<
-		chunk.handle_solid.print_ibo( ) << "\n" <<
 		"commands: " << "\n" <<
 		chunk.handle_solid.print_commands( ) << "\n";
 
@@ -3646,13 +3630,8 @@ inline void put_face(
 	};
 
 	handle.push_verts( {
-		vert, vert, vert, vert
+		vert, vert, vert, vert, vert, vert
 	}  );
-	
-	handle.push_inds( {
-		idx_inds + 0, idx_inds + 1, idx_inds + 2,
-		idx_inds + 2, idx_inds + 3, idx_inds + 0
-	} );
 }
 
 inline void put_face(
@@ -3673,12 +3652,7 @@ inline void put_face(
 	};
 
 	handle.push_verts( {
-		vert, vert, vert, vert
-	} );
-	
-	handle.push_inds( {
-		idx_inds + 0, idx_inds + 1, idx_inds + 2,
-		idx_inds + 2, idx_inds + 3, idx_inds + 0
+		vert, vert, vert, vert, vert, vert
 	} );
 }
 

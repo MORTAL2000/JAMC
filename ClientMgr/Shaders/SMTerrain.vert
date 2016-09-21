@@ -1,14 +1,14 @@
 #version 430
 
-const vec4 offset_face[ 6 ][ 4 ] = {
-	{ vec4( 0, 0, 1, 0 ), vec4( 1, 0, 1, 0 ), vec4( 1, 1, 1, 0 ), vec4( 0, 1, 1, 0 ) },
-	{ vec4( 1, 0, 0, 0 ), vec4( 0, 0, 0, 0 ), vec4( 0, 1, 0, 0 ), vec4( 1, 1, 0, 0 ) },
+const vec4 offset_face[ 6 ][ 6 ] = {
+	{ vec4( 0, 0, 1, 0 ), vec4( 1, 0, 1, 0 ), vec4( 1, 1, 1, 0 ), vec4( 1, 1, 1, 0 ), vec4( 0, 1, 1, 0 ), vec4( 0, 0, 1, 0 ) },
+	{ vec4( 1, 0, 0, 0 ), vec4( 0, 0, 0, 0 ), vec4( 0, 1, 0, 0 ), vec4( 0, 1, 0, 0 ), vec4( 1, 1, 0, 0 ), vec4( 1, 0, 0, 0 ) },
 
-	{ vec4( 1, 0, 1, 0 ), vec4( 1, 0, 0, 0 ), vec4( 1, 1, 0, 0 ), vec4( 1, 1, 1, 0 ) }, 
-	{ vec4( 0, 0, 0, 0 ), vec4( 0, 0, 1, 0 ), vec4( 0, 1, 1, 0 ), vec4( 0, 1, 0, 0 ) }, 
+	{ vec4( 1, 0, 1, 0 ), vec4( 1, 0, 0, 0 ), vec4( 1, 1, 0, 0 ), vec4( 1, 1, 0, 0 ), vec4( 1, 1, 1, 0 ), vec4( 1, 0, 1, 0 ) }, 
+	{ vec4( 0, 0, 0, 0 ), vec4( 0, 0, 1, 0 ), vec4( 0, 1, 1, 0 ), vec4( 0, 1, 1, 0 ), vec4( 0, 1, 0, 0 ), vec4( 0, 0, 0, 0 ) }, 
 
-	{ vec4( 1, 1, 0, 0 ), vec4( 0, 1, 0, 0 ), vec4( 0, 1, 1, 0 ), vec4( 1, 1, 1, 0 ) }, 
-	{ vec4( 0, 0, 0, 0 ), vec4( 1, 0, 0, 0 ), vec4( 1, 0, 1, 0 ), vec4( 0, 0, 1, 0 ) }
+	{ vec4( 1, 1, 0, 0 ), vec4( 0, 1, 0, 0 ), vec4( 0, 1, 1, 0 ), vec4( 0, 1, 1, 0 ), vec4( 1, 1, 1, 0 ), vec4( 1, 1, 0, 0 ) }, 
+	{ vec4( 0, 0, 0, 0 ), vec4( 1, 0, 0, 0 ), vec4( 1, 0, 1, 0 ), vec4( 1, 0, 1, 0 ), vec4( 0, 0, 1, 0 ), vec4( 0, 0, 0, 0 ) }
 };
 
 const vec3 norm_face[ 6 ] = {
@@ -20,11 +20,13 @@ const vec3 norm_face[ 6 ] = {
 	vec3( 0, -1, 0 )
 };
 
-const vec2 uvs_face[ 4 ] = {
+const vec2 uvs_face[ 6 ] = {
 	vec2( 0, 0 ),
 	vec2( 1, 0 ),
 	vec2( 1, 1 ),
-	vec2( 0, 1 )
+	vec2( 1, 1 ),
+	vec2( 0, 1 ),
+	vec2( 0, 0 )
 };
 
 const vec4 scale_face[ 6 ] = {
@@ -58,7 +60,7 @@ layout( std140 ) uniform mvp_matrices {
 	float time_game;
 };
 
-const int max_emitters = 128;
+const int max_emitters = 8;
 layout( std140 ) uniform light_data {
 	vec4 pos_sun;
 	vec4 ambient;
@@ -105,7 +107,7 @@ void main() {
 	vec3 norm;
 	uint orient, scale;
 	uint tex1, tex2;
-	int id_vert = gl_VertexID % 4;
+	int id_vert = gl_VertexID %  6;
 
 	// Extract data
 	vert.x = float( ( data1 >> 0u ) & 31u );

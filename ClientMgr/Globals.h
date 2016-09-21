@@ -59,6 +59,10 @@ extern int get_refresh( );
 #define PI 3.14159265f
 #define BUFFER_OFFSET(i) ((void*)(i))
 
+
+#define FOR3D( F3DX, F3DXSTART, F3DXEND, F3DY, F3DYSTART, F3DYEND, F3DZ, F3DZSTART, F3DZEND ) for( F3DX = F3DXSTART; F3DX < F3DXEND; ++F3DX ) { for( F3DY = F3DYSTART; F3DY < F3DYEND; ++F3DY ) { for( F3DZ = F3DZSTART; F3DZ < F3DZEND; ++F3DZ ) {
+#define FOR3DEND } } }
+
 static const float UPDATE_RATE = 60;
 static const float TIME_MILLISEC = 1000.0f;
 static const float DELTA_CORRECT = 1.0f / UPDATE_RATE;

@@ -1,14 +1,14 @@
 #version 430 core
 
-const vec4 offset_face[ 6 ][ 4 ] = {
-	{ vec4( 0, 0, 1, 0 ), vec4( 1, 0, 1, 0 ), vec4( 1, 1, 1, 0 ), vec4( 0, 1, 1, 0 ) },
-	{ vec4( 1, 0, 0, 0 ), vec4( 0, 0, 0, 0 ), vec4( 0, 1, 0, 0 ), vec4( 1, 1, 0, 0 ) },
+const vec4 offset_face[ 6 ][ 6 ] = {
+	{ vec4( 0, 0, 1, 0 ), vec4( 1, 0, 1, 0 ), vec4( 1, 1, 1, 0 ), vec4( 1, 1, 1, 0 ), vec4( 0, 1, 1, 0 ), vec4( 0, 0, 1, 0 ) },
+	{ vec4( 1, 0, 0, 0 ), vec4( 0, 0, 0, 0 ), vec4( 0, 1, 0, 0 ), vec4( 0, 1, 0, 0 ), vec4( 1, 1, 0, 0 ), vec4( 1, 0, 0, 0 ) },
 
-	{ vec4( 1, 0, 1, 0 ), vec4( 1, 0, 0, 0 ), vec4( 1, 1, 0, 0 ), vec4( 1, 1, 1, 0 ) }, 
-	{ vec4( 0, 0, 0, 0 ), vec4( 0, 0, 1, 0 ), vec4( 0, 1, 1, 0 ), vec4( 0, 1, 0, 0 ) }, 
+	{ vec4( 1, 0, 1, 0 ), vec4( 1, 0, 0, 0 ), vec4( 1, 1, 0, 0 ), vec4( 1, 1, 0, 0 ), vec4( 1, 1, 1, 0 ), vec4( 1, 0, 1, 0 ) }, 
+	{ vec4( 0, 0, 0, 0 ), vec4( 0, 0, 1, 0 ), vec4( 0, 1, 1, 0 ), vec4( 0, 1, 1, 0 ), vec4( 0, 1, 0, 0 ), vec4( 0, 0, 0, 0 ) }, 
 
-	{ vec4( 1, 1, 0, 0 ), vec4( 0, 1, 0, 0 ), vec4( 0, 1, 1, 0 ), vec4( 1, 1, 1, 0 ) }, 
-	{ vec4( 0, 0, 0, 0 ), vec4( 1, 0, 0, 0 ), vec4( 1, 0, 1, 0 ), vec4( 0, 0, 1, 0 ) }
+	{ vec4( 1, 1, 0, 0 ), vec4( 0, 1, 0, 0 ), vec4( 0, 1, 1, 0 ), vec4( 0, 1, 1, 0 ), vec4( 1, 1, 1, 0 ), vec4( 1, 1, 0, 0 ) }, 
+	{ vec4( 0, 0, 0, 0 ), vec4( 1, 0, 0, 0 ), vec4( 1, 0, 1, 0 ), vec4( 1, 0, 1, 0 ), vec4( 0, 0, 1, 0 ), vec4( 0, 0, 0, 0 ) }
 };
 
 const vec4 scale_face[ 6 ] = {
@@ -33,7 +33,7 @@ uniform mat4 mat_light;
 void main() {
 	vec4 vert;
 	uint orient, scale;
-	int id_vert = gl_VertexID % 4;
+	int id_vert = gl_VertexID % 6;
 
 	// Extract data
 	vert.x = float( ( data1 >> 0 ) & 31 );

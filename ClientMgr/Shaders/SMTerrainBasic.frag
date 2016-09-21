@@ -11,7 +11,7 @@ layout( std140 ) uniform mvp_matrices {
 	float time_game;
 };
 
-const int max_emitters = 128;
+const int max_emitters = 8;
 layout( std140 ) uniform light_data {
 	vec4 pos_sun;
 	vec4 ambient;
