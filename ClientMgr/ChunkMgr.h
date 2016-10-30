@@ -226,6 +226,9 @@ private:
 
 	//void chunk_wait( Chunk & chunk );
 
+	void chunk_set_manip( Chunk & chunk, short unsigned x, short unsigned y, short unsigned z, short id );
+	void chunk_manip( Chunk & chunk );
+
 	void chunk_init( Chunk & chunk );
 	void chunk_read( Chunk & chunk );
 	void chunk_load( Chunk & chunk );

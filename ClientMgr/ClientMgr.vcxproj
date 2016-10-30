@@ -159,6 +159,7 @@
   <ItemGroup>
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="BlockSelector.cpp" />
+    <ClCompile Include="BlockSet.cpp" />
     <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="ChunkData.cpp" />
     <ClCompile Include="ChunkMgr.cpp" />
@@ -183,6 +184,7 @@
     <ClCompile Include="PageFuncs.cpp" />
     <ClCompile Include="ResourceMgr.cpp" />
     <ClCompile Include="ResPool.cpp" />
+    <ClCompile Include="Shapes.cpp" />
     <ClCompile Include="simplexnoise.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SpawnBlock.cpp" />
@@ -198,6 +200,7 @@
   <ItemGroup>
     <ClInclude Include="Block.h" />
     <ClInclude Include="BlockSelector.h" />
+    <ClInclude Include="BlockSet.h" />
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="ChunkData.h" />
     <ClInclude Include="ChunkMgr.h" />
@@ -222,6 +225,7 @@
     <ClInclude Include="Player.h" />
     <ClInclude Include="ResourceMgr.h" />
     <ClInclude Include="ResPool.h" />
+    <ClInclude Include="Shapes.h" />
     <ClInclude Include="SharedMesh.h" />
     <ClInclude Include="SharedMeshTerrain.h" />
     <ClInclude Include="simplexnoise.h" />

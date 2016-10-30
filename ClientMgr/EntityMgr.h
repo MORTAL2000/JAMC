@@ -18,6 +18,7 @@ private:
 	std::unordered_map< std::string, Entity & > map_entity;
 
 	VBO vbo;
+	SMEntity shared_mesh_entity;
 
 public:
 	EFAlloc alloc_base;
@@ -38,8 +39,6 @@ private:
 	void entity_terrain_collide_r( ECState & ec_state );
 	void entity_terrain_collide_u( ECState & ec_state );
 	void entity_terrain_collide_d( ECState & ec_state );
-
-	void entity_mesh( Entity & entity );
 
 public:
 	EntityMgr( Client & client );

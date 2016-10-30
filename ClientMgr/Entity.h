@@ -3,6 +3,7 @@
 #include "Globals.h"
 #include "ResourceMgr.h"
 #include "glm\glm.hpp"
+#include "SharedMesh.h"
 
 #include <functional>
 #include <typeindex>
@@ -14,14 +15,8 @@ typedef std::function< int( Client &, Entity & ) > EFUpdate;
 typedef std::function< int( Client &, Entity & ) > EFRelease;
 typedef std::function< int( Client &, Entity & ) > EFMesh;
 
-struct test { 
-	int a;
-	int b;
-};
-
-class test2 : public test { 
-	test2( ) : test { 1, 2 } { }
-};
+using EntityVertex = BaseVertex< float, float, float, float >;
+using SMEntity = SharedMesh< EntityVertex >;
 
 enum ErrorEntity {
 	EE_Ok,
@@ -68,6 +63,7 @@ struct ECState {
 class Entity {
 public:
 	Handle< ECState > h_state;
+	SMEntity::SMHandle h_mesh;
 
 	int id = 0;
 	int time_live = 0;

@@ -5,10 +5,17 @@
 #include "Directional.h"
 #include "SharedMesh.h"
 #include "SharedMeshTerrain.h"
+#include "BlockSet.h"
 
 #include <array>
 #include <mutex>
 #include <vector>
+
+struct PosBlock { 
+	uint16_t x : 5;			// 0-4
+	uint16_t y : 6;			// 5-10
+	uint16_t z : 5;			// 11-15
+};
 
 struct VertTerrain {
 	uint64_t x : 5;			// 0-4
@@ -38,6 +45,7 @@ enum ChunkState {
 	CS_Load,
 	CS_Wait,
 	CS_Gen,
+	CS_Manip,
 	CS_SMesh,
 	CS_TMesh,
 	CS_SBuffer,
@@ -57,7 +65,9 @@ public:
 	int hash_lw;
 	int hash_lw_2d;
 
-	short id_blocks[ WorldSize::Chunk::size_x ][ WorldSize::Chunk::size_y ][ WorldSize::Chunk::size_z ];
+	std::vector< std::pair< PosBlock, short > > list_block_manip;
+	BlockSet block_set;
+	//short id_blocks[ WorldSize::Chunk::size_x ][ WorldSize::Chunk::size_y ][ WorldSize::Chunk::size_z ];
 
 	std::recursive_mutex mtx_state;
 	int cnt_states;
@@ -91,5 +101,4 @@ public:
 	Chunk( );
 	Chunk( Chunk const & other ) { }
 	~Chunk( );
-
 };

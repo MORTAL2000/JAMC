@@ -219,6 +219,12 @@
     <ClCompile Include="WorldSize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Shapes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BlockSet.cpp">
+      <Filter>Source Files\Managers\ChunkMgr</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Globals.h">
@@ -334,6 +340,12 @@
     </ClInclude>
     <ClInclude Include="WorldSize.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shapes.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockSet.h">
+      <Filter>Header Files\Managers\ChunkMgr</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

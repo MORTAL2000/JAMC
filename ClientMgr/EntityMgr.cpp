@@ -9,20 +9,12 @@
 #include "WaterBlock.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtc/matrix_inverse.hpp"
+#include "Shapes.h"
 
 const char * ErrorEntityLookup::to_text[ ] = {
 	"No entity error!",
 	"Entity creation failed!",
 	"EE_Size"
-};
-
-glm::vec3 verts_entity[ FaceDirection::FD_Size ][ 4 ] = {
-	{ { -0.5f, -0.5f, 0.5f }, { 0.5f, -0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { -0.5f, 0.5f, 0.5f } },
-	{ { 0.5f, -0.5f, -0.5f }, { -0.5f, -0.5f, -0.5f }, { -0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, -0.5f } },
-	{ { 0.5f, -0.5f, 0.5f }, { 0.5f, -0.5f, -0.5f  }, { 0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f } },
-	{ { -0.5f, -0.5f, -0.5f }, { -0.5f, -0.5f, 0.5f }, { -0.5f, 0.5f, 0.5f }, { -0.5f, 0.5f, -0.5f } },
-	{ { 0.5f, 0.5f, -0.5f }, { -0.5f, 0.5f, -0.5f }, { -0.5f, 0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f } },
-	{ { -0.5f, -0.5f, -0.5f }, { 0.5f, -0.5f, -0.5f }, { 0.5f, -0.5f, 0.5f }, { -0.5f, -0.5f, 0.5f } }
 };
 
 glm::vec2 uvs_entity[ 4 ] = { 
@@ -66,20 +58,20 @@ void EntityMgr::init( ) {
 		}
 
 		auto & ec_state = entity.h_state.get( );
-		ec_state.pos = glm::vec3( 0, 0, 0 );
-		ec_state.pos_last = glm::vec3( 0, 0, 0 );
-		ec_state.pos_delta = glm::vec3( 0, 0, 0 );
-		ec_state.veloc = glm::vec3( 0, 0, 0 );
-		ec_state.accel = glm::vec3( 0, 0, 0 );
+		ec_state.pos = { 0, 0, 0 };
+		ec_state.pos_last = { 0, 0, 0 };
+		ec_state.pos_delta = { 0, 0, 0 };
+		ec_state.veloc = { 0, 0, 0 };
+		ec_state.accel = { 0, 0, 0 };
 		ec_state.is_coll = false;
 		fill_array( ec_state.is_coll_face, false );
 		ec_state.id_block = -1;
 
-		ec_state.rot = glm::vec3( 0, 0, 0 );
-		ec_state.rot_veloc = glm::vec3( 0, 0, 0 );
-		ec_state.rot_accel = glm::vec3( 0, 0, 0 );
+		ec_state.rot = { 0, 0, 0 };
+		ec_state.rot_veloc = { 0, 0, 0 };
+		ec_state.rot_accel = { 0, 0, 0 };
 
-		ec_state.dim = glm::vec3( 1.0f, 1.0f, 1.0f );
+		ec_state.dim = { 1.0f, 1.0f, 1.0f };
 
 		return ErrorEntity::EE_Ok;
 	};
@@ -125,13 +117,14 @@ void EntityMgr::update( ) {
 	}
 
 	client.resource_mgr.pool< Entity >().apply_func_live_threads( client.thread_mgr,
-		10, client.thread_mgr.cnt_thread_sync( ) * 10, [ & ] ( Entity & entity ) { 
+		10, client.thread_mgr.cnt_thread_sync( ) * 3, [ & ] ( Entity & entity ) { 
 
 		auto & state = entity.h_state.get( );
 
 		entity.loader->ef_update( client, entity );
 		entity_integrate( state );
 		entity_terrain_collide( state );
+		entity.loader->ef_mesh( client, entity );
 
 		state.mat_model = glm::mat4( 1.0f );
 		state.mat_model = glm::translate( state.mat_model, state.pos );
@@ -234,7 +227,7 @@ void EntityMgr::init_mesh( ) {
 
 		for( int j = 0; j < 4; ++j ) {
 			vbo.push_data( VBO::Vertex {
-				verts_entity[ i ][ j ],
+				Shapes::Verts::cube[ i ][ j ],
 				color,
 				norm,
 				{ uvs_entity[ j ].x, uvs_entity[ j ].y, 0 }
@@ -244,6 +237,8 @@ void EntityMgr::init_mesh( ) {
 
 	vbo.finalize_set( );
 	vbo.buffer( );
+
+	shared_mesh_entity.init( 4, num_entity, 6, num_entity, 10, 4, 6 );
 }
 
 void EntityMgr::loader_add( EntityLoader * entity_loader ) { 
@@ -641,8 +636,4 @@ void EntityMgr::entity_stop( ECState & ec_state ) {
 		ec_state.pos.x -= ec_state.pos_delta.x;
 		ec_state.veloc.x = 0;
 	}
-}
-
-void EntityMgr::entity_mesh( Entity & entity ) { 
-
 }

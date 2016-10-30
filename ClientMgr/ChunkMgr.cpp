@@ -1050,7 +1050,7 @@ void ChunkMgr::calc_light( ) {
 		light_amb = min_amb + ( 1 - ( pos_deg_light - 135 ) / 55 ) * ( max_amb - min_amb );
 	}
 	else if( pos_deg_light >= 0 && pos_deg_light < 45 ) {
-		light_amb = min_amb + ( 10 + pos_deg_light ) / 55 * ( max_amb - min_amb );
+		light_amb = min_amb + ( 10 + pos_deg_light ) / 55 * ( max_amb - min_amb ); 
 	}
 	else {
 		light_amb = max_amb;
@@ -1483,6 +1483,29 @@ void ChunkMgr::chunk_shutdown( Chunk & chunk ) {
 	chunk.is_shutdown = true;
 }
 
+void ChunkMgr::chunk_set_manip( Chunk & chunk, short unsigned x, short unsigned y, short unsigned z, short id ) {
+	chunk_state( chunk, ChunkState::CS_Manip, true );
+
+	chunk.list_block_manip.push_back( { { x, y, z }, id } );
+}
+
+void ChunkMgr::chunk_manip( Chunk & chunk ) { 
+	chunk_state( chunk, ChunkState::CS_Manip, false );
+	PosBlock * pos;
+
+	for( int unsigned i = 0; i < chunk.list_block_manip.size( ); ++i ) { 
+		pos = &chunk.list_block_manip[ i ].first;
+		chunk.block_set.set( pos->x, pos->y, pos->z, chunk.list_block_manip[ i ].second );
+	}
+
+	chunk.list_block_manip.resize( WorldSize::Chunk::size_x * WorldSize::Chunk::size_z );
+	chunk.list_block_manip.shrink_to_fit( );
+	chunk.list_block_manip.clear( );
+
+	chunk_state( chunk, ChunkState::CS_SMesh, true );
+	chunk_state( chunk, ChunkState::CS_TMesh, true );
+}
+
 void ChunkMgr::chunk_init( Chunk & chunk ) {
 	chunk.is_working = true;
 
@@ -1492,6 +1515,8 @@ void ChunkMgr::chunk_init( Chunk & chunk ) {
 
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Init, false );
+
+		chunk.block_set.resize( WorldSize::Chunk::size_x, WorldSize::Chunk::size_y, WorldSize::Chunk::size_z );
 
 		std::lock_guard< std::mutex > lock( mtx_noise );
 		auto iter_noise = map_noise.find( chunk.hash_lw_2d );
@@ -1727,7 +1752,8 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 								id = buffer_section[ index_buffer + 1 ];
 							}
 
-							chunk.id_blocks[ k ][ i ][ j ] = id;
+							chunk.block_set.set( k, i, j, id );
+							//chunk.id_blocks[ k ][ i ][ j ] = id;
 							num_block--;
 						}
 					}
@@ -1787,26 +1813,32 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 				for( int j = 0; j < WorldSize::Chunk::size_y; j++ ) {
 					if( chunk.pos_gw.y + j < noise_height ) {
 						if( chunk.pos_gw.y + j < noise_height - noise_cobble ) {
-							chunk.id_blocks[ i ][ j ][ k ] = block_cobble.id;
+							chunk.block_set.set( i, j, k, block_cobble.id );
+							//chunk.id_blocks[ i ][ j ][ k ] = block_cobble.id;
 						}
 						else {
-							chunk.id_blocks[ i ][ j ][ k ] = biome.id_block_depth;
+							chunk.block_set.set( i, j, k, biome.id_block_depth );
+							//chunk.id_blocks[ i ][ j ][ k ] = biome.id_block_depth;
 						}
 					}
 					else if( chunk.pos_gw.y + j == noise_height ) {
-						chunk.id_blocks[ i ][ j ][ k ] = biome.id_block_surface;
+						chunk.block_set.set( i, j, k, biome.id_block_surface );
+						//chunk.id_blocks[ i ][ j ][ k ] = biome.id_block_surface;
 					}
 					else {
 						if( chunk.pos_gw.y + j <= WorldSize::World::level_sea &&
 							noise_biome != map_biome_name[ "Cobblestone Chasm" ] ) {
-							chunk.id_blocks[ i ][ j ][ k ] = block_water.id;
+							chunk.block_set.set( i, j, k, block_water.id );
+							//chunk.id_blocks[ i ][ j ][ k ] = block_water.id;
 						}
 						else {
-							chunk.id_blocks[ i ][ j ][ k ] = -1;
+							chunk.block_set.set( i, j, k, -1 );
+							//chunk.id_blocks[ i ][ j ][ k ] = -1;
 						}
 					}
 
-					if( chunk.id_blocks[ i ][ j ][ k ] != -1 ) { 
+					//if( chunk.id_blocks[ i ][ j ][ k ] != -1 ) { 
+					if( chunk.block_set.get( i, j, k ) != -1 ) {
 						chunk.cnt_solid += 1;
 					}
 					else { 
@@ -1827,7 +1859,7 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 
 void ChunkMgr::chunk_gen( Chunk & chunk ) { 
 	chunk.is_working = true;
-
+	
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
 	int priority = 0;
 	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
@@ -1991,7 +2023,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 
 		if( chunk.states[ ChunkState::CS_SMesh ] && chunk.handle_solid_temp.ptr_buffer ) {
 			chunk_state( chunk, ChunkState::CS_SMesh, false );
-
+			
 			chunk.list_incl_solid.clear( );
 
 			chunk.handle_solid_temp.clear( );
@@ -2013,7 +2045,8 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			for( pos_curr.x = 0; pos_curr.x < WorldSize::Chunk::size_x; pos_curr.x++ ) {
 				for( pos_curr.y = 0; pos_curr.y < WorldSize::Chunk::size_y; pos_curr.y++ ) {
 					for( pos_curr.z = 0; pos_curr.z < WorldSize::Chunk::size_z; pos_curr.z++ ) {
-						id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
+						//id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
+						id_curr = chunk.block_set.get( pos_curr.x, pos_curr.y, pos_curr.z );
 
 						if( id_curr == -1 || id_curr == -2 ) {
 							// Is air, skip
@@ -2060,7 +2093,8 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 								}
 							}
 
-							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+							//id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+							id_adj = chunk_adj->block_set.get( pos_adj.x, pos_adj.y, pos_adj.z );
 
 							if( id_adj == -1 ) {
 								if( id_curr == list_id_last[ dir_face ].first ) {
@@ -2126,7 +2160,8 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 						list_x_solid: // Start list x
 
 						pos_curr_x = { pos_curr.z, pos_curr.y, pos_curr.x };
-						id_curr = chunk.id_blocks[ pos_curr_x.x ][ pos_curr_x.y ][ pos_curr_x.z ];
+						//id_curr = chunk.id_blocks[ pos_curr_x.x ][ pos_curr_x.y ][ pos_curr_x.z ];
+						id_curr = chunk.block_set.get( pos_curr_x.x, pos_curr_x.y, pos_curr_x.z );
 
 						if( id_curr == -1 || id_curr == -2 ) {
 							// Is air, skip
@@ -2167,7 +2202,8 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 								}
 							}
 
-							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+							//id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+							id_adj = chunk_adj->block_set.get( pos_adj.x, pos_adj.y, pos_adj.z );
 
 							if( id_adj == -1 ) {
 								if( id_curr == list_id_last[ dir_face ].first ) {
@@ -2292,7 +2328,8 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			for( pos_curr.x = 0; pos_curr.x < WorldSize::Chunk::size_x; pos_curr.x++ ) {
 				for( pos_curr.y = 0; pos_curr.y < WorldSize::Chunk::size_y; pos_curr.y++ ) {
 					for( pos_curr.z = 0; pos_curr.z < WorldSize::Chunk::size_z; pos_curr.z++ ) {
-						id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
+						//id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
+						id_curr = chunk.block_set.get( pos_curr.x, pos_curr.y, pos_curr.z );
 
 						if( id_curr == -1 ) {
 							continue;
@@ -2327,7 +2364,8 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 								}
 							}
 
-							id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+							//id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
+							id_adj = chunk_adj->block_set.get( pos_adj.x, pos_adj.y, pos_adj.z );
 
 							if( !block_curr->occlude_lookup[ dir_face ].size( ) ) { 
 								continue;
@@ -2465,7 +2503,8 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 			int num_block, id;
 			int index_buffer;
 
-			id = chunk.id_blocks[ 0 ][ 0 ][ 0 ];
+			//id = chunk.id_blocks[ 0 ][ 0 ][ 0 ];
+			id = chunk.block_set.get( 0, 0, 0 );
 			num_block = 0;
 			index_buffer = 0;
 			index_section = 0;
@@ -2473,7 +2512,8 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 			for( int i = 0; i < WorldSize::Chunk::size_y; i++ ) {
 				for( int j = 0; j < WorldSize::Chunk::size_z; j++ ) {
 					for( int k = 0; k < WorldSize::Chunk::size_x; k++ ) {
-						if( id == chunk.id_blocks[ k ][ i ][ j ] ) {
+						//if( id == chunk.id_blocks[ k ][ i ][ j ] ) {
+						if( id == chunk.block_set.get( k, i, j ) ) {
 							num_block++;
 						}
 						else {
@@ -2482,7 +2522,8 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 							index_buffer += 2;
 
 							num_block = 1;
-							id = chunk.id_blocks[ k ][ i ][ j ];
+							//id = chunk.id_blocks[ k ][ i ][ j ];
+							id = chunk.block_set.get( k, i, j );
 
 							if( index_buffer >= size_buffer ) {
 								index_start = chunk.ptr_file->file_header.array_index[ index_region ].index_section[ index_section ];
@@ -2998,7 +3039,8 @@ int ChunkMgr::get_block( glm::vec3 const & pos_gw ) {
 		if( chunk.is_loaded ) {
 			glm::ivec3 pos_lc;
 			Directional::pos_gw_to_lc( pos_gw, pos_lc );
-			return iter->second.get( ).id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ];
+			//return iter->second.get( ).id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ];
+			return iter->second.get( ).block_set.get( pos_lc.x, pos_lc.y, pos_lc.z );
 		}
 	}
 	return -2;
@@ -3017,11 +3059,13 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, int const id ) {
 	auto & chunk = iter->second.get( );
 	glm::ivec3 pos_lc;
 	Directional::pos_gw_to_lc( pos_gw, pos_lc );
-	if( chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ] == id ) {
+	//if( chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ] == id ) {
+	if( chunk.block_set.get( pos_lc.x, pos_lc.y, pos_lc.z ) == id ) {
 		return;
 	}
 
-	chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ] = id;
+	//chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ] = id;
+	chunk.block_set.set( pos_lc.x, pos_lc.y, pos_lc.z, id );
 
 	{
 		std::lock_guard< std::mutex > lock( chunk.mtx_adj );
@@ -3068,8 +3112,11 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 		Directional::pos_gw_to_lc( pos_gw, state.pos_lc );
 		auto & chunk = state.iter->second.get( );
 
-		if( chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] != id ) {
-			chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] = id;
+		//if( chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] != id ) {
+		//	chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] = id;
+		if( chunk.is_loaded &&
+			chunk.block_set.get( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
+			chunk.block_set.set( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
 
 			state.map_queue_dirty.insert( { chunk.hash_lw, chunk } );
 			std::lock_guard< std::mutex > lock( chunk.mtx_adj );
@@ -3114,8 +3161,11 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 			Directional::pos_gw_to_lc( pos_gw, state.pos_lc );
 			auto & chunk = state.iter->second.get( );
 
-			if( chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] != id ) {
-				chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] = id;
+			//if( chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] != id ) {
+			//	chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] = id;
+			if( chunk.is_loaded &&
+				chunk.block_set.get( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
+				chunk.block_set.set( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
 
 				state.map_queue_dirty.insert( { Directional::get_hash( state.pos_lw ), chunk } );
 				std::lock_guard< std::mutex > lock( chunk.mtx_adj );
