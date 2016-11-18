@@ -46,6 +46,8 @@ enum ChunkState {
 	CS_Wait,
 	CS_Gen,
 	CS_Manip,
+	CS_Encode,
+	CS_Decode,
 	CS_SMesh,
 	CS_TMesh,
 	CS_SBuffer,
@@ -67,7 +69,6 @@ public:
 
 	std::vector< std::pair< PosBlock, short > > list_block_manip;
 	BlockSet block_set;
-	//short id_blocks[ WorldSize::Chunk::size_x ][ WorldSize::Chunk::size_y ][ WorldSize::Chunk::size_z ];
 
 	std::recursive_mutex mtx_state;
 	int cnt_states;

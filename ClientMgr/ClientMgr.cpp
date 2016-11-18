@@ -7,7 +7,7 @@ ClientMgr::ClientMgr(){}
 ClientMgr::~ClientMgr(){}
 
 void ClientMgr::run() {
-	/*
+	
 	std::cout << "*** Init ***" << std::endl;
 
 	BlockSet bset;
@@ -26,14 +26,14 @@ void ClientMgr::run() {
 		for( int unsigned j = 0; j < 8; ++j ) {
 			for( int unsigned k = 0; k < 8; ++k ) {
 				if( j % 2 == 0 ) { 
-					bset.set( i, j, k, 1 );
+					bset.set_data( i, j, k, 1 );
 				}
 				else {
 					//if( i % 2 == 0 & k % 2 == 0 ) {
 					//	bset.set( i, j, k, 1 );
 					//}
 					//else { 
-						bset.set( i, j, k, 0 );
+						bset.set_data( i, j, k, 0 );
 					//}
 				}
 			}
@@ -73,7 +73,7 @@ void ClientMgr::run() {
 	bset.print( );
 
 	system( "PAUSE" );
-	*/
+	
 
 	client.init();
 	client.end();

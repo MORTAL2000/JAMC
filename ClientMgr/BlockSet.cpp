@@ -16,12 +16,16 @@ void BlockSet::resize( int unsigned x, int unsigned y, int unsigned z ) {
 	vec_size.y = y;
 	vec_size.z = z;
 
+	idx_rle = 0;
+	idx_max = vec_size.x * vec_size.y * vec_size.z;
+
 	list_data.resize( vec_size.x * vec_size.y * vec_size.z );
 	list_data.shrink_to_fit( );
 }
 
 void BlockSet::encode( ) {
 	if( list_data.size( ) != vec_size.x * vec_size.y * vec_size.z ) { 
+		printf( "Error! While encoding, list_data does not match BlockSet Size!" );
 		return; 
 	}
 
@@ -31,28 +35,10 @@ void BlockSet::encode( ) {
 
 	list_rle.clear( );
 
-	/*
-	for( int unsigned  i = 0; i < vec_size.x; ++i ) { 
-		for( int unsigned j = 0; j < vec_size.y; ++j ) { 
-			for( int unsigned k = 0; k < vec_size.z; ++k ) { 
-				id_curr = get( i, j, k );
-
-				if( id_last == id_curr ) {
-					++cnt;
-				}
-				else { 
-					list_rle.push_back( { id_last, cnt } );
-					id_last = id_curr;
-					cnt = 0;
-				}
-			}
-		}
-	}
-	*/
 	for( int unsigned j = 0; j < vec_size.y; ++j ) {
 		for( int unsigned i = 0; i < vec_size.x; ++i ) {
 			for( int unsigned k = 0; k < vec_size.z; ++k ) {
-				id_curr = get( i, j, k );
+				id_curr = get_data( i, j, k );
 
 				if( id_last == id_curr ) {
 					++cnt;
@@ -69,38 +55,28 @@ void BlockSet::encode( ) {
 	if( cnt != 0 ) { 
 		list_rle.push_back( { id_last, cnt } );
 	}
-
-	//list_data.clear( );
-	//list_data.shrink_to_fit( );
 }
 
 void BlockSet::decode( ) {
 	short index = 0;
 	RLEPair pair_rle;
 	glm::ivec3 pos;
-	//short id, cnt;
 
 	list_data.clear( );
 	resize( vec_size.x, vec_size.y, vec_size.z );
 
 	for( int unsigned i = 0; i < list_rle.size( ); ++i ) {
 		pair_rle = list_rle[ i ];
-		//id = list_rle[ i ].id;
-		//cnt = list_rle[ i ].cnt;
 
 		for( int unsigned j = 0; j < pair_rle.cnt; ++j ) {
 			pos.x = ( index % ( vec_size.z * vec_size.x ) ) / vec_size.z;
 			pos.y = index / ( vec_size.z * vec_size.x );
 			pos.z = index % vec_size.z;
 
-			set( pos, pair_rle.id );
-			//list_data[ index ] = pair_rle.id;
+			set_data( pos, pair_rle.id );
 			++index;
 		}
 	}
-
-	//list_rle.clear( );
-	//list_rle.shrink_to_fit( );
 }
 
 void BlockSet::clear_data( ) { 
@@ -123,10 +99,10 @@ void BlockSet::print( ) {
 	}
 
 	if( !list_data.empty( ) ) {
-		for( int unsigned j = 0; j < vec_size.y; ++j ) {
+		for( int unsigned j = 0; j < vec_size.y; ++j ) {                                                   
 			for( int unsigned i = 0; i < vec_size.x; ++i ) {
 				for( int unsigned k = 0; k < vec_size.z; ++k ) {
-					std::cout << get( i, j, k ) << " ";
+					std::cout << get_data( i, j, k ) << " ";
 				}
 
 				std::cout << std::endl;

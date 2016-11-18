@@ -37,9 +37,7 @@ void ChunkMgr::init( ) {
 	load_block_data( );
 
 	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 6;
-
 	GLuint num_verts = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 8;
-
 	GLuint num_buff = 1024;
 	GLuint size_buff_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4 * 2;
 
@@ -1495,7 +1493,7 @@ void ChunkMgr::chunk_manip( Chunk & chunk ) {
 
 	for( int unsigned i = 0; i < chunk.list_block_manip.size( ); ++i ) { 
 		pos = &chunk.list_block_manip[ i ].first;
-		chunk.block_set.set( pos->x, pos->y, pos->z, chunk.list_block_manip[ i ].second );
+		chunk.block_set.set_data( pos->x, pos->y, pos->z, chunk.list_block_manip[ i ].second );
 	}
 
 	chunk.list_block_manip.resize( WorldSize::Chunk::size_x * WorldSize::Chunk::size_z );
@@ -1752,7 +1750,7 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 								id = buffer_section[ index_buffer + 1 ];
 							}
 
-							chunk.block_set.set( k, i, j, id );
+							chunk.block_set.set_data( k, i, j, id );
 							//chunk.id_blocks[ k ][ i ][ j ] = id;
 							num_block--;
 						}
@@ -1813,32 +1811,32 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 				for( int j = 0; j < WorldSize::Chunk::size_y; j++ ) {
 					if( chunk.pos_gw.y + j < noise_height ) {
 						if( chunk.pos_gw.y + j < noise_height - noise_cobble ) {
-							chunk.block_set.set( i, j, k, block_cobble.id );
+							chunk.block_set.set_data( i, j, k, block_cobble.id );
 							//chunk.id_blocks[ i ][ j ][ k ] = block_cobble.id;
 						}
 						else {
-							chunk.block_set.set( i, j, k, biome.id_block_depth );
+							chunk.block_set.set_data( i, j, k, biome.id_block_depth );
 							//chunk.id_blocks[ i ][ j ][ k ] = biome.id_block_depth;
 						}
 					}
 					else if( chunk.pos_gw.y + j == noise_height ) {
-						chunk.block_set.set( i, j, k, biome.id_block_surface );
+						chunk.block_set.set_data( i, j, k, biome.id_block_surface );
 						//chunk.id_blocks[ i ][ j ][ k ] = biome.id_block_surface;
 					}
 					else {
 						if( chunk.pos_gw.y + j <= WorldSize::World::level_sea &&
 							noise_biome != map_biome_name[ "Cobblestone Chasm" ] ) {
-							chunk.block_set.set( i, j, k, block_water.id );
+							chunk.block_set.set_data( i, j, k, block_water.id );
 							//chunk.id_blocks[ i ][ j ][ k ] = block_water.id;
 						}
 						else {
-							chunk.block_set.set( i, j, k, -1 );
+							chunk.block_set.set_data( i, j, k, -1 );
 							//chunk.id_blocks[ i ][ j ][ k ] = -1;
 						}
 					}
 
 					//if( chunk.id_blocks[ i ][ j ][ k ] != -1 ) { 
-					if( chunk.block_set.get( i, j, k ) != -1 ) {
+					if( chunk.block_set.get_data( i, j, k ) != -1 ) {
 						chunk.cnt_solid += 1;
 					}
 					else { 
@@ -2046,7 +2044,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 				for( pos_curr.y = 0; pos_curr.y < WorldSize::Chunk::size_y; pos_curr.y++ ) {
 					for( pos_curr.z = 0; pos_curr.z < WorldSize::Chunk::size_z; pos_curr.z++ ) {
 						//id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
-						id_curr = chunk.block_set.get( pos_curr.x, pos_curr.y, pos_curr.z );
+						id_curr = chunk.block_set.get_data( pos_curr.x, pos_curr.y, pos_curr.z );
 
 						if( id_curr == -1 || id_curr == -2 ) {
 							// Is air, skip
@@ -2094,7 +2092,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							}
 
 							//id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
-							id_adj = chunk_adj->block_set.get( pos_adj.x, pos_adj.y, pos_adj.z );
+							id_adj = chunk_adj->block_set.get_data( pos_adj.x, pos_adj.y, pos_adj.z );
 
 							if( id_adj == -1 ) {
 								if( id_curr == list_id_last[ dir_face ].first ) {
@@ -2161,7 +2159,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 
 						pos_curr_x = { pos_curr.z, pos_curr.y, pos_curr.x };
 						//id_curr = chunk.id_blocks[ pos_curr_x.x ][ pos_curr_x.y ][ pos_curr_x.z ];
-						id_curr = chunk.block_set.get( pos_curr_x.x, pos_curr_x.y, pos_curr_x.z );
+						id_curr = chunk.block_set.get_data( pos_curr_x.x, pos_curr_x.y, pos_curr_x.z );
 
 						if( id_curr == -1 || id_curr == -2 ) {
 							// Is air, skip
@@ -2203,7 +2201,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							}
 
 							//id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
-							id_adj = chunk_adj->block_set.get( pos_adj.x, pos_adj.y, pos_adj.z );
+							id_adj = chunk_adj->block_set.get_data( pos_adj.x, pos_adj.y, pos_adj.z );
 
 							if( id_adj == -1 ) {
 								if( id_curr == list_id_last[ dir_face ].first ) {
@@ -2329,7 +2327,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 				for( pos_curr.y = 0; pos_curr.y < WorldSize::Chunk::size_y; pos_curr.y++ ) {
 					for( pos_curr.z = 0; pos_curr.z < WorldSize::Chunk::size_z; pos_curr.z++ ) {
 						//id_curr = chunk.id_blocks[ pos_curr.x ][ pos_curr.y ][ pos_curr.z ];
-						id_curr = chunk.block_set.get( pos_curr.x, pos_curr.y, pos_curr.z );
+						id_curr = chunk.block_set.get_data( pos_curr.x, pos_curr.y, pos_curr.z );
 
 						if( id_curr == -1 ) {
 							continue;
@@ -2365,7 +2363,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							}
 
 							//id_adj = chunk_adj->id_blocks[ pos_adj.x ][ pos_adj.y ][ pos_adj.z ];
-							id_adj = chunk_adj->block_set.get( pos_adj.x, pos_adj.y, pos_adj.z );
+							id_adj = chunk_adj->block_set.get_data( pos_adj.x, pos_adj.y, pos_adj.z );
 
 							if( !block_curr->occlude_lookup[ dir_face ].size( ) ) { 
 								continue;
@@ -2504,7 +2502,7 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 			int index_buffer;
 
 			//id = chunk.id_blocks[ 0 ][ 0 ][ 0 ];
-			id = chunk.block_set.get( 0, 0, 0 );
+			id = chunk.block_set.get_data( 0, 0, 0 );
 			num_block = 0;
 			index_buffer = 0;
 			index_section = 0;
@@ -2513,7 +2511,7 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 				for( int j = 0; j < WorldSize::Chunk::size_z; j++ ) {
 					for( int k = 0; k < WorldSize::Chunk::size_x; k++ ) {
 						//if( id == chunk.id_blocks[ k ][ i ][ j ] ) {
-						if( id == chunk.block_set.get( k, i, j ) ) {
+						if( id == chunk.block_set.get_data( k, i, j ) ) {
 							num_block++;
 						}
 						else {
@@ -2523,7 +2521,7 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 
 							num_block = 1;
 							//id = chunk.id_blocks[ k ][ i ][ j ];
-							id = chunk.block_set.get( k, i, j );
+							id = chunk.block_set.get_data( k, i, j );
 
 							if( index_buffer >= size_buffer ) {
 								index_start = chunk.ptr_file->file_header.array_index[ index_region ].index_section[ index_section ];
@@ -3040,7 +3038,7 @@ int ChunkMgr::get_block( glm::vec3 const & pos_gw ) {
 			glm::ivec3 pos_lc;
 			Directional::pos_gw_to_lc( pos_gw, pos_lc );
 			//return iter->second.get( ).id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ];
-			return iter->second.get( ).block_set.get( pos_lc.x, pos_lc.y, pos_lc.z );
+			return iter->second.get( ).block_set.get_data( pos_lc.x, pos_lc.y, pos_lc.z );
 		}
 	}
 	return -2;
@@ -3060,12 +3058,12 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, int const id ) {
 	glm::ivec3 pos_lc;
 	Directional::pos_gw_to_lc( pos_gw, pos_lc );
 	//if( chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ] == id ) {
-	if( chunk.block_set.get( pos_lc.x, pos_lc.y, pos_lc.z ) == id ) {
+	if( chunk.block_set.get_data( pos_lc.x, pos_lc.y, pos_lc.z ) == id ) {
 		return;
 	}
 
 	//chunk.id_blocks[ pos_lc.x ][ pos_lc.y ][ pos_lc.z ] = id;
-	chunk.block_set.set( pos_lc.x, pos_lc.y, pos_lc.z, id );
+	chunk.block_set.set_data( pos_lc.x, pos_lc.y, pos_lc.z, id );
 
 	{
 		std::lock_guard< std::mutex > lock( chunk.mtx_adj );
@@ -3115,8 +3113,8 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 		//if( chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] != id ) {
 		//	chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] = id;
 		if( chunk.is_loaded &&
-			chunk.block_set.get( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
-			chunk.block_set.set( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
+			chunk.block_set.get_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
+			chunk.block_set.set_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
 
 			state.map_queue_dirty.insert( { chunk.hash_lw, chunk } );
 			std::lock_guard< std::mutex > lock( chunk.mtx_adj );
@@ -3164,8 +3162,8 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 			//if( chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] != id ) {
 			//	chunk.id_blocks[ state.pos_lc.x ][ state.pos_lc.y ][ state.pos_lc.z ] = id;
 			if( chunk.is_loaded &&
-				chunk.block_set.get( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
-				chunk.block_set.set( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
+				chunk.block_set.get_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
+				chunk.block_set.set_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
 
 				state.map_queue_dirty.insert( { Directional::get_hash( state.pos_lw ), chunk } );
 				std::lock_guard< std::mutex > lock( chunk.mtx_adj );
