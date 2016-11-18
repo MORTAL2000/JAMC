@@ -1072,7 +1072,7 @@ void ChunkMgr::calc_light( ) {
 void ChunkMgr::init_skybox( ) { 
 	vbo_skybox.init( );
 	vbo_sun.init( );
-	id_skybox = 0;
+	id_skybox = 3;
 	mesh_skybox( );
 }
 

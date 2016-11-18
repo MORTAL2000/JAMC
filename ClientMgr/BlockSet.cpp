@@ -11,12 +11,12 @@ BlockSet::BlockSet( ) {
 
 BlockSet::~BlockSet( ) { }
 
-void BlockSet::resize( int unsigned x, int unsigned y, int unsigned z ) { 
+void BlockSet::resize( int unsigned x, int unsigned y, int unsigned z ) {
 	vec_size.x = x;
 	vec_size.y = y;
 	vec_size.z = z;
 
-	idx_rle = 0;
+	//idx_rle = 0;
 	idx_max = vec_size.x * vec_size.y * vec_size.z;
 
 	list_data.resize( vec_size.x * vec_size.y * vec_size.z );
@@ -24,9 +24,9 @@ void BlockSet::resize( int unsigned x, int unsigned y, int unsigned z ) {
 }
 
 void BlockSet::encode( ) {
-	if( list_data.size( ) != vec_size.x * vec_size.y * vec_size.z ) { 
+	if( list_data.size( ) != vec_size.x * vec_size.y * vec_size.z ) {
 		printf( "Error! While encoding, list_data does not match BlockSet Size!" );
-		return; 
+		return;
 	}
 
 	short id_curr = list_data[ 0 ];
@@ -52,7 +52,7 @@ void BlockSet::encode( ) {
 		}
 	}
 
-	if( cnt != 0 ) { 
+	if( cnt != 0 ) {
 		list_rle.push_back( { id_last, cnt } );
 	}
 }
@@ -79,7 +79,7 @@ void BlockSet::decode( ) {
 	}
 }
 
-void BlockSet::clear_data( ) { 
+void BlockSet::clear_data( ) {
 	list_data.clear( );
 	list_data.shrink_to_fit( );
 }
@@ -99,7 +99,7 @@ void BlockSet::print( ) {
 	}
 
 	if( !list_data.empty( ) ) {
-		for( int unsigned j = 0; j < vec_size.y; ++j ) {                                                   
+		for( int unsigned j = 0; j < vec_size.y; ++j ) {
 			for( int unsigned i = 0; i < vec_size.x; ++i ) {
 				for( int unsigned k = 0; k < vec_size.z; ++k ) {
 					std::cout << get_data( i, j, k ) << " ";
@@ -112,9 +112,9 @@ void BlockSet::print( ) {
 		}
 	}
 
-	std::cout << "Size: class: " 
-		<< sizeof( BlockSet ) 
-		<< " rle: " << sizeof( RLEPair ) * list_rle.size( ) 
-		<< " data: " << sizeof( short ) * list_data.size( ) 
+	std::cout << "Size: class: "
+		<< sizeof( BlockSet )
+		<< " rle: " << sizeof( RLEPair ) * list_rle.size( )
+		<< " data: " << sizeof( short ) * list_data.size( )
 		<< std::endl << std::endl;
 }
