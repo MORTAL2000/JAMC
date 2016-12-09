@@ -26,21 +26,14 @@
 #include "glut\glut.h"
 
 // Forward Declarations
-class Runnable;
 class Manager;
-
-class Client;
-class ClientMgr;
 
 class AbstractHandle;
 template< class T > class Handle;
 class Pool;
 template< class T > class ResPool;
 
-template< class T > class Vect2;
-template< class T > class Vect3;
-
-class Block;
+class Client;
 
 class Chunk;
 struct ChunkNoise;
@@ -63,24 +56,24 @@ extern int get_refresh( );
 #define FOR3D( F3DX, F3DXSTART, F3DXEND, F3DY, F3DYSTART, F3DYEND, F3DZ, F3DZSTART, F3DZEND ) for( F3DX = F3DXSTART; F3DX < F3DXEND; ++F3DX ) { for( F3DY = F3DYSTART; F3DY < F3DYEND; ++F3DY ) { for( F3DZ = F3DZSTART; F3DZ < F3DZEND; ++F3DZ ) {
 #define FOR3DEND } } }
 
-static const float UPDATE_RATE = 60;
-static const float TIME_MILLISEC = 1000.0f;
-static const float DELTA_CORRECT = 1.0f / UPDATE_RATE;
-static const float TIME_FRAME_MILLI = TIME_MILLISEC / UPDATE_RATE;
+constexpr float UPDATE_RATE = 60;
+constexpr float TIME_MILLISEC = 1000.0f;
+constexpr float DELTA_CORRECT = 1.0f / UPDATE_RATE;
+constexpr float TIME_FRAME_MILLI = TIME_MILLISEC / UPDATE_RATE;
 
 // Windows Proc
 LRESULT CALLBACK WndProc( HWND p_hWnd, UINT p_uiMessage, WPARAM p_wParam, LPARAM p_lParam );
 
 // General Functions
 template< class T, int x >
-static inline void fill_array( T ( & ref_array )[ x ], T data ) {
+inline void fill_array( T ( & ref_array )[ x ], T data ) {
 	for( int i = 0; i < x; i++ ) {
 		ref_array[ i ] = data;
 	}
 }
 
 template< class T, int x, int y >
-static inline void fill_array( T ( & ref_array )[ x ][ y ], T data ) {
+inline void fill_array( T ( & ref_array )[ x ][ y ], T data ) {
 	for( int i = 0; i < x; i++ ) {
 		for( int j = 0; j < y; j++ ) {
 			ref_array[ i ][ j ] = data;
@@ -89,7 +82,7 @@ static inline void fill_array( T ( & ref_array )[ x ][ y ], T data ) {
 }
 
 template< class T, int x, int y, int z >
-static inline void fill_array( T ( & ref_array )[ x ][ y ][ z ], T data ) {
+inline void fill_array( T ( & ref_array )[ x ][ y ][ z ], T data ) {
 	for( int i = 0; i < x; i++ ) {
 		for( int j = 0; j < y; j++ ) {
 			for( int k = 0; k < z; k++ ) {
@@ -99,14 +92,14 @@ static inline void fill_array( T ( & ref_array )[ x ][ y ][ z ], T data ) {
 	}
 }
 
-static inline void clamp( int & x, int a, int b ) {
+inline void clamp( int & x, int a, int b ) {
 	x < a ? x = a : ( x > b ? x = b : x );
 }
 
 // Opengl functions
 extern inline std::string getGLErrorString( int err );
 
-static inline void checkOpenGLError( const char* stmt, const char* fname, int line ) {
+inline void checkOpenGLError( const char* stmt, const char* fname, int line ) {
 	GLenum err;
 	while( ( err = glGetError( ) ) != GL_NO_ERROR ) {
 		printf( "glError: %s, at %s:%i - %s\n", getGLErrorString( err ).c_str( ), fname, line, stmt );

@@ -72,9 +72,7 @@ struct TimeRecord {
 	}
 };
 
-class TimeMgr :
-	public Manager {
-
+class TimeMgr : public Manager {
 private:
 	std::recursive_mutex mutex_time, mutex_record;
 	std::unordered_map< std::string, float > time_map;
@@ -90,7 +88,7 @@ private:
 	void mesh_graphs( );
 
 public:
-	TimeMgr( Client & client );
+	TimeMgr( );
 	~TimeMgr();
 
 	void init();

@@ -1,9 +1,7 @@
 #pragma once
 
 #include "Globals.h"
-#include "glm\glm.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/gtc/matrix_inverse.hpp"
+
 #include <iostream>
 #include <vector>
 #include <queue>
@@ -11,6 +9,12 @@
 #include <unordered_map>
 #include <mutex>
 #include <sstream>
+
+#include "glm\glm.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtc/matrix_inverse.hpp"
+
+#include "Client.h"
 
 template< typename T_vert >
 class SharedMeshTerrain {
@@ -668,7 +672,7 @@ public:
 		return total;
 	}
 
-	void render( Client & client ) { 
+	void render( ) { 
 		glBindVertexArray( id_vao );
 		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 
@@ -681,7 +685,7 @@ public:
 		glBindVertexArray( 0 );
 	}
 
-	void render_range( Client & client, GLuint idx_start, GLuint length ) { 
+	void render_range( GLuint idx_start, GLuint length ) { 
 		glBindVertexArray( id_vao );
 		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 

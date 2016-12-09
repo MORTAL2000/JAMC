@@ -1,12 +1,13 @@
 #pragma once
 #include "Globals.h"
 
-#include "Manager.h"
-
 #include <vector>
-#include "Block.h"
 #include <array>
 #include <unordered_map>
+
+#include "glm\glm.hpp"
+
+#include "Manager.h"
 
 typedef std::array< std::array< float, 2 >, 4 > face_uvs;
 
@@ -32,9 +33,7 @@ struct MultiTexture {
 		map_subtexture_lookup( ) { }
 };
 
-class TextureMgr :
-	public Manager {
-
+class TextureMgr : public Manager {
 private:
 	std::string const path_shaders;
 	std::vector< ShaderLoader > list_shaders;
@@ -66,7 +65,7 @@ private:
 		std::string const & path_frag, GLuint & id_program );
 
 public:
-	TextureMgr( Client & client );
+	TextureMgr( );
 	~TextureMgr();
 
 	void init( );

@@ -6,15 +6,15 @@
 #include <timeapi.h>
 
 Client::Client( ) :
-	Manager( *this ),
 	is_running( true ),
 	update_last( 0 ), render_last( 0 ),
 	update_cnt( 0 ), render_cnt( 0 ),
-	resource_mgr( client ), texture_mgr( client ),
-	time_mgr( client ), thread_mgr( client ),
-	display_mgr( client ), input_mgr( client ),
-	gui_mgr( client ), chunk_mgr( client ),
-	entity_mgr( client ) { }
+	resource_mgr( ), texture_mgr( ),
+	time_mgr( ), thread_mgr( ),
+	display_mgr( ), input_mgr( ),
+	gui_mgr( ), chunk_mgr( ),
+	entity_mgr( ), biome_mgr( ),
+	block_mgr( ) { }
 
 Client::~Client( ) { }
 
@@ -89,10 +89,10 @@ void Client::thread_main_loop( ) {
 		//if( time_main < 0.5f ) time_main = 0.5f;
 		thread_mgr.loop_main( time_main );
 
-		client.time_mgr.begin_record( RecordStrings::RENDER_SWAP );
+		time_mgr.begin_record( RecordStrings::RENDER_SWAP );
 		display_mgr.swap_buffers( );
-		client.time_mgr.push_record( RecordStrings::RENDER_SWAP );
-		client.time_mgr.end_record( RecordStrings::RENDER_SWAP );
+		time_mgr.push_record( RecordStrings::RENDER_SWAP );
+		time_mgr.end_record( RecordStrings::RENDER_SWAP );
 		
 		if( !display_mgr.is_vsync && display_mgr.is_limiter ) {
 			float time_sleep = TIME_FRAME_MILLI -
@@ -179,19 +179,19 @@ void Client::render( ) {
 	display_mgr.clear_buffers( );
 	display_mgr.set_camera( );
 
-	client.time_mgr.begin_record( RecordStrings::RENDER_DRAW );
+	time_mgr.begin_record( RecordStrings::RENDER_DRAW );
 
 	GL_CHECK( chunk_mgr.render( ) );
 
 	GL_CHECK( entity_mgr.render( ) );
 
 	GL_CHECK( render_output( ) );
-	client.time_mgr.end_record( RecordStrings::RENDER_DRAW );
-	client.time_mgr.push_record( RecordStrings::RENDER_DRAW );
+	time_mgr.end_record( RecordStrings::RENDER_DRAW );
+	time_mgr.push_record( RecordStrings::RENDER_DRAW );
 }
 
 void Client::render_output( ) {
-	client.texture_mgr.unbind_program( );
+	texture_mgr.unbind_program( );
 
 	glDisable( GL_TEXTURE_2D );
 	glDisable( GL_LIGHTING );

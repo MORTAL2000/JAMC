@@ -1,6 +1,8 @@
 #pragma once
 #include "Globals.h"
 
+#include <iostream>
+
 #include "Manager.h"
 #include "ResourceMgr.h"
 #include "TextureMgr.h"
@@ -11,16 +13,17 @@
 #include "GuiMgr.h"
 #include "ChunkMgr.h"
 #include "EntityMgr.h"
+#include "BlockMgr.h"
+#include "BiomeMgr.h"
 
-#include <iostream>
-
-class Client : 
-	public Manager {
+class Client {
+public:
+	static Client & get_instance( ) { 
+		static Client client;
+		return client;
+	}
 
 private:
-	std::mutex mutex_thead_ids;
-	std::vector< std::string > list_thread_ids;
-
 	void thread_main_loop();
 
 	int update_last, render_last;
@@ -29,9 +32,6 @@ private:
 	void render_output();
 
 public:
-	static const int size_output = 15;
-	static const int size_padding = 5;
-
 	ResourceMgr		resource_mgr;
 	TextureMgr		texture_mgr;
 	TimeMgr			time_mgr;
@@ -39,6 +39,8 @@ public:
 	DisplayMgr		display_mgr;
 	InputMgr		input_mgr;
 	GuiMgr			gui_mgr;
+	BlockMgr		block_mgr;
+	BiomeMgr		biome_mgr;
 	ChunkMgr		chunk_mgr;
 	EntityMgr		entity_mgr;
 
@@ -57,3 +59,7 @@ public:
 
 	LRESULT CALLBACK WndProc( HWND p_hWnd, UINT p_uiMessage, WPARAM p_wParam, LPARAM p_lParam );
 };
+
+Client & get_client( ) { 
+	return Client::get_instance( );
+}

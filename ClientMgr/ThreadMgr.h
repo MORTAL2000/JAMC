@@ -9,9 +9,7 @@
 #include <queue>
 #include <thread>
 
-class ThreadMgr : 
-	public Manager {
-
+class ThreadMgr : public Manager {
 private:
 	static int const size_prio_init;
 	static int const size_func_init;
@@ -38,7 +36,7 @@ private:
 	void loop_sync( int const id_thread );
 
 public:
-	ThreadMgr( Client & client );
+	ThreadMgr( );
 	~ThreadMgr();
 
 	void init();

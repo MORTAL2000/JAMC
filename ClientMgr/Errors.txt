@@ -1,0 +1,405 @@
+1>------ Build started: Project: ClientMgr - Minecraft, Configuration: Release x64 ------
+1>  BaseBiome.cpp
+1>  BlockSelector.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\GuiMgr.h(31): error C3646: 'block_selector': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\GuiMgr.h(31): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>  BlockSet.cpp
+1>BlockSet.cpp(38): warning C4018: '<': signed/unsigned mismatch
+1>BlockSet.cpp(39): warning C4018: '<': signed/unsigned mismatch
+1>BlockSet.cpp(40): warning C4018: '<': signed/unsigned mismatch
+1>BlockSet.cpp(71): warning C4018: '<': signed/unsigned mismatch
+1>BlockSet.cpp(102): warning C4018: '<': signed/unsigned mismatch
+1>BlockSet.cpp(103): warning C4018: '<': signed/unsigned mismatch
+1>BlockSet.cpp(104): warning C4018: '<': signed/unsigned mismatch
+1>  Chunk.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(97): error C3646: 'sm_terrain': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(97): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(183): error C2061: syntax error: identifier 'ChunkState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2653: 'SMTerrain': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2065: 'SMTHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2065: 'handle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2275: 'glm::ivec3': illegal use of this type as an expression
+1>  c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): note: see declaration of 'glm::ivec3'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2059: syntax error: 'const'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2653: 'SMTerrain': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2065: 'SMTHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2065: 'handle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2275: 'glm::ivec3': illegal use of this type as an expression
+1>  c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): note: see declaration of 'glm::ivec3'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2059: syntax error: 'const'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(18): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(19): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C2653: 'SMEntity': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C3646: 'h_mesh': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>  ChunkMgr.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(18): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(19): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C2653: 'SMEntity': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C3646: 'h_mesh': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(44): error C3646: 'chunk_mgr': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(44): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>ChunkMgr.cpp(1245): warning C4018: '<': signed/unsigned mismatch
+1>  CircularDequeue.cpp
+1>  DisplayMgr.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(97): error C3646: 'sm_terrain': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(97): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(183): error C2061: syntax error: identifier 'ChunkState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2653: 'SMTerrain': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2065: 'SMTHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2065: 'handle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2275: 'glm::ivec3': illegal use of this type as an expression
+1>  c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): note: see declaration of 'glm::ivec3'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2059: syntax error: 'const'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2653: 'SMTerrain': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2065: 'SMTHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2065: 'handle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2275: 'glm::ivec3': illegal use of this type as an expression
+1>  c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): note: see declaration of 'glm::ivec3'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2059: syntax error: 'const'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(18): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(19): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C2653: 'SMEntity': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C3646: 'h_mesh': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(37): error C3646: 'time_mgr': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(37): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(39): error C3646: 'display_mgr': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(39): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>DisplayMgr.cpp(207): warning C4838: conversion from 'const int' to 'BYTE' requires a narrowing conversion
+1>  Entity.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(39): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(40): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2065: 'EntityLoader': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2923: 'std::vector': 'EntityLoader' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C3646: 'alloc_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C3646: 'custom_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C3646: 'release_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(37): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(39): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(40): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(41): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(42): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(43): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(44): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(45): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(55): error C2061: syntax error: identifier 'EntityLoader'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(56): error C2061: syntax error: identifier 'EFAlloc'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(59): error C2061: syntax error: identifier 'EFCustom'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(63): error C2061: syntax error: identifier 'ECState'
+1>  EntityMgr.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(39): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(40): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(45): error C3646: 'entity_mgr': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(45): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>  Globals.cpp
+1>  GravBlock.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(39): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(40): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2065: 'EntityLoader': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2923: 'std::vector': 'EntityLoader' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C3646: 'alloc_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C3646: 'custom_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C3646: 'release_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(37): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(39): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(40): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(41): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(42): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(43): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(44): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(45): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(55): error C2061: syntax error: identifier 'EntityLoader'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(56): error C2061: syntax error: identifier 'EFAlloc'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(59): error C2061: syntax error: identifier 'EFCustom'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(63): error C2061: syntax error: identifier 'ECState'
+1>GravBlock.cpp(36): error C2660: 'EntityMgr::entity_stop': function does not take 1 arguments
+1>  GuiMgr.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(41): error C3646: 'gui_mgr': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(41): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>GuiMgr.cpp(245): error C2039: 'gui_mgr': is not a member of 'Client'
+1>  c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(19): note: see declaration of 'Client'
+1>GuiMgr.cpp(245): error C2228: left of '.process_input' must have class/struct/union
+1>GuiMgr.cpp(869): error C2039: 'gui_mgr': is not a member of 'Client'
+1>  c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(19): note: see declaration of 'Client'
+1>GuiMgr.cpp(869): error C2228: left of '.print_to_console' must have class/struct/union
+1>  IceShardBiome.cpp
+1>  LineBlock.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(39): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(40): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2065: 'EntityLoader': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2923: 'std::vector': 'EntityLoader' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C3646: 'alloc_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C3646: 'custom_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C3646: 'release_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(37): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(39): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(40): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(41): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(42): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(43): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(44): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(45): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(55): error C2061: syntax error: identifier 'EntityLoader'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(56): error C2061: syntax error: identifier 'EFAlloc'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(59): error C2061: syntax error: identifier 'EFCustom'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(63): error C2061: syntax error: identifier 'ECState'
+1>LineBlock.cpp(41): error C2660: 'EntityMgr::entity_stop': function does not take 1 arguments
+1>  Player.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(39): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(40): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2065: 'EntityLoader': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2923: 'std::vector': 'EntityLoader' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C3646: 'alloc_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C3646: 'custom_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C3646: 'release_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(37): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(39): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(40): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(41): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(42): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(43): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(44): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(45): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(55): error C2061: syntax error: identifier 'EntityLoader'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(56): error C2061: syntax error: identifier 'EFAlloc'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(59): error C2061: syntax error: identifier 'EFCustom'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(63): error C2061: syntax error: identifier 'ECState'
+1>Player.cpp(77): error C2660: 'EntityMgr::entity_add': function does not take 2 arguments
+1>Player.cpp(90): error C2660: 'EntityMgr::entity_add': function does not take 2 arguments
+1>Player.cpp(103): error C2660: 'EntityMgr::entity_stop': function does not take 1 arguments
+1>  SpawnBlock.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(39): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(40): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2065: 'EntityLoader': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2923: 'std::vector': 'EntityLoader' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C3646: 'alloc_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C3646: 'custom_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C3646: 'release_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(37): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(39): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(40): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(41): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(42): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(43): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(44): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(45): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(55): error C2061: syntax error: identifier 'EntityLoader'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(56): error C2061: syntax error: identifier 'EFAlloc'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(59): error C2061: syntax error: identifier 'EFCustom'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(63): error C2061: syntax error: identifier 'ECState'
+1>SpawnBlock.cpp(61): error C2660: 'EntityMgr::entity_add': function does not take 2 arguments
+1>  TimeMgr.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(97): error C3646: 'sm_terrain': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(97): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(183): error C2061: syntax error: identifier 'ChunkState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2653: 'SMTerrain': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2065: 'SMTHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2065: 'handle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2275: 'glm::ivec3': illegal use of this type as an expression
+1>  c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): note: see declaration of 'glm::ivec3'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(297): error C2059: syntax error: 'const'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2653: 'SMTerrain': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2065: 'SMTHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2065: 'handle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2275: 'glm::ivec3': illegal use of this type as an expression
+1>  c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): note: see declaration of 'glm::ivec3'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(301): error C2059: syntax error: 'const'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(18): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(19): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C2653: 'SMEntity': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C3646: 'h_mesh': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Entity.h(66): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(37): error C3646: 'time_mgr': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Client.h(37): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>  Tnt.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(39): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(40): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2065: 'EntityLoader': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2923: 'std::vector': 'EntityLoader' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C3646: 'alloc_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C3646: 'custom_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C3646: 'release_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(37): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(39): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(40): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(41): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(42): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(43): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(44): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(45): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(55): error C2061: syntax error: identifier 'EntityLoader'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(56): error C2061: syntax error: identifier 'EFAlloc'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(59): error C2061: syntax error: identifier 'EFCustom'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(63): error C2061: syntax error: identifier 'ECState'
+1>Tnt.cpp(49): error C2660: 'EntityMgr::entity_stop': function does not take 1 arguments
+1>  WaterBlock.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(39): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(40): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2065: 'EntityLoader': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2923: 'std::vector': 'EntityLoader' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C3646: 'alloc_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C3646: 'custom_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C3646: 'release_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(37): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(39): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(40): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(41): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(42): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(43): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(44): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(45): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(55): error C2061: syntax error: identifier 'EntityLoader'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(56): error C2061: syntax error: identifier 'EFAlloc'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(59): error C2061: syntax error: identifier 'EFCustom'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(63): error C2061: syntax error: identifier 'ECState'
+1>  WormBlock.cpp
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(39): error C2061: syntax error: identifier 'BaseVertex'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\Chunk.h(40): error C2061: syntax error: identifier 'SharedMesh'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C3646: 'sm_inclusive': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(98): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2653: 'SMChunkIncl': is not a class or namespace name
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2065: 'SMHandle': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C2923: 'std::vector': 'SMHandle' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\ChunkMgr.h(100): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2065: 'EntityLoader': undeclared identifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C2923: 'std::vector': 'EntityLoader' is not a valid template type argument for parameter '_Ty'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(14): error C3203: 'allocator': unspecialized class template can't be used as a template argument for template parameter '_Alloc', expected a real type
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C3646: 'shared_mesh_entity': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(22): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C3646: 'alloc_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(28): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C3646: 'custom_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(29): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C3646: 'release_base': unknown override specifier
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(30): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(37): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(39): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(40): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(41): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(42): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(43): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(44): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(45): error C2061: syntax error: identifier 'ECState'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(55): error C2061: syntax error: identifier 'EntityLoader'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(56): error C2061: syntax error: identifier 'EFAlloc'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(59): error C2061: syntax error: identifier 'EFCustom'
+1>c:\users\amani\desktop\clientmgr minecraft\clientmgr\EntityMgr.h(63): error C2061: syntax error: identifier 'ECState'
+========== Build: 0 succeeded, 1 failed, 0 up-to-date, 0 skipped ==========

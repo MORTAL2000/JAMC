@@ -7,8 +7,8 @@
 #include <iostream>
 
 // *** Input Manager ***
-InputMgr::InputMgr( Client & client ) :
-	Manager( client ) {}
+InputMgr::InputMgr( ) :
+	Manager( ) {}
 
 InputMgr::~InputMgr() {}
 
@@ -91,6 +91,7 @@ const static int time_cmd_cd = 100;
 static int time_last_cmd = 0;
 static const float move_speed_def = 5.0f;
 
+// TODO: Move to player entity - Maybe?
 void InputMgr::process_input( ) {
 	auto & camera = client.display_mgr.camera;
 	float move_speed = move_speed_def;
@@ -145,7 +146,7 @@ void InputMgr::process_input( ) {
 			client.display_mgr.out.str( "" );
 			client.display_mgr.out <<
 				Directional::print_vec( client.display_mgr.camera.pos_camera ) <<
-				" Block: " << client.chunk_mgr.get_block_string( client.chunk_mgr.get_block( client.display_mgr.camera.pos_camera ) );
+				" Block: " << client.block_mgr.get_block_string( client.chunk_mgr.get_block( client.display_mgr.camera.pos_camera ) );
 			client.gui_mgr.print_to_console( client.display_mgr.out.str( ) );
 
 			time_last_cmd = time;
@@ -192,7 +193,7 @@ void InputMgr::process_input( ) {
 			client.display_mgr.out.str( "" );
 			client.display_mgr.out <<
 				Directional::print_vec( client.display_mgr.camera.pos_camera ) <<
-				" Block: " << client.chunk_mgr.get_block_string( client.chunk_mgr.get_block( client.display_mgr.camera.pos_camera ) );
+				" Block: " << client.block_mgr.get_block_string( client.chunk_mgr.get_block( client.display_mgr.camera.pos_camera ) );
 			client.gui_mgr.print_to_console( client.display_mgr.out.str( ) );
 			time_last_cmd = time;
 		}
@@ -214,8 +215,9 @@ void InputMgr::process_input( ) {
 			if( select % 3 == 0 ) { 
 				client.entity_mgr.entity_add(
 					"Spin Block",
-					[ & ] ( Client & client, Entity & entity ) { 
+					[ ] ( Entity & entity ) { 
 						entity.h_state.get( ).rot_veloc = { 180.0f, 0.0f, 0.0f };
+
 						return ErrorEntity::EE_Ok;
 					}
 				);
@@ -223,7 +225,7 @@ void InputMgr::process_input( ) {
 			else if( select % 3 == 1 ) {
 				client.entity_mgr.entity_add(
 					"Spin Block",
-					[ & ] ( Client & client, Entity & entity ) {
+					[ ] ( Entity & entity ) {
 					entity.h_state.get( ).rot_veloc = { 0.0f, 180.0f, 0.0f };
 					return ErrorEntity::EE_Ok;
 				}
@@ -232,7 +234,7 @@ void InputMgr::process_input( ) {
 			else if( select % 3 == 2 ) {
 				client.entity_mgr.entity_add(
 					"Spin Block",
-					[ & ] ( Client & client, Entity & entity ) {
+					[ ] ( Entity & entity ) {
 					entity.h_state.get( ).rot_veloc = { 0.0f, 0.0f, 180.0f };
 					return ErrorEntity::EE_Ok;
 				}
@@ -255,10 +257,10 @@ void InputMgr::process_input( ) {
 
 			client.entity_mgr.entity_add( 
 				"Tnt",
-				[ &, pos_gw ] ( Client & client, Entity & entity ) {
-					auto & block_tnt = client.chunk_mgr.get_block_data( "Tnt" );
-					entity.id = block_tnt.id;
-					entity.color = client.chunk_mgr.get_block_data( block_tnt.id ).color;
+				[ &client = client, pos_gw ] ( Entity & entity ) {
+					auto block_tnt = client.block_mgr.get_block_loader( "Tnt" );
+					entity.id = block_tnt->id;
+					entity.color = client.block_mgr.get_block_loader( block_tnt->id )->color;
 
 					auto & ec_state = entity.h_state.get( );
 					ec_state.pos = glm::floor( pos_gw );

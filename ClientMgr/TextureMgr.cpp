@@ -10,9 +10,9 @@
 #include <sstream>
 #include <fstream>
 
-TextureMgr::TextureMgr( Client & client ) :
-	path_shaders( "./Shaders/" ),
-	Manager( client ) { }
+TextureMgr::TextureMgr( ) :
+	Manager( ),
+	path_shaders( "./Shaders/" ) { }
 
 TextureMgr::~TextureMgr( ) { }
 

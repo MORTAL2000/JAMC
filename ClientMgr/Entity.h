@@ -9,11 +9,11 @@
 #include <typeindex>
 #include <unordered_map>
 
-typedef std::function< int( Client &, Entity & ) > EFAlloc;
-typedef std::function< int( Client &, Entity & ) > EFCustom;
-typedef std::function< int( Client &, Entity & ) > EFUpdate;
-typedef std::function< int( Client &, Entity & ) > EFRelease;
-typedef std::function< int( Client &, Entity & ) > EFMesh;
+typedef std::function< int( Entity & ) > EFAlloc;
+typedef std::function< int( Entity & ) > EFCustom;
+typedef std::function< int( Entity & ) > EFUpdate;
+typedef std::function< int( Entity & ) > EFRelease;
+typedef std::function< int( Entity & ) > EFMesh;
 
 using EntityVertex = BaseVertex< float, float, float, float >;
 using SMEntity = SharedMesh< EntityVertex >;
@@ -95,7 +95,7 @@ public:
 	template< class T >
 	bool add_data( Client & client ) { 
 		Handle< T > * ptr_handle = new Handle< T >( );
-		if( !client.resource_mgr.allocate( *ptr_handle ) ) { 
+		if( !get_client( ).resource_mgr.allocate( *ptr_handle ) ) { 
 			delete ptr_handle;
 			return false;
 		}
@@ -125,9 +125,10 @@ public:
 		for( auto data : vect_data ) { 
 			( ( Handle< T > * ) data )->release( );
 			delete ( Handle< T > * ) data;
-			vect_data.clear( );
-			map_data.erase( index_type );
 		}
+
+		vect_data.clear( );
+		map_data.erase( index_type );
 	}
 };
 

@@ -5,13 +5,13 @@
 SpawnBlock::SpawnBlock( ) :
 	EntityLoader { 
 		"Spawn Block",
-		[ ] ( Client & client, Entity & entity ) {
+		[ &client = get_client( ) ] ( Entity & entity ) {
 			if( !entity.add_data< ECSpawnBlock >( client ) ) {
 				return ErrorEntity::EE_Failed;
 			}
 
 			entity.id = client.gui_mgr.block_selector.get_id_block( );
-			entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
+			entity.color = client.block_mgr.get_block_loader( entity.id )->color;
 
 			auto & ec_state = entity.h_state.get( );
 			ec_state.pos = client.display_mgr.camera.pos_camera;
@@ -27,20 +27,20 @@ SpawnBlock::SpawnBlock( ) :
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ ] ( Entity & entity ) {
 			entity.clear_data< ECSpawnBlock >( );
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ &client = get_client( ) ] ( Entity & entity ) {
 			auto & ec_state = entity.h_state.get( );
 			auto & ec_spawn = entity.get_data< ECSpawnBlock >( ).get( );
 
 			if( client.time_mgr.get_time( TimeStrings::GAME ) - ec_spawn.time_last > ec_spawn.time_update ) {
 				client.thread_mgr.task_main( 10,[ &, pos = ec_state.pos, num_spawn = ec_spawn.num_spawn ]( ) {
 					for( int i = 0; i < num_spawn; i++ ) {
-						client.entity_mgr.entity_add( "Grav Block", [ pos = pos ] ( Client & client, Entity & entity ) {
-							entity.id = std::rand( ) % client.chunk_mgr.get_num_blocks( );
+						client.entity_mgr.entity_add( "Grav Block", [ &client, pos = pos ] ( Entity & entity ) {
+							entity.id = std::rand( ) % client.block_mgr.get_num_blocks( );
 							auto & ec_state = entity.h_state.get( );
 
 							ec_state.pos = pos;
@@ -55,7 +55,7 @@ SpawnBlock::SpawnBlock( ) :
 									)
 								)
 								* ( float ) ( std::rand( ) % 25 + 15 );
-							entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
+							entity.color = client.block_mgr.get_block_loader( entity.id )->color;
 
 							return ErrorEntity::EE_Ok;
 						} );
@@ -71,7 +71,7 @@ SpawnBlock::SpawnBlock( ) :
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ ] ( Entity & entity ) {
 
 			return ErrorEntity::EE_Ok;
 		}

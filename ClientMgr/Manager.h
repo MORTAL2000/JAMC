@@ -1,13 +1,12 @@
 #pragma once
-#include "Globals.h"
+
+class Client;
 
 class Manager {
-protected:
-	Client & client;
-
 public:
-	Manager( Client & client ) : 
-		client( client ) {}
+	Manager( );
+
+	Client & client;
 
 	virtual void init() = 0;
 	virtual void update() = 0;

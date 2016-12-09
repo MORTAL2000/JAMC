@@ -5,7 +5,7 @@
 Tnt::Tnt( ) :
 	EntityLoader { 
 		"Tnt",
-		[ ] ( Client & client, Entity & entity ) {
+		[ &client = get_client( ) ] ( Entity & entity ) {
 			if( !entity.add_data< ECTnt >( client ) ) {
 				return ErrorEntity::EE_Failed;
 			}
@@ -21,12 +21,12 @@ Tnt::Tnt( ) :
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ ] ( Entity & entity ) {
 			entity.clear_data< ECTnt >( );
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ &client = get_client( ) ] ( Entity & entity ) {
 			auto & ec_state = entity.h_state.get( );
 			auto & ec_tnt = entity.get_data< ECTnt >( ).get( );
 			int time_now = client.time_mgr.get_time( TimeStrings::GAME );
@@ -50,7 +50,7 @@ Tnt::Tnt( ) :
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ ] ( Entity & entity ) {
 			return ErrorEntity::EE_Ok;
 		}
 	} { }

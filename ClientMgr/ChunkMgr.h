@@ -2,15 +2,18 @@
 
 #include "Globals.h"
 
-#include "Manager.h"
-#include "Block.h"
-#include "Chunk.h"
-#include "WorldSize.h"
-#include "ResPool.h" 
-#include "VBO.h"
-
 #include <fstream>
 #include <unordered_map>
+#include <vector>
+
+#include "glm\glm.hpp"
+
+#include "Manager.h"
+#include "WorldSize.h"
+#include "ResPool.h" 
+#include "Chunk.h"
+#include "BlockLoader.h"
+#include "VBO.h"
 
 struct SetState {
 	glm::ivec3 pos_lw; 
@@ -64,26 +67,6 @@ struct ChunkFile {
 	std::fstream file_stream;
 };
 
-struct NoiseLayer { 
-	int height_base;
-	int height_min, height_max;
-
-	float seed_x, seed_y;
-
-	float scale_x, scale_y;
-	float scale_height;
-	std::vector< std::pair< float, float > > list_bounds;
-};
-
-struct Biome {
-	std::string name_biome;
-	NoiseLayer noise_biome;
-	NoiseLayer noise_lerp;
-	int id_block_surface;
-	int id_block_depth;
-	std::vector< NoiseLayer > list_noise;
-};
-
 struct ChunkNoise {
 	int cnt_using = 0;
 	int height[ WorldSize::Chunk::size_x ][ WorldSize::Chunk::size_z ];
@@ -129,10 +112,6 @@ private:
 	GLuint id_vbo_chunk_outline;
 	int size_chunk_outline;
 
-	// Block data containers
-	std::vector< Block > list_block_data;
-	std::unordered_map< std::string, int > map_block_data;
-
 	// Center chunk pos
 	glm::ivec3 pos_center_chunk_lw;
 
@@ -142,10 +121,6 @@ private:
 
 	// Chunk data container mutex
 	std::recursive_mutex mtx_chunks, mtx_dirty, mtx_edge, mtx_render;
-
-	// Biome Data
-	std::vector< Biome > list_biomes;
-	std::unordered_map< std::string, GLuint > map_biome_name;
 
 	// Chunk data containers
 	std::unordered_map< int, Handle< Chunk > > map_chunks;
@@ -240,21 +215,17 @@ private:
 	void chunk_save( Chunk & chunk );
 	void chunk_remove( Chunk & chunk );
 
-	// Block dictionary functions
-	void load_block_data( );
-	void load_block_mesh( );
-
 public:
-	ChunkMgr( Client & client );
+	ChunkMgr( );
 	~ChunkMgr( );
 
 public:
 	// General Public functions
-	void init( );
-	void update( );
-	void render( );
-	void end( );
-	void sec( );
+	void init( ) override;
+	void update( ) override;
+	void render( ) override;
+	void end( ) override;
+	void sec( ) override;
 
 	void next_skybox( );
 
@@ -289,14 +260,6 @@ public:
 	void explode_sphere( glm::vec3 const & pos_gw, int const size );
 	void explode_sphere_recur( glm::vec3 const & pos_gw, int const size, int depth );
 
-	// Block data accessor
-	Block & get_block_data( int const id );
-	Block & get_block_data( std::string const & name );
-	Block * get_block_data_safe( std::string const & name );
-	std::string const & get_block_string( int const id );
-
-	int get_num_blocks( );
-
 	void set_sun( int deg ) {
 		pos_deg_light = deg;
 	}
@@ -320,12 +283,12 @@ public:
 	inline void put_sort(
 		std::vector< std::pair< float, GLuint > > & list_sort,
 		glm::vec3 & pos_gw,
-		Block & block, FaceDirection face );
+		BlockLoader * block, FaceDirection face );
 
 	inline void put_sort(
 		std::vector< std::pair< float, GLuint > > & list_sort,
 		glm::vec3 & pos_gw, glm::vec3 & scale,
-		Block & block, FaceDirection face );
+		BlockLoader * block, FaceDirection face );
 };
 
 // Change to block pointer and face

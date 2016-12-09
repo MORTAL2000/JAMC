@@ -1,16 +1,15 @@
 #include "DisplayMgr.h"
-#include "Client.h"
-
-#include "ChunkMgr.h"
 
 #include <iostream>
+
+#include "ChunkMgr.h"
 
 Camera::Camera( ) :
 	pos_camera( 0, WorldSize::Chunk::size_y * 2 / 3, 0 ),
 	rot_camera( 0.0f, 180.0f, 0.0f ) { }
 
-DisplayMgr::DisplayMgr( Client & client ) :
-	Manager( client ),
+DisplayMgr::DisplayMgr( ) :
+	Manager( ),
 	is_vsync( false ),
 	is_limiter( true ) { }
 
@@ -22,8 +21,7 @@ void DisplayMgr::init( ) {
 	init_gl_window( 
 		glm::ivec2( 0, 0 ), 
 		glm::ivec2( 1920, 1080 ), 
-		32,
-		false );
+		32, false );
 
 	init_gl( );
 	set_proj( );
@@ -299,52 +297,6 @@ void DisplayMgr::toggle_limiter( ) {
 	is_limiter = !is_limiter;
 }
 
-/*
-void DisplayMgr::draw_string( glm::ivec2 const & pos, std::string const & string, glm::vec4 & color, int const size ) {
-	glPushMatrix( );
-
-	glLineWidth( size / 10.0f );
-	glTranslatef( pos.x, pos.y - size / 2, 0 );
-	glColor4f( color.r, color.g, color.b, color.a );
-	glScalef( size / 104.76f, size / 119.05f, 1.0f );
-	for( auto iter = string.begin( ); iter != string.end( ); iter++ ) {
-		if( *iter != ' ' )
-			glTranslatef( size, 0.0f, 0.0f );
-
-		glutStrokeCharacter( GLUT_STROKE_ROMAN, *iter );
-	}
-
-	glPopMatrix( );
-}
-*/
-
-/*
-void DisplayMgr::draw_string( Vect3< int > const & pos, std::string & string, glm::vec4 & color, int const size ) {
-	glPushMatrix();
-	glLineWidth( size / 10.0f );
-	glTranslatef( pos.x, pos.y, pos.z );
-	glColor4f( color.r, color.g, color.b, color.a );
-	glScalef( size / 104.76f, size / 119.05f, 1.0f );
-	for( auto iter = string.begin(); iter != string.end(); iter++ ) {
-		/*if( *iter == ' ' || *iter == '_' || *iter == '>' || *iter == '<' ) {
-		glScalef( 0.25f, 1.0f, 1.0f );
-		glutStrokeCharacter( GLUT_STROKE_ROMAN, *iter );
-		glScalef( 4.0f, 1.0f, 1.0f );
-		glTranslatef( 6.0f, 0.0f, 0.0f );
-		}
-		else {
-		glutStrokeCharacter( GLUT_STROKE_ROMAN, *iter );
-		glTranslatef( 6.0f, 0.0f, 0.0f );
-		}
-
-		glutStrokeCharacter( GLUT_STROKE_ROMAN, *iter );
-		//glTranslatef( 6.0f, 0.0f, 0.0f );
-	}
-	glPopMatrix();
-}
-*/
-
-
 void DisplayMgr::draw_key( int const size ) {
 	glPushMatrix( );
 
@@ -372,139 +324,6 @@ void DisplayMgr::draw_key( int const size ) {
 
 	glPopMatrix( );
 }
-
-/*
-void DisplayMgr::draw_skybox( glm::vec3 & pos_skybox, float const size ) {
-	client.texture_mgr.bind_skybox( );
-
-	glPushMatrix( );
-
-	glDisable( GL_CULL_FACE );
-	glDisable( GL_LIGHT0 );
-
-	glTranslatef( pos_skybox.x, pos_skybox.y, pos_skybox.z );
-	glRotatef( client.time_mgr.get_time( TimeStrings::GAME ) / TIME_MILLISEC, 0, 1, 0 );
-	//glTranslatef( -size / 2, -size / 2, -size / 2 );
-
-	glBegin( GL_QUADS );
-	glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
-	for( int i = 0; i < FD_Size; i++ ) {
-		auto face = ( FaceDirection ) i;
-		auto & face_uvs = client.texture_mgr.get_uvs_skybox( face );
-		auto & face_verts = verts_skybox[ face ];
-		for( int j = 0; j < 4; j++ ) {
-			glTexCoord2f( face_uvs[ j ][ 0 ], face_uvs[ j ][ 1 ] );
-			glVertex3f( face_verts[ j ].x * size, face_verts[ j ].y * size, face_verts[ j ].z * size );
-		}
-	}
-	glEnd( );
-
-	glEnable( GL_LIGHT0 );
-	glEnable( GL_CULL_FACE );
-
-	glPopMatrix( );
-}
-
-void DisplayMgr::draw_sun( glm::vec3 & pos_sun, float const size ) {
-	glm::vec3 delta_sun = camera.pos_camera - pos_sun;
-
-	glm::vec3 rot_sun( 
-		atan( -delta_sun.y / sqrt( pow( delta_sun.x, 2 ) + pow( delta_sun.z, 2 ) ) ) * 180 / PI,
-		atan2( delta_sun.x, delta_sun.z ) * 180 / PI,
-		0 );
-
-	auto & sun_uvs = client.texture_mgr.get_uvs_sun( );
-	auto & sun_verts = verts_skybox[ FaceDirection::FD_Front ];
-
-	glPushMatrix( );
-
-	glDisable( GL_LIGHTING );
-
-	glTranslatef( pos_sun.x, pos_sun.y, pos_sun.z );
-	glRotatef( rot_sun.y, 0, 1, 0 );
-	glRotatef( rot_sun.x, 1, 0, 0 );
-	glTranslatef( -size / 2, -size / 2, -size / 2 );
-	glColor4f( 0.8f, 0.8f, 0.8f, 1.0f );
-	glBegin( GL_QUADS );
-	for( int m = 0; m < 4; m++ ) {
-		glTexCoord2f(
-			sun_uvs[ m ][ 0 ],
-			sun_uvs[ m ][ 1 ] );
-
-		glVertex3f(
-			sun_verts[ m ].x * size,
-			sun_verts[ m ].y * size,
-			sun_verts[ m ].z * size );
-	}
-	glEnd( );
-
-	glEnable( GL_LIGHTING );
-
-	glPopMatrix( );
-}
-
-static int const size_graph_text = 12;
-
-void DisplayMgr::draw_record_graph( glm::ivec2 & pos_graph, glm::ivec2 & dim_graph, std::string const & name_record, float time_ref, int size_history ) { 
-	auto & record_graph = client.time_mgr.get_record( name_record );
-	if( size_history > record_graph.history.size( ) || size_history <= 0 ) { 
-		size_history = record_graph.history.size( );
-	}
-	if( size_history > 0 ) {
-		float size_bar = dim_graph.x / float( size_history );
-
-		float max_record = time_ref;
-
-		for( int i = 0; i < size_history; i++ ) {
-			if( record_graph.history[ i ] > max_record ) {
-				max_record = record_graph.history[ i ];
-			}
-		}
-		glPushMatrix( );
-
-		glTranslatef( pos_graph.x, pos_graph.y, 0 );
-
-		glBegin( GL_QUADS );
-
-		glColor4f( 0.5f, 0.5f, 0.5f, 0.7f );
-
-		glVertex2f( -1, -1 );
-		glVertex2f( dim_graph.x + 1, -1 );
-		glVertex2f( dim_graph.x + 1, dim_graph.y + 1 );
-		glVertex2f( -1, dim_graph.y + 1 );
-
-		glColor4f( 1.0f, 0.0f, 0.0f, 0.5f );
-
-		for( int i = 0; i < size_history; i++ ) {
-			glVertex2f( i * size_bar, 0 );
-			glVertex2f( i * size_bar + size_bar, 0 );
-			glVertex2f( i * size_bar + size_bar, dim_graph.y * ( record_graph.history[ i ] / max_record ) );
-			glVertex2f( i * size_bar, dim_graph.y * ( record_graph.history[ i ] / max_record ) );
-		}
-
-		glColor4f( 0.0f, 1.0f, 0.0f, 0.5f );
-
-		glVertex2f( 0, dim_graph.y * ( time_ref / max_record ) - 1 );
-		glVertex2f( dim_graph.x, dim_graph.y * ( time_ref / max_record ) - 1 );
-		glVertex2f( dim_graph.x, dim_graph.y * ( time_ref / max_record ) );
-		glVertex2f( 0, dim_graph.y * ( time_ref / max_record ) );
-
-		glEnd( );
-
-		glm::ivec2 pos_string = pos_graph;
-		pos_string.y += dim_graph.y - 1 - size_graph_text / 2;
-		pos_string.x += 1;
-
-		glPopMatrix( );
-
-		draw_string( pos_string, name_record, glm::vec4( 0.0f, 0.0f, 1.0f, 0.5f ), size_graph_text );
-	}
-}
-
-void DisplayMgr::draw_record_graph( glm::ivec2 & pos_graph, glm::ivec2 & dim_graph, std::string const & name_record, float time_ref ) {
-	draw_record_graph( pos_graph, dim_graph, name_record, time_ref, 0 );
-}
-*/
 
 void DisplayMgr::clear_buffers( ) {
 	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );

@@ -1,11 +1,5 @@
 #include "ChunkMgr.h"
 
-#include "Client.h"
-
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/gtx/norm.hpp"
-#include "tinyxml2-master\tinyxml2.h"
-
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
@@ -13,10 +7,16 @@
 #include <fstream>
 #include <limits>
 
-#include "simplexnoise.h"
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/norm.hpp"
+#include "tinyxml2-master\tinyxml2.h"
 
-ChunkMgr::ChunkMgr( Client & client ) :
-	Manager( client ),
+#include "Client.h"
+#include "simplexnoise.h"
+#include "BlockLoader.h"
+
+ChunkMgr::ChunkMgr( ) : 
+	Manager( ),
 	SHADOW_WIDTH( 4096 ), SHADOW_HEIGHT( 4096 ),
 	dim_shadow { 200.0f, 200.0f },
 	pos_shadow { 0.0f, 0.0f } { }
@@ -26,15 +26,13 @@ ChunkMgr::~ChunkMgr( ) { }
 void ChunkMgr::init( ) {
 	printf( "\n*** ChunkMgr ***\n" );
 
-	client.resource_mgr.reg_pool< Chunk >( WorldSize::World::num_chunks );
+	get_client( ).resource_mgr.reg_pool< Chunk >( WorldSize::World::num_chunks );
 
 	map_chunks.reserve( WorldSize::World::num_chunks );
 	map_dirty.reserve( WorldSize::World::num_chunks );
 	map_noise.reserve( ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) + 32 );
 
 	pos_center_chunk_lw = glm::ivec3( 0, 0, 0 );
-
-	load_block_data( );
 
 	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 6;
 	GLuint num_verts = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 8;
@@ -107,319 +105,6 @@ void ChunkMgr::init( ) {
 		}
 	}
 	*/
-
-	// Base Biome
-	{
-		Biome biome;
-		biome.name_biome = "Base";
-		biome.id_block_surface = get_block_data( "Grass" ).id;
-		biome.id_block_depth = get_block_data( "Dirt" ).id;
-
-		biome.list_noise.push_back( {
-			3,
-			-7, 13,
-			500.0f, 500.0f,
-			0.001f, 0.001f, 10.0f,
-			{ { -10.0f, 10.0f } }
-		} );
-
-		list_biomes.push_back( biome );
-		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
-	}
-
-	// Ice Shard Biome
-	{
-		Biome biome;
-		biome.name_biome = "Ice Shards";
-		biome.id_block_surface = get_block_data( "Ice" ).id;
-		biome.id_block_depth = get_block_data( "Ice" ).id;
-
-		biome.noise_biome = {
-			0,
-			-100, 100,
-			991.2f, 2991.2f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 100.0f } }
-		};
-
-		biome.noise_lerp = {
-			0,
-			-100, 100,
-			991.2f, 2991.2f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 52.5f } }
-		};
-
-		biome.list_noise.push_back( {
-			10,
-			10, 10,
-			0, 0,
-			0.1f, 0.1f, 0.0f,
-			{ { 0.0f, 0.0f } }
-		} );
-
-		biome.list_noise.push_back( {
-			0,
-			0, 15,
-			0, 0,
-			0.05f, 0.05f, 15.0f,
-			{ { -15.0f, 15.0f } }
-		} );
-
-		list_biomes.push_back( biome );
-		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
-	}
-
-	// Sand Plateau Biome
-	{
-		Biome biome;
-		biome.name_biome = "Sand Plateau";
-		biome.id_block_surface = get_block_data( "Sand" ).id;
-		biome.id_block_depth = get_block_data( "Sand" ).id;
-
-		biome.noise_biome = {
-			0,
-			-100, 100,
-			10101.2f, 10101.2f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 100.0f } }
-		};
-		biome.noise_lerp = {
-			0,
-			-100, 100,
-			10101.2f, 10101.2f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 55.0f } }
-		};
-
-		biome.list_noise.push_back( {
-			10,
-			0, 12,
-			10101.2f, 10101.2f,
-			0.01f, 0.01f, 10.0f,
-			{ { 0.0f, 10.0f } }
-		} );
-
-		biome.list_noise.push_back( {
-			10,
-			0, 12,
-			10101.2f, 10101.2f,
-			0.01f, 0.01f, 10.0f,
-			{ { 0.0f, 10.0f } }
-		} );
-
-		biome.list_noise.push_back( {
-			10,
-			0, 15,
-			10101.2f, 10101.2f,
-			0.01f, 0.01f, 10.0f,
-			{ { 2.5f, 10.0f } }
-		} );
-
-		biome.list_noise.push_back( {
-			10,
-			0, 17,
-			10101.2f, 10101.2f,
-			0.01f, 0.01f, 10.0f,
-			{ { 5.0f, 10.0f } }
-		} );
-
-		biome.list_noise.push_back( {
-			10,
-			0, 20,
-			10101.2f, 10101.2f,
-			0.01f, 0.01f, 10.0f,
-			{ { 7.5f, 10.0f } }
-		} );
-
-		list_biomes.push_back( biome );
-		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
-	}
-
-	// Cobblestone Chasm Biome
-	{
-		Biome biome;
-		biome.name_biome = "Cobblestone Chasm";
-		biome.id_block_surface = get_block_data( "Cobblestone" ).id;
-		biome.id_block_depth = get_block_data( "Cobblestone" ).id;
-
-		biome.noise_biome = {
-			0,
-			-100, 100,
-			1901.2f, 1101.2f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 100.0f } }
-		};
-		biome.noise_lerp = {
-			0,
-			-100, 100,
-			1901.2f, 1101.2f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 55.0f } }
-		};
-
-		biome.list_noise.push_back( {
-			0,
-			-6, 6,
-			1231.2f, 1231.2f,
-			0.01f, 0.01f, 6.0f,
-			{ { -6.0f, 6.0f } }
-		} );
-
-		biome.list_noise.push_back( {
-			30,
-			-30, 0,
-			234.2f, 234.2f,
-			0.03f, 0.009f, 60.0f,
-			{ { -60.0f, -30.0f } }
-		} );
-
-		list_biomes.push_back( biome );
-		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
-	}
-
-	// Grass Plateau Biome
-	{
-		Biome biome;
-		biome.name_biome = "Grass Plateau";
-		biome.id_block_surface = get_block_data( "Grass" ).id;
-		biome.id_block_depth = get_block_data( "Dirt" ).id;
-
-		biome.noise_biome = {
-			0,
-			-100, 100,
-			331.9f, 331.9f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 100.0f } }
-		};
-		biome.noise_lerp = {
-			0,
-			-100, 100,
-			331.9f, 331.9f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 55.0f } }
-		};
-
-		biome.list_noise.push_back( {
-			10,
-			0, 12,
-			10101.2f, 10101.2f,
-			0.01f, 0.01f, 10.0f,
-			{ { 0.0f, 10.0f } }
-		} );
-
-		biome.list_noise.push_back( {
-			10,
-			0, 12,
-			10101.2f, 10101.2f,
-			0.01f, 0.01f, 10.0f,
-			{ { 0.0f, 10.0f } }
-		} );
-
-		biome.list_noise.push_back( {
-			10,
-			0, 15,
-			10101.2f, 10101.2f,
-			0.01f, 0.01f, 10.0f,
-			{ { 2.5f, 10.0f } }
-		} );
-
-		biome.list_noise.push_back( {
-			10,
-			0, 17,
-			10101.2f, 10101.2f,
-			0.01f, 0.01f, 10.0f,
-			{ { 5.0f, 10.0f } }
-		} );
-
-		biome.list_noise.push_back( {
-			10,
-			0, 20,
-			10101.2f, 10101.2f,
-			0.01f, 0.01f, 10.0f,
-			{ { 7.5f, 10.0f } }
-		} );
-
-		list_biomes.push_back( biome );
-		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
-	}
-
-	// Grass Hill Biome
-	{
-		Biome biome;
-		biome.name_biome = "Grass Hill";
-		biome.id_block_surface = get_block_data( "Grass" ).id;
-		biome.id_block_depth = get_block_data( "Dirt" ).id;
-
-		biome.noise_biome = {
-			0,
-			-100, 100,
-			3031.9f, 3031.9f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 100.0f } }
-		};
-		biome.noise_lerp = {
-			0,
-			-100, 100,
-			3031.9f, 3031.9f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 55.0f } }
-		};
-
-		biome.list_noise.push_back( {
-			0,
-			-30, 30,
-			101.2f, 101.2f,
-			0.008f, 0.008f, 30.0f,
-			{ { -30.0f, 30.0f } }
-		} );
-
-		list_biomes.push_back( biome );
-		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
-	}
-
-	// Ocean
-	{
-		Biome biome;
-		biome.name_biome = "Ocean";
-		biome.id_block_surface = get_block_data( "Sand" ).id;
-		biome.id_block_depth = get_block_data( "Sand" ).id;
-
-		biome.noise_biome = {
-			0,
-			-100, 100,
-			6031.9f, 6031.9f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 100.0f } }
-		};
-		biome.noise_lerp = {
-			0,
-			-100, 100,
-			6031.9f, 6031.9f,
-			0.001f, 0.001f, 100.0f,
-			{ { 50.0f, 65.0f } }
-		};
-
-		biome.list_noise.push_back( {
-			-5,
-			-30, -3,
-			6631.9f, 6631.9f,
-			0.01f, 0.01f, 30.0f,
-			{ { -30.0f, 30.0f } }
-		} );
-
-		biome.list_noise.push_back( {
-			-10,
-			-50, -5,
-			6931.9f, 6931.9f,
-			0.01f, 0.01f, 40.0f,
-			{ { -40.0f, 40.0f } }
-		} );
-
-
-		list_biomes.push_back( biome );
-		map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
-	}
 
 	is_chunk_debug = false;
 	is_shadow_debug = false;
@@ -789,7 +474,7 @@ void ChunkMgr::render_pass_shadow( ) {
 		//for( GLuint i = 0; i < num_cascades; i++ ) {
 			mat_view_light = glm::lookAt( 
 				client.display_mgr.camera.pos_camera, 
-				client.display_mgr.camera.pos_camera - glm::vec3( client.chunk_mgr.light_data.sun_data.pos_sun ),
+				client.display_mgr.camera.pos_camera - glm::vec3( light_data.sun_data.pos_sun ),
 				glm::vec3( 0.0f, 1.0f, 0.0f ) );
 
 			float xn = zclip[ i ] * tanh_hfov;
@@ -887,14 +572,14 @@ void ChunkMgr::render_pass_shadow( ) {
 			client.texture_mgr.bind_texture_array( 0, id_blocks );
 
 			glDisable( GL_BLEND );
-			sm_terrain.render_range( client, 0, idx_solid );
+			sm_terrain.render_range( 0, idx_solid );
 			glEnable( GL_BLEND );
 
 			client.texture_mgr.bind_program( "SMShadowMapTrans" );
 			glUniformMatrix4fv( idx_mat_light_trans, 1, GL_FALSE, glm::value_ptr( mat_ortho_light[ i ] ) );
 
 			glDisable( GL_CULL_FACE );
-			sm_terrain.render_range( client, idx_solid, idx_trans - idx_solid );
+			sm_terrain.render_range( idx_solid, idx_trans - idx_solid );
 			glEnable( GL_CULL_FACE );
 
 			client.entity_mgr.render( );
@@ -930,7 +615,7 @@ void ChunkMgr::render_pass_solid( ) {
 	client.texture_mgr.bind_texture_array( 0, client.texture_mgr.get_texture_id( "Blocks" ) );
 
 	//glDisable( GL_CULL_FACE );
-	sm_terrain.render_range( client, 0, idx_solid );
+	sm_terrain.render_range( 0, idx_solid );
 	//glEnable( GL_CULL_FACE );
 }
 
@@ -944,7 +629,7 @@ void ChunkMgr::render_pass_trans( ) {
 
 	glDisable( GL_CULL_FACE );
 
-	GL_CHECK( sm_terrain.render_range( client, idx_solid, idx_trans - idx_solid ) );
+	GL_CHECK( sm_terrain.render_range( idx_solid, idx_trans - idx_solid ) );
 	//GL_CHECK( shared_mesh_inclusive.render( client ) );
 
 	glEnable( GL_CULL_FACE );
@@ -1527,13 +1212,13 @@ void ChunkMgr::chunk_init( Chunk & chunk ) {
 			//float noise_biome;
 			float noise, noise_lerp, noise_total;
 
-			auto & biome_base = list_biomes[ 0 ];
+			auto biome_base = client.biome_mgr.get_biome( 0 );
 
 			for( int i = 0; i < WorldSize::Chunk::size_x; i++ ) {
 				for( int j = 0; j < WorldSize::Chunk::size_z; j++ ) {
 					noise_total = 0;
 
-					for( auto & layer_noise : biome_base.list_noise ) { 
+					for( auto & layer_noise : biome_base->list_noise ) { 
 						noise = raw_noise_2d( 
 							layer_noise.seed_x + ( chunk.pos_gw.x + i ) * layer_noise.scale_x,
 							layer_noise.seed_y + ( chunk.pos_gw.z + j ) * layer_noise.scale_y ) *
@@ -1557,9 +1242,9 @@ void ChunkMgr::chunk_init( Chunk & chunk ) {
 					chunk.ptr_noise->biome[ i ][ j ] = 0;
 					chunk.ptr_noise->height[ i ][ j ] = noise_total;
 
-					for( GLuint idx_biome = 1; idx_biome < list_biomes.size( ); ++idx_biome ) {
-						auto & biome = list_biomes[ idx_biome ];
-						auto & layer_biome = biome.noise_biome;
+					for( GLuint idx_biome = 1; idx_biome < client.biome_mgr.get_num_biomes( ); ++idx_biome ) {
+						auto biome = client.biome_mgr.get_biome( idx_biome );
+						auto & layer_biome = biome->noise_biome;
 
 						noise = raw_noise_2d(
 							layer_biome.seed_x + ( chunk.pos_gw.x + i ) * layer_biome.scale_x,
@@ -1579,7 +1264,7 @@ void ChunkMgr::chunk_init( Chunk & chunk ) {
 							noise_total = 0;
 
 
-							for( auto & layer_height : biome.list_noise ) { 
+							for( auto & layer_height : biome->list_noise ) { 
 								noise = raw_noise_2d(
 									layer_height.seed_x + ( chunk.pos_gw.x + i ) * layer_height.scale_x,
 									layer_height.seed_y + ( chunk.pos_gw.z + j ) * layer_height.scale_y ) *
@@ -1599,7 +1284,7 @@ void ChunkMgr::chunk_init( Chunk & chunk ) {
 								}
 							}
 
-							auto & layer_lerp = biome.noise_lerp;
+							auto & layer_lerp = biome->noise_lerp;
 							noise_lerp = 1.0f;
 
 							noise = raw_noise_2d(
@@ -1793,8 +1478,8 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Load, false );
 
-		Block & block_water = get_block_data( "Water" );
-		Block & block_cobble = get_block_data( "Cobblestone" );
+		auto block_water = client.block_mgr.get_block_loader( "Water" );
+		auto block_cobble = client.block_mgr.get_block_loader( "Cobblestone" );
 
 		int noise_height = 0;
 		int noise_biome = 0;
@@ -1805,28 +1490,28 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 			for( int k = 0; k < WorldSize::Chunk::size_z; k++ ) {
 				noise_height = chunk.ptr_noise->height[ i ][ k ];
 				noise_biome = chunk.ptr_noise->biome[ i ][ k ];
-				auto & biome = list_biomes[ noise_biome ];
+				auto biome = client.biome_mgr.get_biome( noise_biome );
 				noise_cobble = 10 + raw_noise_2d( ( chunk.pos_gw.x + i ) * 0.01f, ( chunk.pos_gw.z + k ) * 0.01f ) * 5.0f;
 
 				for( int j = 0; j < WorldSize::Chunk::size_y; j++ ) {
 					if( chunk.pos_gw.y + j < noise_height ) {
 						if( chunk.pos_gw.y + j < noise_height - noise_cobble ) {
-							chunk.block_set.set_data( i, j, k, block_cobble.id );
+							chunk.block_set.set_data( i, j, k, block_cobble->id );
 							//chunk.id_blocks[ i ][ j ][ k ] = block_cobble.id;
 						}
 						else {
-							chunk.block_set.set_data( i, j, k, biome.id_block_depth );
+							chunk.block_set.set_data( i, j, k, biome->id_block_depth );
 							//chunk.id_blocks[ i ][ j ][ k ] = biome.id_block_depth;
 						}
 					}
 					else if( chunk.pos_gw.y + j == noise_height ) {
-						chunk.block_set.set_data( i, j, k, biome.id_block_surface );
+						chunk.block_set.set_data( i, j, k, biome->id_block_surface );
 						//chunk.id_blocks[ i ][ j ][ k ] = biome.id_block_surface;
 					}
 					else {
 						if( chunk.pos_gw.y + j <= WorldSize::World::level_sea &&
-							noise_biome != map_biome_name[ "Cobblestone Chasm" ] ) {
-							chunk.block_set.set_data( i, j, k, block_water.id );
+							noise_biome != client.biome_mgr.get_biome_id( "Cobblestone Chasm" ) ) {
+							chunk.block_set.set_data( i, j, k, block_water->id );
 							//chunk.id_blocks[ i ][ j ][ k ] = block_water.id;
 						}
 						else {
@@ -1867,16 +1552,16 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 
 		SetState state;
 		state.iter = map_chunks.end( );
-		auto & block_pumpkin = get_block_data( "Pumpkin" );
-		auto & block_gleaves = get_block_data( "Leaves Light Green" );
-		auto & block_dgleaves = get_block_data( "Leaves Green" );
-		auto & block_rleaves = get_block_data( "Leaves Red" );
-		auto & block_bleaves = get_block_data( "Leaves Brown" );
-		auto & block_grass_blade = get_block_data( "Grass Blade" );
+		auto block_pumpkin = client.block_mgr.get_block_loader( "Pumpkin" );
+		auto block_gleaves = client.block_mgr.get_block_loader( "Leaves Light Green" );
+		auto block_dgleaves = client.block_mgr.get_block_loader( "Leaves Green" );
+		auto block_rleaves = client.block_mgr.get_block_loader( "Leaves Red" );
+		auto block_bleaves = client.block_mgr.get_block_loader( "Leaves Brown" );
+		auto block_grass_blade = client.block_mgr.get_block_loader( "Grass Blade" );
 
-		auto & biome_base = map_biome_name[ "Base" ];
-		auto & biome_grass_hill = map_biome_name[ "Grass Hill" ];
-		auto & biome_grass_plateau = map_biome_name[ "Grass Plateau" ];
+		auto biome_base = client.biome_mgr.get_biome_id( "Base"  );
+		auto biome_grass_hill = client.biome_mgr.get_biome_id( "Grass Hill" );
+		auto biome_grass_plateau = client.biome_mgr.get_biome_id( "Grass Plateau" );
 
 		for( int i = 0; i < WorldSize::Chunk::size_x; i++ ) {
 			for( int j = 0; j < WorldSize::Chunk::size_z; j++ ) {
@@ -1887,6 +1572,7 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 					if( chunk.ptr_noise->biome[ i ][ j ] == biome_base ||
 						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_hill ||
 						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_plateau ) {
+
 						if( rand( ) % 1000 < 10 ) {
 							set_tree(
 								glm::ivec3( chunk.pos_gw.x, 0, chunk.pos_gw.z ) +
@@ -1898,28 +1584,28 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 							set_block(
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
-								block_gleaves.id );
+								block_gleaves->id );
 						}
 						else if( rand( ) % 1000 < 10 ) {
 							set_block(
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
-								block_dgleaves.id );
+								block_dgleaves->id );
 						}
 						else if( rand( ) % 1000 < 10 ) {
 							set_block( 
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
-								block_rleaves.id );
+								block_rleaves->id );
 						}
 						else if( chunk.ptr_noise->envir[ i ][ j ] > 0 && rand( ) % 1000 < chunk.ptr_noise->envir[ i ][ j ] * 100 ) {
 							set_block(
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
-								block_grass_blade.id );
+								block_grass_blade->id );
 						}
 					}
-					else if( chunk.ptr_noise->biome[ i ][ j ] == map_biome_name[ "Sand Plateau" ] ) {
+					else if( chunk.ptr_noise->biome[ i ][ j ] == client.biome_mgr.get_biome_id( "Sand Plateau" ) ) {
 						if( rand( ) % 1000 < 10 ) {
 							set_tree(
 								glm::ivec3( chunk.pos_gw.x, 0, chunk.pos_gw.z ) +
@@ -1931,13 +1617,13 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 							set_block(
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
-								block_pumpkin.id );
+								block_pumpkin->id );
 						}
 						else if( rand( ) % 1000 < 10 ) {
 							set_block(
 								glm::ivec3( chunk.pos_gw.x + i, chunk.ptr_noise->height[ i ][ j ] + 1, chunk.pos_gw.z + j ),
 								state,
-								block_bleaves.id );
+								block_bleaves->id );
 						}
 					}
 				}
@@ -2010,12 +1696,12 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 		std::array< glm::ivec3, FaceDirection::FD_Size > list_pos_last;
 		std::array< std::pair< int, int >, FaceDirection::FD_Size > list_id_last;
 		std::array< int, FaceDirection::FD_Size > list_cnt_last;
-		std::array< Block *, FaceDirection::FD_Size > list_block_last;
+		std::array< BlockLoader *, FaceDirection::FD_Size > list_block_last;
 
 		FaceDirection dir_face;
 
-		Block * block_curr = nullptr;
-		Block * block_adj = nullptr;
+		BlockLoader * block_curr = nullptr;
+		BlockLoader * block_adj = nullptr;
 
 		Chunk * chunk_adj;
 
@@ -2055,7 +1741,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							goto list_x_solid;
 						}
 
-						block_curr = &get_block_data( id_curr );
+						block_curr = client.block_mgr.get_block_loader( id_curr );
 
 						if( block_curr->is_trans ) {
 							for( FaceDirection iter_face : list_face_z ) {
@@ -2120,7 +1806,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 								continue;
 							}
 							else {
-								block_adj = &get_block_data( id_adj );
+								block_adj = client.block_mgr.get_block_loader( id_adj );
 
 								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
 									block_curr->is_visible( *block_adj ) ) {
@@ -2170,7 +1856,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							continue;
 						}
 
-						block_curr = &get_block_data( id_curr );
+						block_curr = client.block_mgr.get_block_loader( id_curr );
 
 						if( block_curr->is_trans ) {
 							for( FaceDirection iter_face : list_face_x ) {
@@ -2229,7 +1915,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 								continue;
 							}
 							else {
-								block_adj = &get_block_data( id_adj );
+								block_adj = client.block_mgr.get_block_loader( id_adj );
 
 								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
 									block_curr->is_visible( *block_adj ) ) {
@@ -2333,7 +2019,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							continue;
 						}
 
-						block_curr = &get_block_data( id_curr );
+						block_curr = client.block_mgr.get_block_loader( id_curr );
 
 						if( !block_curr->is_trans ) {
 							continue;
@@ -2377,10 +2063,10 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 									block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ] );
 
 								put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + pos_curr ),
-									*block_curr, ( FaceDirection ) dir_face );
+									block_curr, ( FaceDirection ) dir_face );
 							}
 							else {
-								block_adj = &get_block_data( id_adj );
+								block_adj = client.block_mgr.get_block_loader( id_adj );
 
 								if( block_adj->occlude_lookup[ Directional::get_face_opposite( dir_face ) ].size( ) == 0 ||
 									block_curr->is_visible( *block_adj ) ) {
@@ -2392,7 +2078,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 										block_curr->faces[ block_curr->occlude_lookup[ dir_face ][ 0 ] ] );
 
 									put_sort( buffer.list_sort, glm::vec3( chunk.pos_gw + pos_curr ),
-										*block_curr, ( FaceDirection ) dir_face );
+										block_curr, ( FaceDirection ) dir_face );
 								}
 							}
 						}
@@ -2661,348 +2347,6 @@ void ChunkMgr::chunk_remove( Chunk & chunk ) {
 
 		chunk.is_working = false;
 	} );
-}
-
-void ChunkMgr::load_block_data( ) {
-	using namespace std::tr2::sys;
-	std::ostringstream out;
-	path path_base( "./Blocks" );
-	tinyxml2::XMLDocument doc;
-	tinyxml2::XMLElement const * ele_block;
-	tinyxml2::XMLElement const * ele_face;
-	tinyxml2::XMLElement const * ele_data;
-	tinyxml2::XMLElement const * ele_var;
-
-	printTabbedLine( 1, "Loading blocks..." );
-
-	for( directory_iterator iter_blocks( path_base ); iter_blocks != directory_iterator( ); ++iter_blocks ) { 
-		if( iter_blocks->path( ).extension( ).string( ) != ".xml" ) { 
-			continue;
-		}
-
-		Block block;
-
-		doc.LoadFile( iter_blocks->path( ).string( ).c_str( ) );
-		if( doc.Error( ) ) { 
-			std::cout << "ERROR! Error reading: " << iter_blocks->path( ).string( ) << std::endl;
-			doc.PrintError( );
-			continue;
-		}
-		ele_block = doc.FirstChildElement( "Block" );
-
-		ele_data = ele_block->FirstChildElement( "Name" );
-		if( ele_data != nullptr ) {
-			block.name = ele_data->GetText( );
-		}
-
-		ele_data = ele_block->FirstChildElement( "Texture" );
-		if( ele_data != nullptr ) {
-			block.texture = ele_data->GetText( );
-			block.id_texture = client.texture_mgr.get_texture_id( block.texture );
-		}
-
-		ele_data = ele_block->FirstChildElement( "Transparent" );
-		if( ele_data != nullptr ) {
-			ele_data->QueryBoolText( &block.is_trans );
-		}
-
-		ele_data = ele_block->FirstChildElement( "Color" );
-		if( ele_data != nullptr ) {
-			ele_var = ele_data->FirstChildElement( "R" );
-			if( ele_var != nullptr ) {
-				ele_var->QueryFloatText( &block.color.r );
-			}
-
-			ele_var = ele_data->FirstChildElement( "G" );
-			if( ele_var != nullptr ) {
-				ele_var->QueryFloatText( &block.color.g );
-			}
-
-			ele_var = ele_data->FirstChildElement( "B" );
-			if( ele_var != nullptr ) {
-				ele_var->QueryFloatText( &block.color.b );
-			}
-
-			ele_var = ele_data->FirstChildElement( "A" );
-			if( ele_var != nullptr ) {
-				ele_var->QueryFloatText( &block.color.a );
-			}
-		}
-
-		ele_data = ele_block->FirstChildElement( "Collider" );
-		if( ele_data != nullptr ) {
-			block.is_coll = true;
-		}
-
-		ele_face = ele_block->FirstChildElement( "Face" );
-		while( ele_face != nullptr ) { 
-			Face face;
-
-			ele_data = ele_face->FirstChildElement( "Offset" );
-			if( ele_data != nullptr ) { 
-				ele_var = ele_data->FirstChildElement( "X" );
-				if( ele_var != nullptr ) { 
-					ele_var->QueryFloatText( &face.offset.x );
-				}
-
-				ele_var = ele_data->FirstChildElement( "Y" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.offset.y );
-				}
-
-				ele_var = ele_data->FirstChildElement( "Z" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.offset.z );
-				}
-			}
-
-			ele_data = ele_face->FirstChildElement( "Dimension" );
-			if( ele_data != nullptr ) {
-				ele_var = ele_data->FirstChildElement( "X" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.dim.x );
-				}
-
-				ele_var = ele_data->FirstChildElement( "Y" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.dim.y );
-				}
-
-				ele_var = ele_data->FirstChildElement( "Z" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.dim.z );
-				}
-			}
-
-			ele_data = ele_face->FirstChildElement( "Rotation" );
-			if( ele_data != nullptr ) {
-				ele_var = ele_data->FirstChildElement( "X" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.rot.x );
-				}
-
-				ele_var = ele_data->FirstChildElement( "Y" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.rot.y );
-				}
-
-				ele_var = ele_data->FirstChildElement( "Z" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.rot.z );
-				}
-			}
-
-			ele_data = ele_face->FirstChildElement( "Color" );
-			if( ele_data != nullptr ) {
-				ele_var = ele_data->FirstChildElement( "R" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.color.r );
-				}
-
-				ele_var = ele_data->FirstChildElement( "G" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.color.g );
-				}
-
-				ele_var = ele_data->FirstChildElement( "B" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.color.b );
-				}
-
-				ele_var = ele_data->FirstChildElement( "A" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.color.a );
-				}
-			}
-
-			ele_data = ele_face->FirstChildElement( "Occlude" );
-			if( ele_data != nullptr ) {
-				std::string text( ele_data->GetText( ) );
-
-				if( text == "Front" ) {
-					face.occlude = FaceDirection::FD_Front;
-				}
-				else if( text == "Back" ) {
-					face.occlude = FaceDirection::FD_Back;
-				}
-				else if( text == "Left" ) {
-					face.occlude = FaceDirection::FD_Left;
-				}
-				else if( text == "Right" ) {
-					face.occlude = FaceDirection::FD_Right;
-				}
-				else if( text == "Up" ) {
-					face.occlude = FaceDirection::FD_Up;
-				}
-				else if( text == "Down" ) {
-					face.occlude = FaceDirection::FD_Down;
-				}
-				else {
-					face.occlude = FaceDirection::FD_Size;
-				}
-			}
-
-			ele_data = ele_face->FirstChildElement( "SubTexture" );
-			if( ele_data != nullptr ) {
-				face.subtex = ele_data->GetText( );
-				face.id_subtex = client.texture_mgr.get_texture_layer( block.texture, face.subtex );
-			}
-
-			ele_data = ele_face->FirstChildElement( "UV" );
-			int cnt = 0;
-			while( ele_data != nullptr && cnt < 4 ) { 
-				ele_var = ele_data->FirstChildElement( "X" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.uvs[ cnt ].x );
-				}
-
-				ele_var = ele_data->FirstChildElement( "Y" );
-				if( ele_var != nullptr ) {
-					ele_var->QueryFloatText( &face.uvs[ cnt ].y );
-				}
-
-				cnt++;
-				ele_data = ele_data->NextSiblingElement( "UV" );
-			}
-
-			block.faces.emplace_back( face );
-
-			ele_face = ele_face->NextSiblingElement( "Face" );
-		}
-
-		for( int i = 0; i < block.faces.size( ); ++i ) {
-			auto & face = block.faces[ i ];
-
-			if( face.occlude != FaceDirection::FD_Size ) { 
-				block.occlude_lookup[ face.occlude ].emplace_back( i );
-			}
-			else { 
-				block.include_lookup.emplace_back( i );
-			}
-
-			glm::vec3 dim_h = face.dim / 2.0f;
-			glm::vec3 pos_c = { 0.5f, 0.5f, 0.5f };
-			glm::mat4 rotate_z = glm::rotate( glm::mat4( 1.0f ), glm::radians( face.rot.z ), glm::vec3( 0, 0, 1 ) );
-			glm::mat4 rotate_y = glm::rotate( glm::mat4( 1.0f ), glm::radians( face.rot.y ), glm::vec3( 0, 1, 0 ) );
-			glm::mat4 rotate_x = glm::rotate( glm::mat4( 1.0f ), glm::radians( face.rot.x ), glm::vec3( 1, 0, 0 ) );
-
-			face.verts[ 0 ] = { dim_h.x, -dim_h.y, 0 };
-			face.verts[ 1 ] = { -dim_h.x, -dim_h.y, 0 };
-			face.verts[ 2 ] = { -dim_h.x, dim_h.y, 0 };
-			face.verts[ 3 ] = { dim_h.x, dim_h.y, 0 };
-
-			face.norms[ 0 ] = { 0, 0, -1 };
-			face.norms[ 1 ] = { 0, 0, -1 };
-			face.norms[ 2 ] = { 0, 0, -1 };
-			face.norms[ 3 ] = { 0, 0, -1 };
-
-			for( auto & vert : face.verts ) { 
-				vert = glm::vec3( rotate_z * glm::vec4( vert, 0 ) );
-				vert = glm::vec3( rotate_y * glm::vec4( vert, 0 ) );
-				vert = glm::vec3( rotate_x * glm::vec4( vert, 0 ) );
-				vert = vert + pos_c + face.offset;
-			}
-
-			for( auto & norm : face.norms ) { 
-				norm = glm::vec3( rotate_z * glm::vec4( norm, 0 ) );
-				norm = glm::vec3( rotate_y * glm::vec4( norm, 0 ) );
-				norm = glm::vec3( rotate_x * glm::vec4( norm, 0 ) );
-				norm = glm::normalize( norm );
-			}
-
-			/*glm::vec2 dim_dx = { 1.0f, 1.0f };
-			glm::ivec2 const & dim = client.texture_mgr.get_texture( block.texture )->dim;
-			dim_dx /= dim;
-			int num_x, num_y;*/
-			
-			for( auto & uv : face.uvs ) {
-				/*num_x = std::floor( uv.x / dim_dx.x );
-				num_y = std::floor( uv.y / dim_dx.y );
-
-				if( num_x == 0 ) num_x = 1;
-				if( num_y == 0 ) num_y = 1;
-
-				uv.x = num_x * dim_dx.x - dim_dx.x / 2.0f;
-				uv.y = num_y * dim_dx.y - dim_dx.y / 2.0f;
-
-
-				std::cout << "Uv: num_x: " << num_x << " num_y: " << num_y << std::endl;
-				std::cout << "dim_dx: " << Directional::print_vec( dim_dx ) << " uv: " << Directional::print_vec( uv ) << std::endl;*/
-
-				uv.z = face.id_subtex;
-			} 
-		}
-
-		block.id = ( int ) list_block_data.size( );
-		list_block_data.emplace_back( block );
-		map_block_data.insert( { block.name, ( GLuint ) list_block_data.size( ) - 1 } );
-	}
-	
-	printTabbedLine( 1, out.str( ) );
-}
-
-void ChunkMgr::load_block_mesh( ) { 
-	for( auto & block : list_block_data ) { 
-		SMChunkIncl::SMHandle handle;
-
-		handle.clear( );
-
-		sm_inclusive.request_handle( handle );
-
-		handle.push_set( SMChunkIncl::SMGSet(
-			SMChunkIncl::TypeGeometry::TG_Triangles,
-			glm::mat4( 1.0f ),
-			client.texture_mgr.get_program_id( "SMTerrain" ),
-			client.texture_mgr.get_texture_id( "Blocks" ) ) );
-
-		handle.request_buffer( );
-
-		GLuint idx_inds = 0;
-
-		for( auto idx_face : block.include_lookup ) { 
-			auto & face = block.faces[ idx_face ];
-			handle.push_verts( { 
-				{
-					{ face.verts[ 0 ].x, face.verts[ 0 ].y, face.verts[ 0 ].z },
-					{ block.color.r * face.color.r * 255, block.color.g * face.color.g * 255, block.color.b * face.color.b * 255, block.color.a * face.color.a * 255 },
-					{ face.norms[ 0 ].x, face.norms[ 0 ].y, face.norms[ 0 ].z },
-					{ face.uvs[ 0 ].x, face.uvs[ 0 ].y, face.uvs[ 0 ].z }
-				},
-				{
-					{ face.verts[ 1 ].x, face.verts[ 1 ].y, face.verts[ 1 ].z },
-					{ block.color.r * face.color.r * 255, block.color.g * face.color.g * 255, block.color.b * face.color.b * 255, block.color.a * face.color.a * 255 },
-					{ face.norms[ 1 ].x, face.norms[ 1 ].y, face.norms[ 1 ].z },
-					{ face.uvs[ 1 ].x, face.uvs[ 1 ].y, face.uvs[ 1 ].z }
-				},
-				{
-					{ face.verts[ 2 ].x, face.verts[ 2 ].y, face.verts[ 2 ].z },
-					{ block.color.r * face.color.r * 255, block.color.g * face.color.g * 255, block.color.b * face.color.b * 255, block.color.a * face.color.a * 255 },
-					{ face.norms[ 2 ].x, face.norms[ 2 ].y, face.norms[ 2 ].z },
-					{ face.uvs[ 2 ].x, face.uvs[ 2 ].y, face.uvs[ 2 ].z }
-				},
-				{
-					{ face.verts[ 3 ].x, face.verts[ 3 ].y, face.verts[ 3 ].z },
-					{ block.color.r * face.color.r * 255, block.color.g * face.color.g * 255, block.color.b * face.color.b * 255, block.color.a * face.color.a * 255 },
-					{ face.norms[ 3 ].x, face.norms[ 3 ].y, face.norms[ 3 ].z },
-					{ face.uvs[ 3 ].x, face.uvs[ 3 ].y, face.uvs[ 3 ].z }
-				}
-			} );
-
-			handle.push_inds( { 
-				idx_inds + 0, idx_inds + 1, idx_inds + 2, idx_inds + 2, idx_inds + 3, idx_inds + 0,
-			} );
-
-			idx_inds += 4;
-		}
-
-		handle.finalize_set( );
-
-		handle.submit_buffer( );
-
-		handle.release_buffer( );
-
-		list_handles_inclusive.push_back( handle );
-	}
 }
 
 void ChunkMgr::toggle_chunk_debug( ) { 
@@ -3305,8 +2649,8 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		int const height_min = 6, height_max = 10;
 		int const radius_min = 3, radius_max = 6;
 
-		auto & block_leaves = get_block_data( "Leaves Light Green" );
-		auto & block_log = get_block_data( "Log" );
+		auto block_leaves = client.block_mgr.get_block_loader( "Leaves Light Green" );
+		auto block_log = client.block_mgr.get_block_loader( "Log" );
 		int tree_height;
 		int tree_radius;
 
@@ -3325,20 +2669,20 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		set_sphere( 
 			pos_gw + glm::ivec3( 0, tree_height, 0 ), state, 
 			tree_radius, 
-			block_leaves.id );
+			block_leaves->id );
 
 		set_rect( 
 			pos_gw, state, 
 			glm::ivec3( 1, tree_height, 1 ), 
-			block_log.id );
+			block_log->id );
 	}
 	else if( id == 1 ) {
 		float noise_scale = 0.006f;
 		int const height_min = 10, height_max = 16;
 		int const radius_min = 5, radius_max = 9;
 
-		auto & block_leaves = get_block_data( "Leaves Green" );
-		auto & block_log = get_block_data( "Birch Log" );
+		auto block_leaves = client.block_mgr.get_block_loader( "Leaves Green" );
+		auto block_log = client.block_mgr.get_block_loader( "Birch Log" );
 
 		float scale_radius;
 		int tree_height;
@@ -3361,21 +2705,21 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 			set_ellipsoid( 
 				pos_gw + glm::ivec3( 0, 2 + i, 0 ), state, 
 				glm::ivec3( tree_radius * scale_radius, 1, tree_radius * scale_radius ), 
-				block_leaves.id );
+				block_leaves->id );
 		}
 
 		set_rect( 
 			pos_gw, state, 
 			glm::ivec3( 1, tree_height, 1 ), 
-			block_log.id );
+			block_log->id );
 	}
 	else if( id == 2 ) {
 		float noise_scale = 0.006f;
 		int const height_min = 12, height_max = 18;
 		int const radius_min = 4, radius_max = 8;
 
-		auto & block_leaves = get_block_data( "Leaves Red" );
-		auto & block_log = get_block_data( "Birch Log" );
+		auto block_leaves = client.block_mgr.get_block_loader( "Leaves Red" );
+		auto block_log = client.block_mgr.get_block_loader( "Birch Log" );
 
 		int tree_height;
 		int tree_radius;
@@ -3396,19 +2740,19 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 			set_ellipsoid(
 				pos_gw + glm::ivec3( 0, i, 0 ), state,
 				glm::ivec3( tree_radius, 4, tree_radius ),
-				block_leaves.id );
+				block_leaves->id );
 		}
 
 		set_rect( 
 			pos_gw, state, 
 			glm::ivec3( 1, tree_height, 1 ), 
-			block_log.id );
+			block_log->id );
 	}
 	else if( id == 3 ) { 
 		float noise_scale = 0.006f;
 		int const height_min = 3, height_max = 6;
 
-		auto & block_log = get_block_data( "Cactus" );
+		auto block_log = client.block_mgr.get_block_loader( "Cactus" );
 
 		int tree_height;
 
@@ -3421,15 +2765,15 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 		set_rect(
 			pos_gw, state,
 			glm::ivec3( 1, tree_height, 1 ),
-			block_log.id );
+			block_log->id );
 	}
 	else if( id == 4 ) { 
 		float noise_scale = 0.006f;
 		int const height_min = 10, height_max = 16;
 		int const radius_min = 5, radius_max = 9;
 
-		auto & block_leaves = get_block_data( "Leaves Brown" );
-		auto & block_log = get_block_data( "Birch Log" );
+		auto block_leaves = client.block_mgr.get_block_loader( "Leaves Brown" );
+		auto block_log = client.block_mgr.get_block_loader( "Birch Log" );
 
 		float scale_radius;
 		int tree_height;
@@ -3453,14 +2797,14 @@ void ChunkMgr::set_tree( glm::ivec3 const & pos_gw, SetState & state, int const 
 				set_ellipsoid(
 					pos_gw + glm::ivec3( 0, 2 + i, 0 ), state,
 					glm::ivec3( tree_radius * scale_radius, 1, tree_radius * scale_radius ),
-					block_leaves.id );
+					block_leaves->id );
 			}
 		}
 
 		set_rect(
 			pos_gw, state,
 			glm::ivec3( 1, tree_height, 1 ),
-			block_log.id );
+			block_log->id );
 	}
 }
 
@@ -3472,8 +2816,8 @@ void ChunkMgr::explode_sphere_recur( glm::vec3 const & pos_gw, int const size, i
 	glm::ivec3 pos_check;
 	glm::vec3 vec_fwd;
 	int id_curr = 0;
-	auto & block_water = get_block_data( "Water" );
-	auto & block_tnt = get_block_data( "Tnt" );
+	auto block_water = client.block_mgr.get_block_loader( "Water" );
+	auto block_tnt = client.block_mgr.get_block_loader( "Tnt" );
 
 	depth++;
 
@@ -3488,12 +2832,12 @@ void ChunkMgr::explode_sphere_recur( glm::vec3 const & pos_gw, int const size, i
 				vec_fwd = glm::normalize( vec_fwd );
 				id_curr = get_block( pos_gw + glm::vec3( pos_check ) );
 
-				if( id_curr == block_tnt.id ) {
+				if( id_curr == block_tnt->id ) {
 					client.entity_mgr.entity_add(
 						"Tnt",
-						[ id_curr, pos_gw, pos_check ] ( Client & client, Entity & entity ) {
+						[ &client = client, id_curr, pos_gw, pos_check ] ( Entity & entity ) {
 							entity.id = id_curr;
-							entity.color = client.chunk_mgr.get_block_data( id_curr ).color;
+							entity.color = client.block_mgr.get_block_loader( id_curr )->color;
 
 							auto & ec_state = entity.h_state.get( );
 							ec_state.pos = glm::floor( pos_gw ) + glm::vec3( pos_check ) + glm::vec3( 0.5f, 0.5f, 0.5f );
@@ -3510,9 +2854,9 @@ void ChunkMgr::explode_sphere_recur( glm::vec3 const & pos_gw, int const size, i
 
 					client.entity_mgr.entity_add(
 						"Grav Block",
-						[ id_curr, pos_gw, pos_check ] ( Client & client, Entity & entity ) {
+						[ &client = client, id_curr, pos_gw, pos_check ] ( Entity & entity ) {
 							entity.id = id_curr;
-							entity.color = client.chunk_mgr.get_block_data( id_curr ).color;
+							entity.color = client.block_mgr.get_block_loader( id_curr )->color;
 
 							auto & ec_state = entity.h_state.get( );
 							ec_state.pos = glm::floor( pos_gw ) + glm::vec3( pos_check ) + glm::vec3( 0.5f, 0.5f, 0.5f );
@@ -3530,42 +2874,6 @@ void ChunkMgr::explode_sphere_recur( glm::vec3 const & pos_gw, int const size, i
 	}
 
 	set_sphere( pos_gw, size, -1 );
-}
-
-Block & ChunkMgr::get_block_data( int const id ) {
-	return list_block_data[ id ];
-}
-
-Block & ChunkMgr::get_block_data( std::string const & name ) {
-	return list_block_data[ map_block_data[ name ] ];
-}
-
-Block * ChunkMgr::get_block_data_safe( std::string const & name ) {
-	auto iter = map_block_data.find( name );
-	if( iter == map_block_data.end( ) ) {
-		return nullptr;
-	}
-
-	return &list_block_data[ iter->second ];
-}
-
-std::string const & ChunkMgr::get_block_string( int const id ) { 
-	static std::string str_air( "Air" );
-	static std::string str_null( "Null" );
-
-	if( id == -1 ) {
-		return str_air;
-	}
-	else if( id >= 0 && id < list_block_data.size( ) ) {
-		return list_block_data[ id ].name;
-	}
-	else { 
-		return str_null;
-	}
-}
-
-int ChunkMgr::get_num_blocks( ) {
-	return ( int ) list_block_data.size( );
 }
 
 void ChunkMgr::print_dirty( ) {
@@ -3707,11 +3015,11 @@ inline void put_face(
 inline void ChunkMgr::put_sort(
 	std::vector< std::pair< float, GLuint > > & list_sort,
 	glm::vec3 & pos_gw,
-	Block & block, FaceDirection face ) {
+	BlockLoader * block, FaceDirection face ) {
 
 
 	list_sort.push_back( {
-		glm::length2( pos_gw + block.faces[ face ].offset - client.display_mgr.camera.pos_camera ),
+		glm::length2( pos_gw + block->faces[ face ].offset - client.display_mgr.camera.pos_camera ),
 		( GLuint ) list_sort.size( )
 	} );
 }
@@ -3719,11 +3027,11 @@ inline void ChunkMgr::put_sort(
 inline void ChunkMgr::put_sort(
 	std::vector< std::pair< float, GLuint > > & list_sort,
 	glm::vec3 & pos_gw, glm::vec3 & scale, 
-	Block & block, FaceDirection face ) {
+	BlockLoader * block, FaceDirection face ) {
 
 
 	list_sort.push_back( {
-		glm::length2( pos_gw + block.faces[ face ].offset * scale - client.display_mgr.camera.pos_camera ),
+		glm::length2( pos_gw + block->faces[ face ].offset * scale - client.display_mgr.camera.pos_camera ),
 		( GLuint ) list_sort.size( )
 	} );
 }

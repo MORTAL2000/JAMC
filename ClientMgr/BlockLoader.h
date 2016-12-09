@@ -37,7 +37,7 @@ public:
 		id_subtex( 0 ) { }
 };
 
-class Block {
+class BlockLoader {
 public:
 	int id;
 	glm::vec4 color;
@@ -54,7 +54,7 @@ public:
 	bool is_trans;
 	bool is_coll;
 
-	Block( ) :
+	BlockLoader( ) :
 		id( 0 ),
 		name( "Default" ),
 		faces( ),
@@ -62,7 +62,7 @@ public:
 		id_texture( 0 ),
 		is_trans( false ) { }
 
-	~Block( );
+	~BlockLoader( );
 
-	bool is_visible( Block const & other );
+	bool is_visible( BlockLoader const & other ) const;
 };

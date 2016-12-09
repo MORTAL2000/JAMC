@@ -1,12 +1,13 @@
 #include "Player.h"
-#include "WormBlock.h"
+
 #include "Client.h"
 #include "WorldSize.h"
+#include "WormBlock.h"
 
 Player::Player( ) :
 	EntityLoader {
 		"Player",
-		[ ] ( Client & client, Entity & entity ) {
+		[ &client = get_client( ) ] ( Entity & entity ) {
 			if( !entity.add_data< ECPlayer >( client ) ) {
 				return ErrorEntity::EE_Failed;
 			}
@@ -36,13 +37,13 @@ Player::Player( ) :
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ ] ( Entity & entity ) {
 
 			entity.clear_data< ECPlayer >( );
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ &client = get_client( ) ] ( Entity & entity ) {
 			auto & ec_state = entity.h_state.get( );
 			auto & ec_player = entity.get_data< ECPlayer >( ).get( );
 			float mouse_sensitivity = 0.1f;
@@ -68,7 +69,7 @@ Player::Player( ) :
 				}
 				else if( client.input_mgr.is_key( 'Y' ) ) { 
 					client.thread_mgr.task_main( 10, [ & ] ( ) {
-						client.entity_mgr.entity_add( "WormBlock", [ & ] ( Client & client, Entity & entity ) {
+						client.entity_mgr.entity_add( "WormBlock", [ & ] ( Entity & entity ) {
 							auto & ec_state_block = entity.h_state.get( );
 							ec_state_block.pos = ec_state.pos;
 
@@ -80,7 +81,7 @@ Player::Player( ) :
 				}
 				else if( client.input_mgr.is_key( 'U' ) ) {
 					client.thread_mgr.task_main( 10, [ & ] ( ) {
-						client.entity_mgr.entity_add( "Water Block", [ & ] ( Client & client, Entity & entity ) {
+						client.entity_mgr.entity_add( "Water Block", [ & ] ( Entity & entity ) {
 							client.gui_mgr.print_to_console( "Adding water thing" );
 							auto & ec_state_block = entity.h_state.get( );
 							ec_state_block.pos = ec_state.pos;
@@ -264,7 +265,7 @@ Player::Player( ) :
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ ] ( Entity & entity ) {
 
 			return ErrorEntity::EE_Ok;
 		}

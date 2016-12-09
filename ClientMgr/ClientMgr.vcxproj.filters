@@ -28,9 +28,6 @@
     <Filter Include="Header Files\Managers\ChunkMgr">
       <UniqueIdentifier>{22b98c72-b418-4c43-999f-342ae50021a2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Managers\ClientMgr">
-      <UniqueIdentifier>{67ee4aa9-6572-422d-8c39-58e667cc0b90}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Managers\DisplayMgr">
       <UniqueIdentifier>{f58fc833-4b0e-4472-96b4-a54812fe9af2}</UniqueIdentifier>
     </Filter>
@@ -51,9 +48,6 @@
     </Filter>
     <Filter Include="Source Files\Managers\ChunkMgr">
       <UniqueIdentifier>{ba9b6580-538c-4e56-9b32-3cc8eac576f1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Managers\ClientMgr">
-      <UniqueIdentifier>{9c0566a5-522b-406e-91e5-7193e8725075}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Managers\DisplayMgr">
       <UniqueIdentifier>{7889fbc4-4b8d-4798-82dc-7bdef29f9172}</UniqueIdentifier>
@@ -106,6 +100,24 @@
     <Filter Include="Resource Files\Xml\Block Descriptor">
       <UniqueIdentifier>{64dfc2d0-f300-4f34-80a2-91be85dd6c9c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Managers\BiomeMgr">
+      <UniqueIdentifier>{34d4672b-e203-4643-b783-e17a800e1605}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\BlockMgr">
+      <UniqueIdentifier>{98cfac34-97ba-4af7-aead-84549e0e2921}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\BiomeMgr">
+      <UniqueIdentifier>{fe01c11c-9e31-4d93-9c7c-4b46d6065815}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\BlockMgr">
+      <UniqueIdentifier>{39b299a5-5e4e-4934-a776-421e9f994e54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\FileMgr">
+      <UniqueIdentifier>{a9d417c4-0c34-4fc6-82db-020a9fd65070}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\FileMgr">
+      <UniqueIdentifier>{606a266f-6eb9-4845-b0f7-af545c928e46}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -128,12 +140,6 @@
     </ClCompile>
     <ClCompile Include="ChunkMgr.cpp">
       <Filter>Source Files\Managers\ChunkMgr</Filter>
-    </ClCompile>
-    <ClCompile Include="ClientMgr.cpp">
-      <Filter>Source Files\Managers\ClientMgr</Filter>
-    </ClCompile>
-    <ClCompile Include="Client.cpp">
-      <Filter>Source Files\Managers\ClientMgr</Filter>
     </ClCompile>
     <ClCompile Include="ThreadMgr.cpp">
       <Filter>Source Files\Managers\ThreadMgr</Filter>
@@ -165,14 +171,8 @@
     <ClCompile Include="Chunk.cpp">
       <Filter>Source Files\Managers\ChunkMgr</Filter>
     </ClCompile>
-    <ClCompile Include="Block.cpp">
-      <Filter>Source Files\Managers\ChunkMgr</Filter>
-    </ClCompile>
     <ClCompile Include="GuiMgr.cpp">
       <Filter>Source Files\Managers\GuiMgr</Filter>
-    </ClCompile>
-    <ClCompile Include="ChunkData.cpp">
-      <Filter>Source Files\Managers\ChunkMgr</Filter>
     </ClCompile>
     <ClCompile Include="Page.cpp">
       <Filter>Source Files\Managers\GuiMgr</Filter>
@@ -219,11 +219,47 @@
     <ClCompile Include="WorldSize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Shapes.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="BiomeMgr.cpp">
+      <Filter>Source Files\Managers\BiomeMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="BiomeLoader.cpp">
+      <Filter>Source Files\Managers\BiomeMgr</Filter>
     </ClCompile>
     <ClCompile Include="BlockSet.cpp">
-      <Filter>Source Files\Managers\ChunkMgr</Filter>
+      <Filter>Source Files\Managers\BlockMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="BlockLoader.cpp">
+      <Filter>Source Files\Managers\BlockMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="BlockMgr.cpp">
+      <Filter>Source Files\Managers\BlockMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="IceShardBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="Shapes.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="GrassPlateauBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="GrassHillBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="CobblestoneChasmBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="OceanBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="SandPlateauBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="Client.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -244,12 +280,6 @@
     </ClInclude>
     <ClInclude Include="ChunkMgr.h">
       <Filter>Header Files\Managers\ChunkMgr</Filter>
-    </ClInclude>
-    <ClInclude Include="ClientMgr.h">
-      <Filter>Header Files\Managers\ClientMgr</Filter>
-    </ClInclude>
-    <ClInclude Include="Client.h">
-      <Filter>Header Files\Managers\ClientMgr</Filter>
     </ClInclude>
     <ClInclude Include="DisplayMgr.h">
       <Filter>Header Files\Managers\DisplayMgr</Filter>
@@ -281,14 +311,8 @@
     <ClInclude Include="Chunk.h">
       <Filter>Header Files\Managers\ChunkMgr</Filter>
     </ClInclude>
-    <ClInclude Include="Block.h">
-      <Filter>Header Files\Managers\ChunkMgr</Filter>
-    </ClInclude>
     <ClInclude Include="GuiMgr.h">
       <Filter>Header Files\Managers\GuiMgr</Filter>
-    </ClInclude>
-    <ClInclude Include="ChunkData.h">
-      <Filter>Header Files\Managers\ChunkMgr</Filter>
     </ClInclude>
     <ClInclude Include="Page.h">
       <Filter>Header Files\Managers\GuiMgr</Filter>
@@ -344,8 +368,44 @@
     <ClInclude Include="Shapes.h">
       <Filter>Header Files\Objects</Filter>
     </ClInclude>
+    <ClInclude Include="BiomeMgr.h">
+      <Filter>Header Files\Managers\BiomeMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="BiomeLoader.h">
+      <Filter>Header Files\Managers\BiomeMgr</Filter>
+    </ClInclude>
     <ClInclude Include="BlockSet.h">
-      <Filter>Header Files\Managers\ChunkMgr</Filter>
+      <Filter>Header Files\Managers\BlockMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockLoader.h">
+      <Filter>Header Files\Managers\BlockMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="IceShardBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockMgr.h">
+      <Filter>Header Files\Managers\BlockMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="CobblestoneChasmBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="GrassHillBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="OceanBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="GrassPlateauBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="SandPlateauBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="Client.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -432,5 +492,10 @@
     <Xml Include="Blocks\Default.xml">
       <Filter>Resource Files\Xml\Block Descriptor</Filter>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Errors.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

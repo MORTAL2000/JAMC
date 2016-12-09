@@ -5,7 +5,7 @@
 GravBlock::GravBlock( ) :
 	EntityLoader { 
 		"Grav Block",
-		[ ] ( Client & client, Entity & entity ) {
+		[ &client = get_client( ) ] ( Entity & entity ) {
 			if( !entity.add_data< ECGravBlock >( client ) ) {
 				return ErrorEntity::EE_Failed;
 			}
@@ -23,12 +23,12 @@ GravBlock::GravBlock( ) :
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ ] ( Entity & entity ) {
 			entity.clear_data< ECGravBlock >( );
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ &client = get_client( ) ] ( Entity & entity ) {
 			auto & ec_state = entity.h_state.get( );
 			auto & ec_block = entity.get_data< ECGravBlock >( ).get( );
 			float frict = 0.5f;
@@ -59,7 +59,7 @@ GravBlock::GravBlock( ) :
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ ] ( Entity & entity ) {
 			return ErrorEntity::EE_Ok;
 		}
 	} { }

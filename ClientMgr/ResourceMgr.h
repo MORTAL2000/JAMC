@@ -5,13 +5,12 @@
 #include "Manager.h"
 #include "ResPool.h"
 
-class ResourceMgr : 
-	public Manager {
+class ResourceMgr : public Manager {
 private:
 	static int const size_pool_init = 64;
 public:
-	ResourceMgr( Client & client ) :
-		Manager( client ) {}
+	ResourceMgr( ) : 
+		Manager( ) {}
 	~ResourceMgr() {}
 
 	template< class T, int ident_pool = 0 >

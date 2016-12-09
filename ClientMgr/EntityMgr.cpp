@@ -1,5 +1,10 @@
 #include "EntityMgr.h"
+
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtc/matrix_inverse.hpp"
+
 #include "Client.h"
+#include "Shapes.h"
 #include "Player.h"
 #include "Tnt.h"
 #include "GravBlock.h"
@@ -7,9 +12,6 @@
 #include "SpawnBlock.h"
 #include "WormBlock.h"
 #include "WaterBlock.h"
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/gtc/matrix_inverse.hpp"
-#include "Shapes.h"
 
 const char * ErrorEntityLookup::to_text[ ] = {
 	"No entity error!",
@@ -24,8 +26,8 @@ glm::vec2 uvs_entity[ 4 ] = {
 	{ 0, 1 }
 };
 
-EntityMgr::EntityMgr( Client & client ) :
-	Manager( client ) { }
+EntityMgr::EntityMgr( ) :
+	Manager( ) { }
 
 
 EntityMgr::~EntityMgr( ) { }
@@ -46,7 +48,7 @@ void EntityMgr::init( ) {
 
 	GL_CHECK( init_mesh( ) );
 
-	alloc_base = [ ] ( Client & client, Entity & entity ) {
+	alloc_base = [ &client = client ] ( Entity & entity ) {
 		entity.time_live = client.time_mgr.get_time( TimeStrings::GAME );
 		entity.is_shutdown = false;
 		entity.is_visible = true;
@@ -76,11 +78,11 @@ void EntityMgr::init( ) {
 		return ErrorEntity::EE_Ok;
 	};
 
-	custom_base = [ ] ( Client & client, Entity & entity ) { 
+	custom_base = [ ] ( Entity & entity ) { 
 		return ErrorEntity::EE_Ok;
 	};
 
-	release_base = [ ] ( Client & client, Entity & entity ) { 
+	release_base = [ ] ( Entity & entity ) { 
 		entity.h_state.release( );
 
 		return ErrorEntity::EE_Ok;
@@ -94,7 +96,7 @@ void EntityMgr::init( ) {
 	loader_add( &WormBlock( ) );
 	loader_add( &WaterBlock( ) );
 
-	entity_add( "Player", [ ] ( Client & client, Entity & entity ) {
+	entity_add( "Player", [ ] ( Entity & entity ) {
 
 		return ErrorEntity::EE_Ok;
 	} );
@@ -121,10 +123,10 @@ void EntityMgr::update( ) {
 
 		auto & state = entity.h_state.get( );
 
-		entity.loader->ef_update( client, entity );
+		entity.loader->ef_update( entity );
 		entity_integrate( state );
 		entity_terrain_collide( state );
-		entity.loader->ef_mesh( client, entity );
+		entity.loader->ef_mesh( entity );
 
 		state.mat_model = glm::mat4( 1.0f );
 		state.mat_model = glm::translate( state.mat_model, state.pos );
@@ -166,7 +168,7 @@ void EntityMgr::render( ) {
 
 		glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_model ) );
 		glUniformMatrix3fv( idx_mat_norm, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_norm ) );
-		glUniform1f( idx_idx_layer, client.chunk_mgr.get_block_data( entity->id ).faces[ 0 ].id_subtex );
+		glUniform1f( idx_idx_layer, client.block_mgr.get_block_loader( entity->id )->faces[ 0 ].id_subtex );
 		glUniform4fv( idx_frag_color, 1, ( const GLfloat * ) &entity->color );
 
 		vbo.render( client, false );
@@ -195,7 +197,7 @@ void EntityMgr::render_shadow( glm::mat4 & mat_light ) {
 
 		glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_model ) );
 		glUniformMatrix3fv( idx_mat_norm, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_norm ) );
-		glUniform1f( idx_idx_layer, client.chunk_mgr.get_block_data( entity->id ).faces[ 0 ].id_subtex );
+		glUniform1f( idx_idx_layer, client.block_mgr.get_block_loader( entity->id )->faces[ 0 ].id_subtex );
 		glUniform4fv( idx_frag_color, 1, ( const GLfloat * ) &entity->color );
 
 		vbo.render( client, false );
@@ -335,9 +337,9 @@ void EntityMgr::entity_add( std::string const & str_name, EFCustom ef_custom ) {
 
 	int error = ErrorEntity::EE_Ok;
 
-	if( ( error = alloc_base( client, entity ) ) != ErrorEntity::EE_Ok ||
-		( error = entity.loader->ef_alloc( client, entity ) ) != ErrorEntity::EE_Ok ||
-		( error = ef_custom( client, entity ) ) != ErrorEntity::EE_Ok ) {
+	if( ( error = alloc_base( entity ) ) != ErrorEntity::EE_Ok ||
+		( error = entity.loader->ef_alloc( entity ) ) != ErrorEntity::EE_Ok ||
+		( error = ef_custom( entity ) ) != ErrorEntity::EE_Ok ) {
 
 		client.thread_mgr.task_main( 5, [ &, error ] ( ) { 
 			auto & out = client.display_mgr.out;
@@ -347,8 +349,8 @@ void EntityMgr::entity_add( std::string const & str_name, EFCustom ef_custom ) {
 			std::cout << out.str( ) << std::endl;
 		} );
 	
-		release_base( client, entity );
-		entity.loader->ef_release( client, entity );
+		release_base( entity );
+		entity.loader->ef_release( entity );
 		h_entity.release( );
 
 		return;
@@ -362,8 +364,8 @@ void EntityMgr::entity_remove( Handle< Entity > & h_entity ) {
 	auto & entity = h_entity.get( );
 
 	entity.h_state.release( );
-	release_base( client, entity );
-	entity.loader->ef_release( client, entity );
+	release_base( entity );
+	entity.loader->ef_release( entity );
 	h_entity.release( );
 }
 
@@ -403,7 +405,7 @@ void EntityMgr::entity_terrain_collide_f( ECState & ec_state ) {
 	int num_x; int num_y;
 	float step_x; float step_y;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.z += ec_state.pos_delta.z;
@@ -422,7 +424,7 @@ void EntityMgr::entity_terrain_collide_f( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Front ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;
@@ -438,7 +440,7 @@ void EntityMgr::entity_terrain_collide_b( ECState & ec_state ) {
 	int num_x; int num_y;
 	float step_x; float step_y;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.z += ec_state.dim.z;
@@ -458,7 +460,7 @@ void EntityMgr::entity_terrain_collide_b( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Back ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;
@@ -474,7 +476,7 @@ void EntityMgr::entity_terrain_collide_l( ECState & ec_state ) {
 	int num_z; int num_y;
 	float step_z; float step_y;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.x += ec_state.pos_delta.x;
@@ -493,7 +495,7 @@ void EntityMgr::entity_terrain_collide_l( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Left ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;
@@ -509,7 +511,7 @@ void EntityMgr::entity_terrain_collide_r( ECState & ec_state ) {
 	int num_z; int num_y;
 	float step_z; float step_y;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.x += ec_state.dim.x;
@@ -529,7 +531,7 @@ void EntityMgr::entity_terrain_collide_r( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Right ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;
@@ -545,7 +547,7 @@ void EntityMgr::entity_terrain_collide_u( ECState & ec_state ) {
 	int num_x; int num_z;
 	float step_x; float step_z;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.y += ec_state.dim.y;
@@ -565,7 +567,7 @@ void EntityMgr::entity_terrain_collide_u( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Up ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;
@@ -581,7 +583,7 @@ void EntityMgr::entity_terrain_collide_d( ECState & ec_state ) {
 	int num_x; int num_z;
 	float step_x; float step_z;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.y += ec_state.pos_delta.y;
@@ -600,7 +602,7 @@ void EntityMgr::entity_terrain_collide_d( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Down ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;

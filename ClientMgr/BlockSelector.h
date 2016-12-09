@@ -1,8 +1,13 @@
 #pragma once
 #include "Globals.h"
+
+#include "glm\glm.hpp"
+
+#include "Client.h"
 #include "ChunkMgr.h"
 #include "VBO.h"
 #include "SharedMesh.h"
+
 
 class BlockSelector {
 private:

@@ -20,8 +20,8 @@ struct ECWater {
 	int id_curr;
 	int id_check;
 
-	Block * block_curr;
-	Block * block_check;
+	BlockLoader * block_curr;
+	BlockLoader * block_check;
 
 	bool is_start;
 

@@ -1,13 +1,14 @@
 #include "GuiMgr.h"
-#include "Client.h"
-#include "WorldSize.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-GuiMgr::GuiMgr( Client & client ) :
-	Manager( client ),
-	block_selector( client ) { }
+#include "Client.h"
+#include "WorldSize.h"
+
+GuiMgr::GuiMgr( ) :
+	Manager( ),
+	block_selector( get_client( ) ) { }
 
 GuiMgr::~GuiMgr( ) { }
 
@@ -37,13 +38,13 @@ void GuiMgr::update( ) {
 	block_selector.update( );
 
 	if( is_visible && client.input_mgr.is_cursor_vis( ) ) {
-		if( client.input_mgr.is_mouse_down( 0 ) ) {
+		if(client.input_mgr.is_mouse_down( 0 ) ) {
 			on_down( 0 );
 		}
-		if( client.input_mgr.get_mouse_hold( 0 ) ) {
+		if(client.input_mgr.get_mouse_hold( 0 ) ) {
 			on_hold( 0 );
 		}
-		if( client.input_mgr.is_mouse_up( 0 ) ) {
+		if(client.input_mgr.is_mouse_up( 0 ) ) {
 			on_up( 0 );
 		}
 	}
@@ -79,7 +80,7 @@ void GuiMgr::on_down( int button ) {
 	bool is_handled = false;
 	int i = ( int ) list_order.size( ) - 1;
 
-	auto & pos_mouse = client.input_mgr.get_mouse_down( button );
+	auto & pos_mouse =client.input_mgr.get_mouse_down( button );
 
 	while( !is_handled && i >= 0 ) {
 		auto & page = *list_order[ i ];
@@ -119,7 +120,7 @@ void GuiMgr::on_up( int button ) {
 	bool is_handled = false;
 	int i = ( int ) list_order.size( ) - 1;
 
-	auto & pos_mouse = client.input_mgr.get_mouse_up( button );
+	auto & pos_mouse =client.input_mgr.get_mouse_up( button );
 
 	while( !is_handled && i >= 0 ) {
 		auto & page = *list_order[ i ];
@@ -440,6 +441,7 @@ void GuiMgr::handle_input_char( int const key, bool const is_down ) {
 	}
 }
 
+// TODO: Fix repeate code for name parsing of geometry commands
 void GuiMgr::process_input( ) { 
 	std::string str_console( "Console" );
 	auto & page = get_page( str_console );
@@ -528,7 +530,8 @@ void GuiMgr::process_input( ) {
 						id = -1;
 					}
 					else {
-						Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
+						BlockLoader * ptr_block = client.block_mgr.get_block_loader_safe( token );
+
 						if( ptr_block ) {
 							id = ptr_block->id;
 						}
@@ -536,7 +539,7 @@ void GuiMgr::process_input( ) {
 				}
 
 				out.str( "" );
-				out << "Command: Sphere at:" << Directional::print_vec( vec_pos ) << " radius:" << r << " type:" << client.chunk_mgr.get_block_string( id ) << ".";
+				out << "Command: Sphere at:" << Directional::print_vec( vec_pos ) << " radius:" << r << " type:" << client.block_mgr.get_block_string( id ) << ".";
 				print_to_console( out.str( ) );
 				client.thread_mgr.task_async( 10, [ &, vec_pos, r, id ] ( ) { 
 					client.chunk_mgr.set_sphere( vec_pos, r, id );
@@ -594,7 +597,7 @@ void GuiMgr::process_input( ) {
 						id = -1;
 					}
 					else {
-						Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
+						BlockLoader * ptr_block = client.block_mgr.get_block_loader_safe( token );
 						if( ptr_block ) {
 							id = ptr_block->id;
 						}
@@ -602,7 +605,7 @@ void GuiMgr::process_input( ) {
 				}
 
 				out.str( "" );
-				out << "Command: Rectangle at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.chunk_mgr.get_block_string( id ) << ".";
+				out << "Command: Rectangle at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.block_mgr.get_block_string( id ) << ".";
 				print_to_console( out.str( ) );
 
 				client.thread_mgr.task_async( 10, [ &, vec_pos, vec_dim, id ] ( ) {
@@ -661,7 +664,7 @@ void GuiMgr::process_input( ) {
 						id = -1;
 					}
 					else {
-						Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
+						BlockLoader * ptr_block = client.block_mgr.get_block_loader_safe( token );
 						if( ptr_block ) {
 							id = ptr_block->id;
 						}
@@ -669,7 +672,7 @@ void GuiMgr::process_input( ) {
 				}
 
 				out.str( "" );
-				out << "Command: Ellipsoid at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.chunk_mgr.get_block_string( id ) << ".";
+				out << "Command: Ellipsoid at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.block_mgr.get_block_string( id ) << ".";
 				print_to_console( out.str( ) );
 
 				client.thread_mgr.task_async( 10, [ &, vec_pos, vec_dim, id ] ( ) {

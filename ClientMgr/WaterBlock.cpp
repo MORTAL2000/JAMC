@@ -3,7 +3,7 @@
 
 WaterBlock::WaterBlock( ) : EntityLoader {
 	"Water Block",
-	[ ] ( Client & client, Entity & entity ) {
+	[ &client = get_client( ) ] ( Entity & entity ) {
 		if( !entity.add_data< ECWater >( client ) ) {
 			return ErrorEntity::EE_Failed;
 		}
@@ -21,7 +21,7 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 
 		ec_water.cld_static = 250;
 
-		entity.id = client.chunk_mgr.get_block_data( "Water" ).id;
+		entity.id = client.block_mgr.get_block_loader( "Water" )->id;
 
 		ec_water.map_grow.reserve( 64 );
 		//ec_water.list_static.reserve( 64 );
@@ -30,28 +30,28 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 
 		return ErrorEntity::EE_Ok;
 	},
-	[ ] ( Client & client, Entity & entity ) {
+	[ ] ( Entity & entity ) {
 
 		entity.clear_data< ECWater >( );
 
 		return ErrorEntity::EE_Ok;
 	},
-	[ ] ( Client & client, Entity & entity ) {
+	[ &client = get_client( ) ] ( Entity & entity ) {
 		auto & ec_state = entity.h_state.get( );
 		auto & ec_water = entity.get_data< ECWater >( ).get( );
-		auto & block_water = client.chunk_mgr.get_block_data( "Water" );
-		auto & block_grass_blade = client.chunk_mgr.get_block_data( "Grass Blade" );
+		auto block_water = client.block_mgr.get_block_loader( "Water" );
+		auto block_grass_blade = client.block_mgr.get_block_loader( "Grass Blade" );
 
 		ec_water.time_now = client.time_mgr.get_time( TimeStrings::GAME );
 
 		if( !ec_water.is_start ) {
 			Directional::pos_trim( ec_state.pos, ec_water.pos_curr );
-			client.chunk_mgr.set_block( ec_water.pos_curr, block_water.id );
+			client.chunk_mgr.set_block( ec_water.pos_curr, block_water->id );
 			ec_water.map_grow.insert( { ec_water.pos_curr, ec_water.depth_flow } );
 			ec_water.is_start = true;
 		}
 
-		if( client.chunk_mgr.get_block( ec_state.pos ) == block_water.id ) {
+		if( client.chunk_mgr.get_block( ec_state.pos ) == block_water->id ) {
 			if( ec_water.time_now - ec_water.time_update > ec_water.cld_update ) {
 				auto iter_grow = ec_water.map_grow.begin( );
 
@@ -61,8 +61,8 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 					ec_water.id_check = client.chunk_mgr.get_block( ec_water.pos_check );
 
 					if( iter_grow->second == 1 ) { 
-						if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade.id ) {
-							client.chunk_mgr.set_block( ec_water.pos_check, block_water.id );
+						if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade->id ) {
+							client.chunk_mgr.set_block( ec_water.pos_check, block_water->id );
 							ec_water.list_add.push_back( { ec_water.pos_check, ec_water.depth_flow } );
 						}
 
@@ -71,15 +71,15 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 						continue;
 					}
 
-					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade.id ) {
-						client.chunk_mgr.set_block( ec_water.pos_check, block_water.id );
+					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade->id ) {
+						client.chunk_mgr.set_block( ec_water.pos_check, block_water->id );
 						ec_water.list_add.push_back( { ec_water.pos_check, ec_water.depth_flow } );
 
 						ec_water.list_static.push_back( *iter_grow );
 						iter_grow = ec_water.map_grow.erase( iter_grow );
 						continue;
 					}
-					else if( ec_water.id_check == block_water.id ) { 
+					else if( ec_water.id_check == block_water->id ) { 
 						ec_water.list_static.push_back( *iter_grow );
 						iter_grow = ec_water.map_grow.erase( iter_grow );
 						continue;
@@ -91,8 +91,8 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 					ec_water.pos_check = iter_grow->first + Directional::get_vec_dir_i( FaceDirection::FD_Front );
 					ec_water.id_check = client.chunk_mgr.get_block( ec_water.pos_check );
 
-					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade.id ) {
-						client.chunk_mgr.set_block( ec_water.pos_check, block_water.id );
+					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade->id ) {
+						client.chunk_mgr.set_block( ec_water.pos_check, block_water->id );
 						ec_water.list_add.push_back( { ec_water.pos_check, iter_grow->second - 1 } );
 
 						is_grow = true;
@@ -102,8 +102,8 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 					ec_water.pos_check = iter_grow->first + Directional::get_vec_dir_i( FaceDirection::FD_Back );
 					ec_water.id_check = client.chunk_mgr.get_block( ec_water.pos_check );
 
-					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade.id ) {
-						client.chunk_mgr.set_block( ec_water.pos_check, block_water.id );
+					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade->id ) {
+						client.chunk_mgr.set_block( ec_water.pos_check, block_water->id );
 						ec_water.list_add.push_back( { ec_water.pos_check, iter_grow->second - 1 } );
 
 						is_grow = true;
@@ -113,8 +113,8 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 					ec_water.pos_check = iter_grow->first + Directional::get_vec_dir_i( FaceDirection::FD_Left );
 					ec_water.id_check = client.chunk_mgr.get_block( ec_water.pos_check );
 
-					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade.id ) {
-						client.chunk_mgr.set_block( ec_water.pos_check, block_water.id );
+					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade->id ) {
+						client.chunk_mgr.set_block( ec_water.pos_check, block_water->id );
 						ec_water.list_add.push_back( { ec_water.pos_check, iter_grow->second - 1 } );
 
 						is_grow = true;
@@ -124,8 +124,8 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 					ec_water.pos_check = iter_grow->first + Directional::get_vec_dir_i( FaceDirection::FD_Right );
 					ec_water.id_check = client.chunk_mgr.get_block( ec_water.pos_check );
 
-					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade.id ) {
-						client.chunk_mgr.set_block( ec_water.pos_check, block_water.id );
+					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade->id ) {
+						client.chunk_mgr.set_block( ec_water.pos_check, block_water->id );
 						ec_water.list_add.push_back( { ec_water.pos_check, iter_grow->second - 1 } );
 
 						is_grow = true;
@@ -157,7 +157,7 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 					ec_water.pos_check = iter_static->first + Directional::get_vec_dir_i( FaceDirection::FD_Down );
 					ec_water.id_check = client.chunk_mgr.get_block( ec_water.pos_check );
 
-					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade.id ) {
+					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade->id ) {
 						ec_water.map_grow.insert( *iter_static );
 						iter_static = ec_water.list_static.erase( iter_static );
 						continue;
@@ -167,7 +167,7 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 					ec_water.pos_check = iter_static->first + Directional::get_vec_dir_i( FaceDirection::FD_Front );
 					ec_water.id_check = client.chunk_mgr.get_block( ec_water.pos_check );
 
-					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade.id ) {
+					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade->id ) {
 						ec_water.map_grow.insert( *iter_static );
 						iter_static = ec_water.list_static.erase( iter_static );
 						continue;
@@ -177,7 +177,7 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 					ec_water.pos_check = iter_static->first + Directional::get_vec_dir_i( FaceDirection::FD_Back );
 					ec_water.id_check = client.chunk_mgr.get_block( ec_water.pos_check );
 
-					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade.id ) {
+					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade->id ) {
 						ec_water.map_grow.insert( *iter_static );
 						iter_static = ec_water.list_static.erase( iter_static );
 						continue;
@@ -187,7 +187,7 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 					ec_water.pos_check = iter_static->first + Directional::get_vec_dir_i( FaceDirection::FD_Left );
 					ec_water.id_check = client.chunk_mgr.get_block( ec_water.pos_check );
 
-					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade.id ) {
+					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade->id ) {
 						ec_water.map_grow.insert( *iter_static );
 						iter_static = ec_water.list_static.erase( iter_static );
 						continue;
@@ -197,7 +197,7 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 					ec_water.pos_check = iter_static->first + Directional::get_vec_dir_i( FaceDirection::FD_Right );
 					ec_water.id_check = client.chunk_mgr.get_block( ec_water.pos_check );
 
-					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade.id ) {
+					if( ec_water.id_check == -1 || ec_water.id_check == block_grass_blade->id ) {
 						ec_water.map_grow.insert( *iter_static );
 						iter_static = ec_water.list_static.erase( iter_static );
 						continue;
@@ -235,7 +235,7 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 
 		return ErrorEntity::EE_Ok;
 	},
-	[ ] ( Client & client, Entity & entity ) {
+	[ ] ( Entity & entity ) {
 
 		return ErrorEntity::EE_Ok;
 	}

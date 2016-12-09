@@ -67,14 +67,14 @@ public:
 
 	std::ostringstream out;
 
-	DisplayMgr( Client & client );
-	~DisplayMgr();
+	DisplayMgr( );
+	~DisplayMgr( );
 
-	void init( );
-	void update( );
-	void render( ) {}
-	void end( ) {}
-	void sec( ) {}
+	void init( ) override;
+	void update( ) override;
+	void render( ) override {}
+	void end( ) override {}
+	void sec( ) override {}
 
 	HDC & get_HDC( );
 	HGLRC & get_HRC( );
@@ -87,18 +87,7 @@ public:
 	void toggle_vsync( );
 	void toggle_limiter( );
 
-	//void draw_string( 
-	//	glm::ivec2 const & pos_quad, std::string const & string, 
-	//	glm::vec4 & color, int const size );
 	void draw_key( int const size );
-	//void draw_skybox( glm::vec3 & pos_skybox, float const size );
-	//void draw_sun( glm::vec3 & pos_sun, float const size );
-	//void draw_record_graph( 
-	//	glm::ivec2 & pos_graph, glm::ivec2 & dim_graph, 
-	//	std::string const & name_record, float time_ref );
-	//void draw_record_graph( 
-	//	glm::ivec2 & pos_graph, glm::ivec2 & dim_graph, 
-	//	std::string const & name_record, float tim_ref, int size_history );
 
 	void clear_buffers();
 	void set_camera();
@@ -106,4 +95,5 @@ public:
 
 	void set_ortho();
 	void set_proj();
+
 };

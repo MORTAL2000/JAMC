@@ -1,6 +1,9 @@
 #include "VBO.h"
-#include "Client.h"
+
 #include <iostream>
+#include <vector>
+
+#include "Client.h"
 
 GLuint const VBO::GeomNumIndsLookup[ ] = {
 	1, 2, 3

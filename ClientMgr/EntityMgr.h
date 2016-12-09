@@ -2,11 +2,12 @@
 
 #include "Globals.h"
 
+#include <mutex>
+#include <vector>
+
 #include "Manager.h"
 #include "Entity.h"
 #include "VBO.h"
-
-#include <mutex>
 
 class EntityMgr : public Manager {
 private:
@@ -21,6 +22,9 @@ private:
 	SMEntity shared_mesh_entity;
 
 public:
+	EntityMgr( );
+	~EntityMgr( );
+
 	EFAlloc alloc_base;
 	EFCustom custom_base;
 	EFRelease release_base;
@@ -41,9 +45,6 @@ private:
 	void entity_terrain_collide_d( ECState & ec_state );
 
 public:
-	EntityMgr( Client & client );
-	~EntityMgr( );
-
 	void init( );
 	void update( );
 	void render( );

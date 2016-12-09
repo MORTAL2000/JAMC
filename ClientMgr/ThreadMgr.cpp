@@ -8,8 +8,8 @@
 int const ThreadMgr::size_prio_init = 10;
 int const ThreadMgr::size_func_init = 3000;
 
-ThreadMgr::ThreadMgr( Client & client ) :
-	Manager( client ),
+ThreadMgr::ThreadMgr( ) :
+	Manager( ),
 	is_shutdown( false ),
 	total_threads( std::thread::hardware_concurrency( ) ),
 	cnt_total( 0 ),
@@ -344,7 +344,7 @@ void ThreadMgr::loop_async( int const id_thread ) {
 		{
 			std::unique_lock<  std::mutex > lock( mtx_async );
 
-			cond_async.wait( lock, [ &]() {
+			cond_async.wait( lock, [ & ]() {
 				if( is_shutdown ) return true;
 
 				for( int i = size_prio_init - 1; i >= 0; --i ) {

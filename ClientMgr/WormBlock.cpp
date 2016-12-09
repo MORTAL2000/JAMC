@@ -6,12 +6,12 @@
 WormBlock::WormBlock( )	:
 	EntityLoader {
 		"WormBlock",
-		[ ] ( Client & client, Entity & entity ) {
+		[ &client = get_client( ) ] ( Entity & entity ) {
 			if( !entity.add_data< ECWorm >( client ) ) {
 				return ErrorEntity::EE_Failed;
 			}
 
-			entity.id = client.chunk_mgr.get_block_data( "Gold Block" ).id;
+			entity.id = client.block_mgr.get_block_loader( "Gold Block" )->id;
 
 			auto & ec_state = entity.h_state.get( );
 			ec_state.is_gravity = false;
@@ -37,12 +37,12 @@ WormBlock::WormBlock( )	:
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ ] ( Entity & entity ) {
 			entity.clear_data< ECWorm >( );
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ &client = get_client( ) ] ( Entity & entity ) {
 			auto & ec_state = entity.h_state.get( );
 			auto & ec_worm = entity.get_data< ECWorm >( ).get( );
 			int time_now = client.time_mgr.get_time( TimeStrings::GAME );
@@ -67,7 +67,7 @@ WormBlock::WormBlock( )	:
 
 			return ErrorEntity::EE_Ok;
 		},
-		[ ] ( Client & client, Entity & entity ) {
+		[ ] ( Entity & entity ) {
 			return ErrorEntity::EE_Ok;
 		} 
 	} { }

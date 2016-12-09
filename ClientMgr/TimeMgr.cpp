@@ -51,8 +51,8 @@ RecordStrings::CHUNK_REMOVE = "CRem",
 RecordStrings::TASK_MAIN = "TMain";
 
 // *** Time Manager ***
-TimeMgr::TimeMgr( Client & client ) :
-	Manager( client ),
+TimeMgr::TimeMgr( ) :
+	Manager( ),
 	time_map( time_size ),
 	record_map( record_size ) {}
 

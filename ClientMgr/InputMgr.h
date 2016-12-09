@@ -42,16 +42,14 @@ struct Mouse {
 };
 
 struct Keyboard {
-	bool keys[256];
+	bool keys[ 256 ];
 
 	Keyboard( ) {
 		fill_array( keys, false );
 	}
 };
 
-class InputMgr :
-	public Manager {
-
+class InputMgr :public Manager {
 private:
 	int last_command;
 
@@ -63,7 +61,7 @@ private:
 	void process_input( );
 
 public:
-	InputMgr( Client & client );
+	InputMgr( );
 	~InputMgr( );
 
 	void init( );

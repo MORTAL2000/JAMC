@@ -10,8 +10,7 @@
 #include <unordered_map>
 #include <string>
 
-class GuiMgr : 
-	public Manager {
+class GuiMgr : public Manager {
 
 private:
 	static int const size_pages = 100;
@@ -25,23 +24,23 @@ private:
 	bool is_visible;
 	bool is_input;
 
+public:
+	GuiMgr( );
+	~GuiMgr( );
+
+	BlockSelector block_selector;
+
 private:
 	void on_down( int button );
 	void on_hold( int button );
 	void on_up( int button );
 
 public:
-	BlockSelector block_selector;
-
-	GuiMgr( Client & client );
-	~GuiMgr( );
-	
-public:
-	void init( );
-	void update( );
-	void render( );
-	void end( );
-	void sec( );
+	void init( ) override;
+	void update( ) override;
+	void render( ) override;
+	void end( ) override;
+	void sec( ) override;
 
 	void add_page( std::string & str_name, FuncPage func_alloc, FuncPage func_custom );
 
