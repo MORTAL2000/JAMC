@@ -1,32 +1,29 @@
 #pragma once
 
-#include "Globals.h"
-
-#include <vector>
-#include <typeindex>
-#include <typeinfo>
 #include <unordered_map>
+#include <typeindex>
 
-#include "ResourceMgr.h"
-#include "PageLoader.h"
-#include "PageComponent.h"
-#include "VBO.h"
+#include "glm\glm.hpp"
 
-class Page {
+#include "PageComponentLoader.h"
+
+class Page;
+class Client;
+
+class PageComponent {
 private:
 	std::unordered_map< std::type_index, std::vector< void * > > map_data;
-
+	
 public:
-	Page( );
-	~Page( );
-
-	Client * client;
-
-	PageLoader * page_loader;
+	PageComponent( );
+	~PageComponent( );
 
 	bool is_visible;
-	bool is_remesh;
 	bool is_hold;
+
+	Page * page;
+	PageComponent * parent;
+	PCLoader * pc_loader;
 
 	std::string name;
 
@@ -36,23 +33,9 @@ public:
 	glm::ivec2 pos;
 	glm::ivec2 dim;
 
-	VBO vbo_mesh;
-	glm::mat4 mat_model;
-
-	std::vector< Handle< PComp > > list_comps;
-	std::unordered_map< std::string, int > map_comps;
-
 private:
 
 public:
-	bool add_comp( std::string const & name, std::string const & comp, PCFunc func_custom );
-	
-	bool on_down( int button );
-	bool on_hold( int button );
-	bool on_up( int button );
-
-	void reposition( );
-
 	template< class T >
 	int get_data_size( ) {
 		return map_data[ typeid( T ) ].size( );
@@ -103,5 +86,6 @@ public:
 		vect_data.clear( );
 		map_data.erase( index_type );
 	}
-};
 
+	void reposition( );
+};

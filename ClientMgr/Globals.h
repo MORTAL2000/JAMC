@@ -51,7 +51,6 @@ class Entity;
 struct quad_uvs;
 
 class Page;
-class PageComp;
 
 extern int get_refresh( );
 

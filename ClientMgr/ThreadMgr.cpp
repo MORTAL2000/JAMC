@@ -33,7 +33,7 @@ void ThreadMgr::init() {
 	}
 	else {
 		size_io = 1;
-		size_async = total_threads / 2;
+		size_async = total_threads - 3;
 		size_async = std::max( 3u, size_async );
 		size_sync = size_async;
 	}
@@ -110,6 +110,7 @@ void ThreadMgr::update( ) {
 		total += ( int ) funcs_main[ i ].size( );
 	}
 
+	/*
 	out.str( "" );
 	out << "[Main Queue]: " << total;
 	client.gui_mgr.print_to_static( out.str( ) );
@@ -168,6 +169,7 @@ void ThreadMgr::update( ) {
 	out << "[Async Cnt]";
 	out << " total: " << cnt_async_total;
 	client.gui_mgr.print_to_static( out.str( ) );
+	*/
 
 }
 

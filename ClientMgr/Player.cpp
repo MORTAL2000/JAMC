@@ -58,10 +58,10 @@ Player::Player( ) :
 						ec_state.is_gravity = true;
 					}
 					if( ec_player.is_godmode ) {
-						client.gui_mgr.print_to_console( "Godmode set!" );
+						//client.gui_mgr.print_to_console( "Godmode set!" );
 					}
 					else {
-						client.gui_mgr.print_to_console( "Godmode unset!" );
+						//client.gui_mgr.print_to_console( "Godmode unset!" );
 					}
 
 					ec_player.last_input = time_now;
@@ -81,7 +81,7 @@ Player::Player( ) :
 				else if( client.input_mgr.is_key( 'U' ) ) {
 					client.thread_mgr.task_main( 10, [ & ] ( ) {
 						client.entity_mgr.entity_add( "Water Block", [ & ] ( Client & client, Entity & entity ) {
-							client.gui_mgr.print_to_console( "Adding water thing" );
+							//client.gui_mgr.print_to_console( "Adding water thing" );
 							auto & ec_state_block = entity.h_state.get( );
 							ec_state_block.pos = ec_state.pos;
 

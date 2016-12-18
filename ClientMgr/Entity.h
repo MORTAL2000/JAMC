@@ -95,12 +95,14 @@ public:
 	template< class T >
 	bool add_data( Client & client ) { 
 		Handle< T > * ptr_handle = new Handle< T >( );
+
 		if( !client.resource_mgr.allocate( *ptr_handle ) ) { 
 			delete ptr_handle;
 			return false;
 		}
 
 		map_data[ typeid( T ) ].push_back( ( void * )ptr_handle );
+
 		return true;
 	}
 
@@ -112,8 +114,11 @@ public:
 	template< class T >
 	void remove_data( int const index_data ) { 
 		std::type_index index_type = typeid( T );
+
 		auto & vect_data = map_data[ index_type ];
+
 		( ( Handle< T > * ) vect_data[ index_data ] )->release();
+
 		delete ( Handle< T > * ) vect_data[ index_data ];
 		map_data.vect_data.erase( index_data );
 	}
@@ -121,13 +126,16 @@ public:
 	template< class T >
 	void clear_data( ) { 
 		std::type_index index_type = typeid( T );
+
 		auto & vect_data = map_data[ index_type ];
+
 		for( auto data : vect_data ) { 
 			( ( Handle< T > * ) data )->release( );
 			delete ( Handle< T > * ) data;
-			vect_data.clear( );
-			map_data.erase( index_type );
 		}
+
+		vect_data.clear( );
+		map_data.erase( index_type );
 	}
 };
 

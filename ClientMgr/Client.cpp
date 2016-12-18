@@ -13,7 +13,8 @@ Client::Client( ) :
 	resource_mgr( client ), texture_mgr( client ),
 	time_mgr( client ), thread_mgr( client ),
 	display_mgr( client ), input_mgr( client ),
-	gui_mgr( client ), chunk_mgr( client ),
+	gui_mgr( client ), block_mgr( client ),
+	biome_mgr( client ), chunk_mgr( client ), 
 	entity_mgr( client ) { }
 
 Client::~Client( ) { }
@@ -140,18 +141,20 @@ void Client::init_mgrs( ) {
 	GL_CHECK( input_mgr.init( ) );
 	GL_CHECK( texture_mgr.init( ) );
 	GL_CHECK( gui_mgr.init( ) );
+	GL_CHECK( block_mgr.init( ) );
+	GL_CHECK( biome_mgr.init( ) );
 	GL_CHECK( chunk_mgr.init( ) );
 	GL_CHECK( entity_mgr.init( ) );
 }
 
 void Client::update( ) {
-	gui_mgr.clear_static( );
+	//gui_mgr.clear_static( );
 	auto & out = display_mgr.out;
 	out.str( "" );
 	out << "[FRAMES] Update: " << std::setw( 4 ) << update_last << 
 		" Render: " << std::setw( 4 ) << render_last << 
 		" MS: " << std::setw( 4 ) << ( 1000.0f / render_last );
-	gui_mgr.print_to_static( out.str( ) );
+	//gui_mgr.print_to_static( out.str( ) );
 
 	GL_CHECK( input_mgr.update( ) );
 
@@ -172,7 +175,7 @@ void Client::update( ) {
 	GL_CHECK( entity_mgr.update( ) );
 	GL_CHECK( thread_mgr.update( ) );
 
-	gui_mgr.update_static( );
+	//gui_mgr.update_static( );
 }
 
 void Client::render( ) {

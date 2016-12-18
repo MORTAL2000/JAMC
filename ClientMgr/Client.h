@@ -11,6 +11,8 @@
 #include "GuiMgr.h"
 #include "ChunkMgr.h"
 #include "EntityMgr.h"
+#include "BiomeMgr.h"
+#include "BlockMgr.h"
 
 #include <iostream>
 
@@ -39,6 +41,8 @@ public:
 	DisplayMgr		display_mgr;
 	InputMgr		input_mgr;
 	GuiMgr			gui_mgr;
+	BlockMgr		block_mgr;
+	BiomeMgr		biome_mgr;
 	ChunkMgr		chunk_mgr;
 	EntityMgr		entity_mgr;
 

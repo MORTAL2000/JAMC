@@ -7,7 +7,7 @@ LineBlock::LineBlock( ) :
 		"Line Block",
 		[ ] ( Client & client, Entity & entity ) {
 			entity.id = client.gui_mgr.block_selector.get_id_block( );
-			entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
+			entity.color = client.block_mgr.get_block_loader( entity.id )->color;
 
 			auto & state = entity.h_state.get( );
 			state.pos = client.display_mgr.camera.pos_camera;
@@ -32,9 +32,9 @@ LineBlock::LineBlock( ) :
 				return ErrorEntity::EE_Ok;
 			}
 
-			if( entity.id == client.chunk_mgr.get_block_data( "Tnt" ).id ) {
+			if( entity.id == client.block_mgr.get_block_loader( "Tnt" )->id ) {
 				client.thread_mgr.task_main( 6,[ &, pos = ec_state.pos ]( ) {
-					client.chunk_mgr.explode_sphere( pos, 10 );
+					client.chunk_mgr.explode_sphere( pos, 7 );
 				} );
 			}
 			else {

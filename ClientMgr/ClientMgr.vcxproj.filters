@@ -106,6 +106,36 @@
     <Filter Include="Resource Files\Xml\Block Descriptor">
       <UniqueIdentifier>{64dfc2d0-f300-4f34-80a2-91be85dd6c9c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Managers\BiomeMgr">
+      <UniqueIdentifier>{57649941-7bb9-4ae1-9e67-38aa1a09f668}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\BiomeMgr">
+      <UniqueIdentifier>{eec1831c-c2f4-42c0-a43f-c5813f4209ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\BlockMgr">
+      <UniqueIdentifier>{2c14c734-6165-46b2-a9c3-93bcd931c88b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\BlockMgr">
+      <UniqueIdentifier>{9191e3b7-0173-4dec-95b4-b9efdba8ae03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\BiomeMgr\Biomes">
+      <UniqueIdentifier>{af360721-7cfb-47f7-b8e0-af44cf47f354}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\BiomeMgr\Biomes">
+      <UniqueIdentifier>{b8e7f196-4557-4a30-9da7-f6f95c6dc6d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\GuiMgr\Pages">
+      <UniqueIdentifier>{e87d8b7c-9283-4956-b099-15e09a059501}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Managers\GuiMgr\Components">
+      <UniqueIdentifier>{cf4e3a01-e49c-4088-9792-0856b544efb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\GuiMgr\Pages">
+      <UniqueIdentifier>{223ea31c-5c4f-4c67-a2ae-d21364057889}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers\GuiMgr\Components">
+      <UniqueIdentifier>{54f3db7c-8a1c-4d8e-954c-0243dba28c8a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -165,9 +195,6 @@
     <ClCompile Include="Chunk.cpp">
       <Filter>Source Files\Managers\ChunkMgr</Filter>
     </ClCompile>
-    <ClCompile Include="Block.cpp">
-      <Filter>Source Files\Managers\ChunkMgr</Filter>
-    </ClCompile>
     <ClCompile Include="GuiMgr.cpp">
       <Filter>Source Files\Managers\GuiMgr</Filter>
     </ClCompile>
@@ -175,18 +202,6 @@
       <Filter>Source Files\Managers\ChunkMgr</Filter>
     </ClCompile>
     <ClCompile Include="Page.cpp">
-      <Filter>Source Files\Managers\GuiMgr</Filter>
-    </ClCompile>
-    <ClCompile Include="PageComp.cpp">
-      <Filter>Source Files\Managers\GuiMgr</Filter>
-    </ClCompile>
-    <ClCompile Include="PageCompData.cpp">
-      <Filter>Source Files\Managers\GuiMgr</Filter>
-    </ClCompile>
-    <ClCompile Include="PageFuncs.cpp">
-      <Filter>Source Files\Managers\GuiMgr</Filter>
-    </ClCompile>
-    <ClCompile Include="PageCompFuncs.cpp">
       <Filter>Source Files\Managers\GuiMgr</Filter>
     </ClCompile>
     <ClCompile Include="VBO.cpp">
@@ -219,11 +234,62 @@
     <ClCompile Include="WorldSize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Shapes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="BlockSet.cpp">
       <Filter>Source Files\Managers\ChunkMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="BiomeMgr.cpp">
+      <Filter>Source Files\Managers\BiomeMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="BiomeLoader.cpp">
+      <Filter>Source Files\Managers\BiomeMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="BlockLoader.cpp">
+      <Filter>Source Files\Managers\BlockMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="BlockMgr.cpp">
+      <Filter>Source Files\Managers\BlockMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="Shapes.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="SandPlateauBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClCompile>
+    <ClCompile Include="SandFlatsBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClCompile>
+    <ClCompile Include="OceanBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClCompile>
+    <ClCompile Include="IceShardBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClCompile>
+    <ClCompile Include="GrassPlateauBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClCompile>
+    <ClCompile Include="GrassHillBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClCompile>
+    <ClCompile Include="CobblestoneChasmBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseBiome.cpp">
+      <Filter>Source Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClCompile>
+    <ClCompile Include="PageLoader.cpp">
+      <Filter>Source Files\Managers\GuiMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="PageComponentLoader.cpp">
+      <Filter>Source Files\Managers\GuiMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="PageComponent.cpp">
+      <Filter>Source Files\Managers\GuiMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="TestPage.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Pages</Filter>
+    </ClCompile>
+    <ClCompile Include="TestComp.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -281,9 +347,6 @@
     <ClInclude Include="Chunk.h">
       <Filter>Header Files\Managers\ChunkMgr</Filter>
     </ClInclude>
-    <ClInclude Include="Block.h">
-      <Filter>Header Files\Managers\ChunkMgr</Filter>
-    </ClInclude>
     <ClInclude Include="GuiMgr.h">
       <Filter>Header Files\Managers\GuiMgr</Filter>
     </ClInclude>
@@ -291,18 +354,6 @@
       <Filter>Header Files\Managers\ChunkMgr</Filter>
     </ClInclude>
     <ClInclude Include="Page.h">
-      <Filter>Header Files\Managers\GuiMgr</Filter>
-    </ClInclude>
-    <ClInclude Include="PageComp.h">
-      <Filter>Header Files\Managers\GuiMgr</Filter>
-    </ClInclude>
-    <ClInclude Include="PageCompData.h">
-      <Filter>Header Files\Managers\GuiMgr</Filter>
-    </ClInclude>
-    <ClInclude Include="PageFuncs.h">
-      <Filter>Header Files\Managers\GuiMgr</Filter>
-    </ClInclude>
-    <ClInclude Include="PageCompFuncs.h">
       <Filter>Header Files\Managers\GuiMgr</Filter>
     </ClInclude>
     <ClInclude Include="VBO.h">
@@ -346,6 +397,57 @@
     </ClInclude>
     <ClInclude Include="BlockSet.h">
       <Filter>Header Files\Managers\ChunkMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="BiomeMgr.h">
+      <Filter>Header Files\Managers\BiomeMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="BiomeLoader.h">
+      <Filter>Header Files\Managers\BiomeMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockLoader.h">
+      <Filter>Header Files\Managers\BlockMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockMgr.h">
+      <Filter>Header Files\Managers\BlockMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClInclude>
+    <ClInclude Include="CobblestoneChasmBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClInclude>
+    <ClInclude Include="GrassHillBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClInclude>
+    <ClInclude Include="GrassPlateauBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClInclude>
+    <ClInclude Include="IceShardBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClInclude>
+    <ClInclude Include="OceanBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClInclude>
+    <ClInclude Include="SandFlatsBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClInclude>
+    <ClInclude Include="SandPlateauBiome.h">
+      <Filter>Header Files\Managers\BiomeMgr\Biomes</Filter>
+    </ClInclude>
+    <ClInclude Include="PageLoader.h">
+      <Filter>Header Files\Managers\GuiMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="PageComponent.h">
+      <Filter>Header Files\Managers\GuiMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="PageComponentLoader.h">
+      <Filter>Header Files\Managers\GuiMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="TestPage.h">
+      <Filter>Header Files\Managers\GuiMgr\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="TestComp.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -4,9 +4,10 @@
 #include "Manager.h"
 
 #include <vector>
-#include "Block.h"
 #include <array>
 #include <unordered_map>
+
+#include "glm\glm.hpp"
 
 typedef std::array< std::array< float, 2 >, 4 > face_uvs;
 

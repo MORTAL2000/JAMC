@@ -26,7 +26,7 @@ public:
 	}
 
 	template< class T, int ident_pool = 0 >
-	bool allocate( Handle< T > & ptr_handle ) {
+	T * allocate( Handle< T > & ptr_handle ) {
 		return pool< T, ident_pool >().allocate( ptr_handle );
 	}
 
@@ -35,9 +35,9 @@ public:
 		ptr_handle.release();
 	}
 
-	void init() {}
-	void update() {}
-	void render() {}
-	void end() {}
-	void sec() {}
+	void init() override {}
+	void update() override {}
+	void render() override {}
+	void end() override {}
+	void sec() override {}
 };

@@ -11,7 +11,7 @@ SpawnBlock::SpawnBlock( ) :
 			}
 
 			entity.id = client.gui_mgr.block_selector.get_id_block( );
-			entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
+			entity.color = client.block_mgr.get_block_loader( entity.id )->color;
 
 			auto & ec_state = entity.h_state.get( );
 			ec_state.pos = client.display_mgr.camera.pos_camera;
@@ -40,7 +40,7 @@ SpawnBlock::SpawnBlock( ) :
 				client.thread_mgr.task_main( 10,[ &, pos = ec_state.pos, num_spawn = ec_spawn.num_spawn ]( ) {
 					for( int i = 0; i < num_spawn; i++ ) {
 						client.entity_mgr.entity_add( "Grav Block", [ pos = pos ] ( Client & client, Entity & entity ) {
-							entity.id = std::rand( ) % client.chunk_mgr.get_num_blocks( );
+							entity.id = std::rand( ) % client.block_mgr.get_num_blocks( );
 							auto & ec_state = entity.h_state.get( );
 
 							ec_state.pos = pos;
@@ -55,7 +55,7 @@ SpawnBlock::SpawnBlock( ) :
 									)
 								)
 								* ( float ) ( std::rand( ) % 25 + 15 );
-							entity.color = client.chunk_mgr.get_block_data( entity.id ).color;
+							entity.color = client.block_mgr.get_block_loader( entity.id )->color;
 
 							return ErrorEntity::EE_Ok;
 						} );

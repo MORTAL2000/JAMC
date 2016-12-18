@@ -138,12 +138,12 @@ void EntityMgr::update( ) {
 	auto & out = client.display_mgr.out;
 	out.str( "" );
 	out << "[Entity Live] Entity: " << list_entity.size( );
-	client.gui_mgr.print_to_static( out.str( ) );
+	//client.gui_mgr.print_to_static( out.str( ) );
 
 	out.str( "" );
 	auto & ecp_state = entity_player->h_state.get( );
 	out << "[Player ] Veloc: " << Directional::print_vec( ecp_state.veloc );
-	client.gui_mgr.print_to_static( out.str( ) );
+	//client.gui_mgr.print_to_static( out.str( ) );
 }
 
 void EntityMgr::render( ) {
@@ -166,7 +166,7 @@ void EntityMgr::render( ) {
 
 		glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_model ) );
 		glUniformMatrix3fv( idx_mat_norm, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_norm ) );
-		glUniform1f( idx_idx_layer, client.chunk_mgr.get_block_data( entity->id ).faces[ 0 ].id_subtex );
+		glUniform1f( idx_idx_layer, client.block_mgr.get_block_loader( entity->id )->faces[ 0 ].id_subtex );
 		glUniform4fv( idx_frag_color, 1, ( const GLfloat * ) &entity->color );
 
 		vbo.render( client, false );
@@ -195,7 +195,7 @@ void EntityMgr::render_shadow( glm::mat4 & mat_light ) {
 
 		glUniformMatrix4fv( idx_mat_model, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_model ) );
 		glUniformMatrix3fv( idx_mat_norm, 1, GL_FALSE, glm::value_ptr( entity->h_state.get( ).mat_norm ) );
-		glUniform1f( idx_idx_layer, client.chunk_mgr.get_block_data( entity->id ).faces[ 0 ].id_subtex );
+		glUniform1f( idx_idx_layer, client.block_mgr.get_block_loader( entity->id )->faces[ 0 ].id_subtex );
 		glUniform4fv( idx_frag_color, 1, ( const GLfloat * ) &entity->color );
 
 		vbo.render( client, false );
@@ -248,7 +248,7 @@ void EntityMgr::loader_add( EntityLoader * entity_loader ) {
 	auto iter_map = map_loader.find( entity_loader->name );
 	if( iter_map != map_loader.end( ) ) {
 		out << "ERROR: Loader duplicate: " << entity_loader->name;
-		client.gui_mgr.print_to_console( out.str( ) );
+		//client.gui_mgr.print_to_console( out.str( ) );
 		return;
 	}
 
@@ -268,7 +268,7 @@ void EntityMgr::loader_add( EntityLoader * entity_loader ) {
 	);
 
 	out << "SUCCESS: Loader added: " << entity_loader->name;
-	client.gui_mgr.print_to_console( out.str( ) );
+	//client.gui_mgr.print_to_console( out.str( ) );
 }
 
 void EntityMgr::loader_add( std::string const & str_name, EFAlloc ef_alloc, 
@@ -280,7 +280,7 @@ void EntityMgr::loader_add( std::string const & str_name, EFAlloc ef_alloc,
 	auto iter_map = map_loader.find( str_name );
 	if( iter_map != map_loader.end( ) ) {
 		out << "ERROR: Loader duplicate: " << str_name;
-		client.gui_mgr.print_to_console( out.str( ) );
+		//client.gui_mgr.print_to_console( out.str( ) );
 		return;
 	}
 
@@ -300,7 +300,7 @@ void EntityMgr::loader_add( std::string const & str_name, EFAlloc ef_alloc,
 	);
 
 	out << "SUCCESS: Loader added: " << str_name;
-	client.gui_mgr.print_to_console( out.str( ) );
+	//client.gui_mgr.print_to_console( out.str( ) );
 }
 
 void EntityMgr::entity_add( std::string const & str_name, EFCustom ef_custom ) {
@@ -313,7 +313,7 @@ void EntityMgr::entity_add( std::string const & str_name, EFCustom ef_custom ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			out << "No entity loader exists matching: " << str_name;
-			client.gui_mgr.print_to_console( out.str( ) );
+			//client.gui_mgr.print_to_console( out.str( ) );
 			std::cout << out.str( ) << std::endl;
 		} );
 		return;
@@ -324,7 +324,7 @@ void EntityMgr::entity_add( std::string const & str_name, EFCustom ef_custom ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			out << "ENTITY ERROR: Out of entities!";
-			client.gui_mgr.print_to_console( out.str( ) );
+			//client.gui_mgr.print_to_console( out.str( ) );
 			std::cout << out.str( ) << std::endl;
 		} );
 		return;
@@ -343,7 +343,7 @@ void EntityMgr::entity_add( std::string const & str_name, EFCustom ef_custom ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			out << "ENTITY ERROR: " << ErrorEntityLookup::to_text[ error ];
-			client.gui_mgr.print_to_console( out.str( ) );
+			//client.gui_mgr.print_to_console( out.str( ) );
 			std::cout << out.str( ) << std::endl;
 		} );
 	
@@ -403,7 +403,7 @@ void EntityMgr::entity_terrain_collide_f( ECState & ec_state ) {
 	int num_x; int num_y;
 	float step_x; float step_y;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.z += ec_state.pos_delta.z;
@@ -422,7 +422,7 @@ void EntityMgr::entity_terrain_collide_f( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Front ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;
@@ -438,7 +438,7 @@ void EntityMgr::entity_terrain_collide_b( ECState & ec_state ) {
 	int num_x; int num_y;
 	float step_x; float step_y;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.z += ec_state.dim.z;
@@ -458,7 +458,7 @@ void EntityMgr::entity_terrain_collide_b( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Back ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;
@@ -474,7 +474,7 @@ void EntityMgr::entity_terrain_collide_l( ECState & ec_state ) {
 	int num_z; int num_y;
 	float step_z; float step_y;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.x += ec_state.pos_delta.x;
@@ -493,7 +493,7 @@ void EntityMgr::entity_terrain_collide_l( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Left ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;
@@ -509,7 +509,7 @@ void EntityMgr::entity_terrain_collide_r( ECState & ec_state ) {
 	int num_z; int num_y;
 	float step_z; float step_y;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.x += ec_state.dim.x;
@@ -529,7 +529,7 @@ void EntityMgr::entity_terrain_collide_r( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Right ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;
@@ -545,7 +545,7 @@ void EntityMgr::entity_terrain_collide_u( ECState & ec_state ) {
 	int num_x; int num_z;
 	float step_x; float step_z;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.y += ec_state.dim.y;
@@ -565,7 +565,7 @@ void EntityMgr::entity_terrain_collide_u( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Up ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;
@@ -581,7 +581,7 @@ void EntityMgr::entity_terrain_collide_d( ECState & ec_state ) {
 	int num_x; int num_z;
 	float step_x; float step_z;
 	int id_block;
-	Block * ptr_block;
+	BlockLoader * ptr_block;
 
 	pos_coll_s = ec_state.pos_last - ec_state.dim / 2.0f;
 	pos_coll_s.y += ec_state.pos_delta.y;
@@ -600,7 +600,7 @@ void EntityMgr::entity_terrain_collide_d( ECState & ec_state ) {
 				id_block != -1 && id_block != -2;
 
 			if( ec_state.is_coll_face[ FaceDirection::FD_Down ] ) {
-				ptr_block = &client.chunk_mgr.get_block_data( id_block );
+				ptr_block = client.block_mgr.get_block_loader( id_block );
 
 				if( ptr_block->is_coll ) {
 					ec_state.is_coll = true;

@@ -1,9 +1,14 @@
 #include "GuiMgr.h"
-#include "Client.h"
-#include "WorldSize.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
+
+#include "Client.h"
+#include "WorldSize.h"
+
+#include "TestPage.h"
+#include "TestComp.h"
+
 
 GuiMgr::GuiMgr( Client & client ) :
 	Manager( client ),
@@ -12,29 +17,36 @@ GuiMgr::GuiMgr( Client & client ) :
 GuiMgr::~GuiMgr( ) { }
 
 void GuiMgr::init( ) {
-	list_page.reserve( size_pages );
-	map_page.reserve( size_pages );
-	list_order.reserve( size_pages );
-	client.resource_mgr.reg_pool< PCDTextField >( 1000 );
-	client.resource_mgr.reg_pool< PageComp >( 1000 );
+	list_pages.reserve( size_pages );
+	map_pages.reserve( size_pages );
+	//list_order.reserve( size_pages );
 
 	GL_CHECK( block_selector.init( ) );
 
-	GL_CHECK( add_page( std::string( "Console" ),
-		PageFuncs::alloc_console,
-		PageFuncs::cust_null
-		) );
-
-	GL_CHECK( add_page( std::string( "Static" ),
-		PageFuncs::alloc_static,
-		PageFuncs::cust_null
-		) );
+	load_components( );
+	load_pages( );
 
 	is_visible = true;
 }
 
 void GuiMgr::update( ) {
 	block_selector.update( );
+
+	Page * page;
+	for( int unsigned i = 0; i < list_pages.size( ); ++i ) { 
+		page = &list_pages[ i ].get( );
+
+		page->page_loader->func_update( page );
+		page->reposition( );
+
+		if( page->is_visible && page->is_remesh ) {
+			client.thread_mgr.task_main( 10, [ page ] ( ) {
+				page->page_loader->func_mesh( page );
+			} );
+
+			page->is_remesh = false;
+		}
+	}
 
 	if( is_visible && client.input_mgr.is_cursor_vis( ) ) {
 		if( client.input_mgr.is_mouse_down( 0 ) ) {
@@ -49,7 +61,7 @@ void GuiMgr::update( ) {
 	}
 
 	for( int i = 0; i < list_order.size( ); i++ ) { 
-		list_order[ i ]->update( );
+		//list_order[ i ]->update( );
 	}
 }
 
@@ -60,14 +72,19 @@ void GuiMgr::render( ) {
 		return;
 	}
 
-	for( int i = 0; i < list_order.size( ); i++ ) {
-		auto & page = *list_order[ i ];
-		if( !page.is_visibile ) {
+	auto iter_order = list_order.rbegin( );
+
+	while( iter_order != list_order.rend( ) ) {
+		auto page = &list_pages[ *iter_order ].get( );
+
+		if( !page->is_visible ) {
 			continue;
 		}
 
-		client.texture_mgr.update_uniform( "BasicOrtho", "mat_model", page.mat_model );
-		page.vbo.render( client, true );
+		client.texture_mgr.update_uniform( "BasicOrtho", "mat_model", page->mat_model );
+		page->vbo_mesh.render( client, true );
+
+		iter_order++;
 	}
 }
 
@@ -75,94 +92,208 @@ void GuiMgr::end( ) { }
 
 void GuiMgr::sec( ) { }
 
+void GuiMgr::load_components( ) { 
+	add_component_loader( TestComp( client ) );
+}
+
+void GuiMgr::add_component_loader( PCLoader & pc_loader ) { 
+	if( map_page_component_loaders.find( pc_loader.name ) != map_page_component_loaders.end( ) ) { 
+		printf( "ERROR: Duplicate Page Component Loader: %s\n", pc_loader.name.c_str( ) );
+		return;
+	}
+	
+	PCLoader loader;
+
+	loader.name = pc_loader.name;
+
+	loader.func_alloc = pc_loader.func_alloc;
+	loader.func_release = pc_loader.func_release;
+
+	loader.func_over = pc_loader.func_over;
+	loader.func_down = pc_loader.func_down;
+	loader.func_hold = pc_loader.func_hold;
+	loader.func_up = pc_loader.func_up;
+
+	loader.func_mesh = pc_loader.func_mesh;
+
+	loader.func_action = pc_loader.func_action;
+
+	list_page_component_loaders.push_back( loader );
+	map_page_component_loaders.insert( { loader.name, ( int ) list_page_component_loaders.size( ) - 1 } );
+
+	printf( "SUCCESS: Added Page Component Loader: %s\n", loader.name.c_str( ) );
+}
+
+PCLoader * GuiMgr::get_component_loader( std::string const & name_loader ) { 
+	return &list_page_component_loaders[ map_page_component_loaders[ name_loader ] ];
+}
+
+PCLoader * GuiMgr::get_component_loader_safe( std::string const & name_loader ) {
+	auto iter_loader = map_page_component_loaders.find( name_loader );
+
+	if( iter_loader == map_page_component_loaders.end( ) ) { 
+		return nullptr;
+	}
+
+	return &list_page_component_loaders[ iter_loader->second ];
+}
+
+void GuiMgr::load_pages( ) { 
+	add_page_loader( TestPage( client ) );
+
+	add_page( "Test", "Test", [ ] ( Page * page ) { return 0; } );
+	add_page( "Test2", "Test", [ ] ( Page * page ) { 
+		auto & color = page->get_data< TestPage::TestData >( ).color;
+		color = { 1.0f, 0.5f, 0.5f, 0.5f };
+		page->dim = { 300, 300 };
+		return 0;
+	} );
+}
+
+void GuiMgr::add_page_loader( PageLoader & page_loader ) { 
+	if( map_page_loaders.find( page_loader.name ) != map_page_loaders.end( ) ) { 
+		printf( "ERROR: Duplicate Page Loader: %s\n", page_loader.name.c_str( ) );
+		return;
+	}
+
+	PageLoader loader;
+
+	loader.name = page_loader.name;
+
+	loader.func_alloc = page_loader.func_alloc;
+	loader.func_release = page_loader.func_release;
+
+	loader.func_update = page_loader.func_update;
+	loader.func_mesh = page_loader.func_mesh;
+
+	list_page_loaders.push_back( loader );
+	map_page_loaders.insert( { loader.name, ( int ) list_page_loaders.size( ) - 1 } );
+
+	printf( "SUCCESS: Added Page Loader: %s\n", loader.name.c_str( ) );
+}
+
+PageLoader * GuiMgr::get_page_loader( std::string const & name_loader ) { 
+	return &list_page_loaders[ map_page_loaders[ name_loader ] ];
+}
+
+PageLoader * GuiMgr::get_page_loader_safe( std::string const & name_loader ) {
+	auto iter_map = map_page_loaders.find( name_loader );
+
+	if( iter_map == map_page_loaders.end( ) ) { 
+		return nullptr;
+	}
+
+	return &list_page_loaders[ iter_map->second ];
+}
+
+void GuiMgr::add_page( std::string const & name_page, std::string const & name_loader, PageFunc func_custom ) { 
+	if( map_pages.find( name_page ) != map_pages.end( ) ) { 
+		printf( "ERROR: Duplicate Page: %s\n", name_page.c_str( ) );
+		return;
+	}
+
+	PageLoader * loader = get_page_loader_safe( name_loader );
+
+	if( loader == nullptr ) { 
+		printf( "ERROR: No Page Loader found: %s\n", name_loader.c_str( ) );
+		return;
+	}
+
+	Handle< Page > handle_page;
+	auto page = client.resource_mgr.allocate( handle_page );
+
+	if( page == nullptr ) { 
+		printf( "ERROR: Cannot allocate Page Handle: %s\n", name_page.c_str( ) );
+		return;
+	}
+
+	page->client = &client;
+
+	page->name = name_page;
+	page->page_loader = loader;
+
+	if( page->page_loader->func_alloc( page ) != 0 ) { 
+		printf( "ERROR: Error Allocating Page: %s\n", name_page.c_str( ) );
+		client.resource_mgr.release( handle_page );
+		return;
+	}
+
+	page->vbo_mesh.init( );
+
+	func_custom( page );
+
+	page->reposition( );
+
+	list_pages.push_back( handle_page );
+	map_pages.insert( { name_page, ( int ) list_pages.size( ) - 1 } );
+	list_order.push_back( ( int ) list_pages.size( ) - 1 );
+
+	printf( "SUCCESS: Added Page: %s\n", name_page.c_str( ) );
+}
+
 void GuiMgr::on_down( int button ) {
 	bool is_handled = false;
-	int i = ( int ) list_order.size( ) - 1;
 
 	auto & pos_mouse = client.input_mgr.get_mouse_down( button );
 
-	while( !is_handled && i >= 0 ) {
-		auto & page = *list_order[ i ];
+	Page * page;
+	auto iter_order = list_order.begin( );
+	while( !is_handled && iter_order != list_order.end( ) ) {
+		page = &list_pages[ *iter_order ].get( );
 
-		if( page.is_visibile ) {
-			if( Directional::is_point_in_rect( pos_mouse, page.vec_pos, page.vec_pos + page.vec_dim ) ) {
-				is_handled = list_order[ i ]->on_down( button );
+		if( page->is_visible ) {
+			if( Directional::is_point_in_rect( pos_mouse, page->pos, page->pos + page->dim ) ) {
+				is_handled = page->on_down( button );
 
-				if( is_handled ) {
-					auto temp = list_order[ i ];
-					list_order.erase( list_order.begin( ) + i );
-					list_order.push_back( temp );
+				if( is_handled ) { 
+					int id_order = *iter_order;
+					iter_order = list_order.erase( iter_order );
+					list_order.push_front( id_order );
 				}
 			}
 		}
 
-		i--;
+		iter_order++;
 	}
 }
 
 void GuiMgr::on_hold( int button ) {
 	bool is_handled = false;
-	int i = ( int )list_order.size( ) - 1;
+	auto iter_order = list_order.begin( );
 
-	while( !is_handled && i >= 0 ) {
-		auto & page = *list_order[ i ];
+	Page * page;
+	while( !is_handled && iter_order != list_order.end( ) ) {
+		page = &list_pages[ *iter_order ].get( );
 
-		if( page.is_visibile ) {
-			is_handled = list_order[ i ]->on_hold( button );
+		if( page->is_visible ) {
+			is_handled = page->on_hold( button );
 		}
 
-		i--;
+		iter_order++;
 	}
 }
 
 void GuiMgr::on_up( int button ) {
 	bool is_handled = false;
-	int i = ( int ) list_order.size( ) - 1;
 
 	auto & pos_mouse = client.input_mgr.get_mouse_up( button );
 
-	while( !is_handled && i >= 0 ) {
-		auto & page = *list_order[ i ];
+	Page * page;
+	auto iter_order = list_order.begin( );
+	while( !is_handled && iter_order != list_order.end( ) ) {
+		page = &list_pages[ *iter_order ].get( );
 
-		if( page.is_visibile ) {
-			if( Directional::is_point_in_rect( pos_mouse, page.vec_pos, page.vec_pos + page.vec_dim ) ) {
-				is_handled = list_order[ i ]->on_up( button );
+		if( page->is_visible ) {
+			if( Directional::is_point_in_rect( pos_mouse, page->pos, page->pos + page->dim ) ) {
+				is_handled = page->on_up( button );
 			}
 		}
 
-		i--;
+		iter_order++;
 	}
 }
 
-void GuiMgr::add_page( std::string & str_name, FuncPage func_alloc, FuncPage func_custom ) {
-	Handle< Page > handle_page;
-
-	if( client.resource_mgr.allocate( handle_page ) ) {
-		auto & page = handle_page.get( );
-		page.client = &client;
-		page.str_name = str_name;
-
-		if( func_alloc( page ) && func_custom( page ) ) {
-			page.vbo.init( );
-			page.is_dirty = true;
-			page.resize( );
-			list_page.push_back( handle_page );
-			map_page.insert( { page.str_name, &page } );
-			list_order.push_back( &page );
-		}
-	}
-}
-
-Page & GuiMgr::get_page( std::string & str_name ) {
-	return *map_page[ str_name ];
-}
-
-void GuiMgr::page_show_all( ) {
-	for( int i = 0; i < list_order.size(); i++ ) { 
-		list_order[ i ]->is_visibile = true;
-	}
-}
-
+/*
 void GuiMgr::print_to_console( std::string const & str_print ) {
 	std::string str_console( "Console" );
 	auto & page = get_page( str_console );
@@ -225,9 +356,10 @@ void GuiMgr::clear_static() {
 
 	data_static.index = 0;
 	data_static.size = 0;
-}
+}*/
 
-void GuiMgr::toggle_input( ) { 
+void GuiMgr::toggle_input( ) {
+	/*
 	if( is_input ) {
 		auto & page = get_page( std::string( "Console" ) );
 		auto & comp_command = page.get_comp( std::string( "Command" ) );
@@ -261,6 +393,7 @@ void GuiMgr::toggle_input( ) {
 
 		is_input = true;
 	}
+	*/
 }
 
 bool GuiMgr::get_is_input( ) {
@@ -268,6 +401,7 @@ bool GuiMgr::get_is_input( ) {
 }
 
 void GuiMgr::handle_input_char( int const key, bool const is_down ) { 
+	/*
 	std::string str_console( "Console" );
 	auto & page = get_page( str_console );
 	auto & data_command = page.get_data< PCDCommand >( str_console );
@@ -438,9 +572,11 @@ void GuiMgr::handle_input_char( int const key, bool const is_down ) {
 			}
 		}
 	}
+	*/
 }
 
 void GuiMgr::process_input( ) { 
+	/*
 	std::string str_console( "Console" );
 	auto & page = get_page( str_console );
 	auto & data_command = page.get_data< PCDCommand >( str_console );
@@ -528,7 +664,7 @@ void GuiMgr::process_input( ) {
 						id = -1;
 					}
 					else {
-						Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
+						BlockLoader * ptr_block = client.block_mgr.get_block_loader_safe( token );
 						if( ptr_block ) {
 							id = ptr_block->id;
 						}
@@ -536,7 +672,7 @@ void GuiMgr::process_input( ) {
 				}
 
 				out.str( "" );
-				out << "Command: Sphere at:" << Directional::print_vec( vec_pos ) << " radius:" << r << " type:" << client.chunk_mgr.get_block_string( id ) << ".";
+				out << "Command: Sphere at:" << Directional::print_vec( vec_pos ) << " radius:" << r << " type:" << client.block_mgr.get_block_string( id ) << ".";
 				print_to_console( out.str( ) );
 				client.thread_mgr.task_async( 10, [ &, vec_pos, r, id ] ( ) { 
 					client.chunk_mgr.set_sphere( vec_pos, r, id );
@@ -594,7 +730,7 @@ void GuiMgr::process_input( ) {
 						id = -1;
 					}
 					else {
-						Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
+						BlockLoader * ptr_block = client.block_mgr.get_block_loader_safe( token );
 						if( ptr_block ) {
 							id = ptr_block->id;
 						}
@@ -602,7 +738,7 @@ void GuiMgr::process_input( ) {
 				}
 
 				out.str( "" );
-				out << "Command: Rectangle at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.chunk_mgr.get_block_string( id ) << ".";
+				out << "Command: Rectangle at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.block_mgr.get_block_string( id ) << ".";
 				print_to_console( out.str( ) );
 
 				client.thread_mgr.task_async( 10, [ &, vec_pos, vec_dim, id ] ( ) {
@@ -661,7 +797,7 @@ void GuiMgr::process_input( ) {
 						id = -1;
 					}
 					else {
-						Block * ptr_block = client.chunk_mgr.get_block_data_safe( token );
+						BlockLoader * ptr_block = client.block_mgr.get_block_loader_safe( token );
 						if( ptr_block ) {
 							id = ptr_block->id;
 						}
@@ -669,7 +805,7 @@ void GuiMgr::process_input( ) {
 				}
 
 				out.str( "" );
-				out << "Command: Ellipsoid at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.chunk_mgr.get_block_string( id ) << ".";
+				out << "Command: Ellipsoid at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.block_mgr.get_block_string( id ) << ".";
 				print_to_console( out.str( ) );
 
 				client.thread_mgr.task_async( 10, [ &, vec_pos, vec_dim, id ] ( ) {
@@ -878,7 +1014,7 @@ void GuiMgr::process_input( ) {
 			client.thread_mgr.task_async( 10, [ & ] ( ) {
 				block_selector.make_mesh( );
 			} );
-		}*/
+		}
 		else {
 			out.str( "" );
 			out << "Command: '" << token << "' is not a valid command.";
@@ -896,6 +1032,7 @@ void GuiMgr::process_input( ) {
 	else {
 		print_to_console( "Say: " + str_command );
 	}
+	*/
 }
 
 std::unordered_map< std::string, std::vector< int > > get_tokenized_ints( 

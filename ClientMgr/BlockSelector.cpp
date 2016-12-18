@@ -31,8 +31,8 @@ int BlockSelector::get_id_block( ) {
 
 void BlockSelector::change_id_block( int delta_id_block ) {
 	id_block += delta_id_block;
-	while( id_block >= client.chunk_mgr.get_num_blocks( ) ) id_block -= client.chunk_mgr.get_num_blocks( );
-	while( id_block < 0 ) id_block += client.chunk_mgr.get_num_blocks( );
+	while( id_block >= client.block_mgr.get_num_blocks( ) ) id_block -= client.block_mgr.get_num_blocks( );
+	while( id_block < 0 ) id_block += client.block_mgr.get_num_blocks( );
 	set_dirty( );
 }
 
@@ -134,13 +134,13 @@ void BlockSelector::mesh( ) {
 			is_test = false;
 		}
 
-		Block * block;
+		BlockLoader * block;
 		glm::vec3 const * vert;
 		glm::vec4 color;
 		glm::vec3 const * norm;
 		glm::vec3 const * uv;
 
-		block = &client.chunk_mgr.get_block_data( id_block );
+		block = client.block_mgr.get_block_loader( id_block );
 
 		vbo.clear( );
 
@@ -164,8 +164,8 @@ void BlockSelector::mesh( ) {
 
 		for( int k = num_hist; k >= 1; --k ) {
 			id_temp = id_block + k;
-			while( id_temp >= client.chunk_mgr.get_num_blocks( ) ) id_temp -= client.chunk_mgr.get_num_blocks( );
-			block = &client.chunk_mgr.get_block_data( id_temp );
+			while( id_temp >= client.block_mgr.get_num_blocks( ) ) id_temp -= client.block_mgr.get_num_blocks( );
+			block = client.block_mgr.get_block_loader( id_temp );
 
 			vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
 				"Selector", client.texture_mgr.get_texture_id( "Blocks" ),
@@ -186,8 +186,8 @@ void BlockSelector::mesh( ) {
 			}
 
 			id_temp = id_block - k;
-			while( id_temp < 0 ) id_temp += client.chunk_mgr.get_num_blocks( );
-			block = &client.chunk_mgr.get_block_data( id_temp );
+			while( id_temp < 0 ) id_temp += client.block_mgr.get_num_blocks( );
+			block = client.block_mgr.get_block_loader( id_temp );
 
 			vbo.push_set( VBO::IndexSet( VBO::TypeGeometry::TG_Triangles,
 				"Selector", client.texture_mgr.get_texture_id( "Blocks" ),

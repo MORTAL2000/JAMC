@@ -1,5 +1,6 @@
 #pragma once
 #include "Globals.h"
+
 #include "ChunkMgr.h"
 #include "VBO.h"
 #include "SharedMesh.h"
@@ -9,6 +10,7 @@ private:
 	static int constexpr size_max = 75;
 	static int constexpr size_min = 40;
 	static int constexpr num_hist = 6;
+
 	Client & client;
 	int id_temp;
 	int id_block;

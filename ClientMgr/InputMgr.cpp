@@ -136,7 +136,7 @@ void InputMgr::process_input( ) {
 		else if( is_key( '3' ) ) { 
 			client.display_mgr.out.str( "" );
 			client.display_mgr.out << "Returning home!!!";
-			client.gui_mgr.print_to_console( client.display_mgr.out.str( ) );
+			//client.gui_mgr.print_to_console( client.display_mgr.out.str( ) );
 
 			client.display_mgr.camera.pos_camera = glm::vec3( 0, WorldSize::Chunk::size_y / 2 + 5, 0 );
 			time_last_cmd = time;
@@ -145,8 +145,8 @@ void InputMgr::process_input( ) {
 			client.display_mgr.out.str( "" );
 			client.display_mgr.out <<
 				Directional::print_vec( client.display_mgr.camera.pos_camera ) <<
-				" Block: " << client.chunk_mgr.get_block_string( client.chunk_mgr.get_block( client.display_mgr.camera.pos_camera ) );
-			client.gui_mgr.print_to_console( client.display_mgr.out.str( ) );
+				" Block: " << client.block_mgr.get_block_string( client.chunk_mgr.get_block( client.display_mgr.camera.pos_camera ) );
+			//client.gui_mgr.print_to_console( client.display_mgr.out.str( ) );
 
 			time_last_cmd = time;
 		}
@@ -192,12 +192,12 @@ void InputMgr::process_input( ) {
 			client.display_mgr.out.str( "" );
 			client.display_mgr.out <<
 				Directional::print_vec( client.display_mgr.camera.pos_camera ) <<
-				" Block: " << client.chunk_mgr.get_block_string( client.chunk_mgr.get_block( client.display_mgr.camera.pos_camera ) );
-			client.gui_mgr.print_to_console( client.display_mgr.out.str( ) );
+				" Block: " << client.block_mgr.get_block_string( client.chunk_mgr.get_block( client.display_mgr.camera.pos_camera ) );
+			//client.gui_mgr.print_to_console( client.display_mgr.out.str( ) );
 			time_last_cmd = time;
 		}
 		else if( is_key( '8' ) ) {
-			client.gui_mgr.page_show_all( );
+			//client.gui_mgr.page_show_all( );
 			time_last_cmd = time;
 		}
 		else if( is_key( 'F' ) ) {
@@ -256,9 +256,9 @@ void InputMgr::process_input( ) {
 			client.entity_mgr.entity_add( 
 				"Tnt",
 				[ &, pos_gw ] ( Client & client, Entity & entity ) {
-					auto & block_tnt = client.chunk_mgr.get_block_data( "Tnt" );
-					entity.id = block_tnt.id;
-					entity.color = client.chunk_mgr.get_block_data( block_tnt.id ).color;
+					auto block_tnt = client.block_mgr.get_block_loader( "Tnt" );
+					entity.id = block_tnt->id;
+					entity.color = client.block_mgr.get_block_loader( block_tnt->id )->color;
 
 					auto & ec_state = entity.h_state.get( );
 					ec_state.pos = glm::floor( pos_gw );

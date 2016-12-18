@@ -11,7 +11,7 @@ WormBlock::WormBlock( )	:
 				return ErrorEntity::EE_Failed;
 			}
 
-			entity.id = client.chunk_mgr.get_block_data( "Gold Block" ).id;
+			entity.id = client.block_mgr.get_block_loader( "Gold Block" )->id;
 
 			auto & ec_state = entity.h_state.get( );
 			ec_state.is_gravity = false;

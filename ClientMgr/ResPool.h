@@ -77,8 +77,8 @@ public:
 
 	~ResPool( ) { }
 
-	bool allocate( Handle< T > & handle ) {
-		if( id_next >= size_max ) { return false; }
+	T * allocate( Handle< T > & handle ) {
+		if( id_next >= size_max ) { return nullptr; }
 		if( id_next < id_first ) { id_first = id_next; }
 		if( id_next > id_last ) { id_last = id_next; }
 
@@ -93,7 +93,7 @@ public:
 			++id_next;
 		} while( id_next < size_max && list_live[ id_next ] );
 
-		return true;
+		return &handle.get( );
 	}
 
 	void release( Handle< T > & handle ) {
