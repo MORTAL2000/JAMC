@@ -55,7 +55,7 @@ void Client::thread_main_loop( ) {
 
 		time_mgr.begin_record( RecordStrings::UPDATE );
 
-		while( time_mgr.get_time( TimeStrings::GAME_ACCUM ) > TIME_FRAME_MILLI ) {
+		if( time_mgr.get_time( TimeStrings::GAME_ACCUM ) > TIME_FRAME_MILLI ) {
 			if( time_mgr.get_time( TimeStrings::GAME ) -
 				time_mgr.get_time( TimeStrings::SEC ) >
 				TIME_MILLISEC ) {

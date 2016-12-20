@@ -17,9 +17,9 @@ TextureMgr::TextureMgr( Client & client ) :
 TextureMgr::~TextureMgr( ) { }
 
 void TextureMgr::init( ) {
-	printf( "*** TextureMgr ***\n" );
+	printf( "\n*** TextureMgr ***\n" );
 
-	printf( "\nCreating shaders and loading data...\n" );
+	printf( "\nCreating shaders...\n\n" );
 
 	for( auto & shader : {
 		"BasicOrtho", "BasicPersp", "SMBasic", "SMBasicProj", "Terrain", "SMTerrain", "SMTerrainBasic", "SMTerrainInstance", 
@@ -28,11 +28,15 @@ void TextureMgr::init( ) {
 		loader_add( shader );
 	}
 
+	printf( "\nLoading Textures...\n" );
+
 	GL_CHECK( load_textures( ) );
+
+	printf( "\nLoading Fonts...\n" );
 
 	GL_CHECK( load_fonts( ) );
 
-	printf( "Creating uniform buffer objects...\n" );
+	printf( "\nCreating uniform buffer objects...\n" );
 
 	GL_CHECK( glGenBuffers( 1, &id_ubo_mvp ) );
 	GL_CHECK( glBindBuffer( GL_UNIFORM_BUFFER, id_ubo_mvp ) );
@@ -44,7 +48,7 @@ void TextureMgr::init( ) {
 	GL_CHECK( glBufferData( GL_UNIFORM_BUFFER, sizeof( LightData ), &client.chunk_mgr.get_light_data( ), GL_DYNAMIC_DRAW ) );
 	GL_CHECK( glBindBufferBase( GL_UNIFORM_BUFFER, 1, id_ubo_lights ) );
 
-	printf( "Linking Uniforms...\n" );
+	printf( "\nLinking Uniforms...\n" );
 	GLuint id_program;
 	GLuint idx_block;
 	GLuint idx_sampler;
@@ -190,10 +194,6 @@ void TextureMgr::load_textures( ) {
 	// Load xml file
 	doc.LoadFile( "./Textures/MultiTexDesc.xml" );
 
-	std::cout << std::endl;
-	//std::cout << checkGlErrors( ) << std::endl;
-	std::cout << "Loading MultiTexs..." << std::endl;
-
 	// Any errors?
 	if( doc.Error( ) ) { 
 		std::cout << "ERROR: Error while loading MultiTex descriptor!!" << std::endl;
@@ -245,8 +245,7 @@ void TextureMgr::load_textures( ) {
 		// Reserve bucket space fot the sub texture lookup
 		entry.map_subtexture_lookup.reserve( num_tex );
 
-		std::cout << "Loading MultiTex: [" << entry.name_texture << "] dim:" << Directional::print_vec( entry.dim_texture ) 
-			<< " size:" << entry.num_subtexture << " mipmap:" << entry.num_mipmap << std::endl;
+		printf( "\nLoading MultiTex[ %s ] dim: %s size: %i\n", entry.name_texture.c_str( ), Directional::print_vec( entry.dim_texture ).c_str( ), entry.num_subtexture );
 
 		// Request space fo the copy and final multitexture
 		glGenTextures( 1, &id_copy );
@@ -258,8 +257,6 @@ void TextureMgr::load_textures( ) {
 		glBindTexture( GL_TEXTURE_2D_ARRAY, entry.id_texture );
 		glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 		glTexStorage3D( GL_TEXTURE_2D_ARRAY, entry.num_mipmap, GL_RGBA8, entry.dim_texture.x, entry.dim_texture.y, num_tex );
-
-		//std::cout << "Error after allocation? " << checkGlErrors( ) << std::endl;
 
 		// Lets iterate over all the sub textures in their folders!
 		for( directory_iterator iter_multitex( path_multitex ); iter_multitex != directory_iterator( ); ++iter_multitex ) {
@@ -301,8 +298,7 @@ void TextureMgr::load_textures( ) {
 				entry.map_subtexture_lookup.insert( { path_relative, entry.num_subtexture } );
 
 				entry.num_subtexture++;
-
-				std::cout << "Loading subtex: " << path_relative << std::endl;
+				printf( "Loading subtex: %s\n", path_relative.c_str( ) );
 			}
 		}
 
@@ -316,12 +312,8 @@ void TextureMgr::load_textures( ) {
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 
 		glDeleteTextures( 1, &id_copy );
-
-		std::cout << "Loaded MultiTex[" << entry.name_texture << "] dim:" << Directional::print_vec( entry.dim_texture ) << " size:" << entry.num_subtexture << std::endl;
+		printf( "Loaded MultiTex[ %s ] dim: %s size: %i\n", entry.name_texture.c_str( ), Directional::print_vec( entry.dim_texture ).c_str( ), entry.num_subtexture );
 	}
-
-	//std::cout << checkGlErrors( ) << std::endl;
-	std::cout << std::endl;
 }
 
 void TextureMgr::load_fonts( ) { 

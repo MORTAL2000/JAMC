@@ -11,8 +11,6 @@ private:
 
 public:
 	static PageFunc func_null;
-	static PageFunc func_update_comps;
-	static PageFunc func_mesh_comps;
 
 	PageLoader( );
 	~PageLoader( );

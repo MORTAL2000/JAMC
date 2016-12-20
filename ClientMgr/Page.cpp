@@ -37,6 +37,7 @@ bool Page::add_comp( std::string const & name_comp, std::string const & name_loa
 	}
 
 	comp->page = this;
+	comp->parent = nullptr;
 	comp->pc_loader = loader;
 
 	comp->name = name_comp;
@@ -57,6 +58,19 @@ bool Page::add_comp( std::string const & name_comp, std::string const & name_loa
 	printf( "SUCCESS: Added Component: %s to Page: %s\n", name_comp.c_str( ), name.c_str( ) );
 
 	return true;
+}
+
+PComp * Page::get_comp( std::string const & name ) {
+	return &list_comps[ map_comps[ name ] ].get( );
+}
+
+PComp * Page::get_comp_safe( std::string const & name ) {
+	auto iter_map = map_comps.find( name );
+	if( iter_map == map_comps.end( ) ) { 
+		return nullptr;
+	}
+
+	return &list_comps[ map_comps[ name ] ].get( );
 }
 
 bool Page::on_down( int button ) {
@@ -121,8 +135,9 @@ bool Page::on_up( int button ) {
 	bool is_handled = false;
 	glm::ivec2 pos_l = client->input_mgr.get_mouse_up( button ) - pos;
 
-	auto iter_comps = list_comps.begin( );
+
 	PComp * comp;
+	auto iter_comps = list_comps.begin( );
 
 	while( iter_comps != list_comps.end( ) ) {
 		comp = &iter_comps->get( );

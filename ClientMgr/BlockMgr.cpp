@@ -33,15 +33,12 @@ void BlockMgr::sec( ) { }
 void BlockMgr::load_block_data( ) {
 	using namespace std::tr2::sys;
 
-	std::ostringstream out;
 	path path_base( "./Blocks" );
 	tinyxml2::XMLDocument doc;
 	tinyxml2::XMLElement const * ele_block;
 	tinyxml2::XMLElement const * ele_face;
 	tinyxml2::XMLElement const * ele_data;
 	tinyxml2::XMLElement const * ele_var;
-
-	printTabbedLine( 1, "Loading blocks..." );
 
 	for( directory_iterator iter_blocks( path_base ); iter_blocks != directory_iterator( ); ++iter_blocks ) {
 		if( iter_blocks->path( ).extension( ).string( ) != ".xml" ) {
@@ -305,8 +302,6 @@ void BlockMgr::load_block_data( ) {
 		list_block_loader.emplace_back( loader_block );
 		map_block_loader.insert( { loader_block.name, ( GLuint ) list_block_loader.size( ) - 1 } );
 	}
-
-	printTabbedLine( 1, out.str( ) );
 }
 
 void BlockMgr::load_block_mesh( ) {

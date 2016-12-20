@@ -1,59 +1,68 @@
-#include "TestPage.h"
-
-#include "LabelComp.h"
 #include "TextButtonComp.h"
 
-TestPage::TestPage( Client & client ) {
-	name = "Test";
+#include "Client.h"
+#include "LabelComp.h"
 
-	func_alloc = [ &client = client ] ( Page * page ) { 
-		page->is_visible = true;
-		page->is_remesh = true;
-		page->is_hold = false;
+TextButtonComp::TextButtonComp( Client & client ) {
+	name = "Button";
 
-		page->anchor = { 0.5f, 0.5f };
-		page->offset = { 0, 0 };
-		page->dim = { 500, 500 };
+	func_alloc = [ &client = client ] ( PComp * comp ) {
+		comp->is_visible = true;
+		comp->is_hold = false;
 
-		page->add_data< TestData >( client );
-		auto & color = page->get_data< TestData >( ).color;
-		color = { 1.0f, 1.0f, 1.0f, 0.5f };
+		comp->pos = { 0, 0 };
+		comp->dim = { 100, 32 };
+		comp->offset = -comp->dim / 2;
 
-		page->add_comp( "TestButton", "Button", [ ] ( PComp * comp ) {
-			comp->anchor = { 0.5f, 0.5f };
+		comp->add_data< ButtonData >( client );
 
-			auto & button_data = comp->get_data< TextButtonComp::ButtonData >( );
-			auto & label_data = button_data.comp_label->get_data< LabelComp::LabelData >( );
+		auto & button_data = comp->get_data< ButtonData >( );
+		button_data.func_action = func_null;
+		button_data.color_down = { 1.0f, 0.5f, 0.5f, 0.75f };
+		button_data.color_up = { 1.0f, 1.0f, 1.0f, 0.75f };
+		button_data.color = button_data.color_up;
+		button_data.id_texture = client.texture_mgr.get_texture_id( "Gui" );
+		button_data.id_subtex = client.texture_mgr.get_texture_layer( "Gui", "Default/PageBG" );
 
-			label_data.text = "TestButton";
+		comp->add_comp( "Label", "Label", func_null );
 
-			comp->page->is_remesh = true;
+		PComp * label_comp = comp->get_comp( "Label" );
+		button_data.comp_label = label_comp;
+		label_comp->anchor = { 0.5f, 0.5f };
 
-			return 0;
-		} );
-
-		page->add_comp( "TitleLabel", "Label", [ ] ( PComp * comp ) { 
-			auto & data = comp->get_data< LabelComp::LabelData >( );
-
-			data.alignment_v = LabelComp::LabelData::AlignVertical::AV_Bottom;
-
-			data.text = comp->page->name + " Page";
-			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 10, -10 };
-			comp->page->is_remesh = true;
-
-			return 0;
-		} );
+		auto & label_data = label_comp->get_data< LabelComp::LabelData >( );
+		label_data.size_text = 12;
+		label_data.alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Center;
+		label_data.alignment_v = LabelComp::LabelData::AlignVertical::AV_Center;
 
 		return 0;
 	};
 
-	func_release = func_null;
+	func_down = [ &client = client ] ( PComp * comp ) {
+		auto & button_data = comp->get_data< ButtonData >( );
+		button_data.color = button_data.color_down;
+		comp->page->is_remesh = true;
 
-	func_mesh = [ 
-		id_subtex = client.texture_mgr.get_texture_layer( "Gui", "Default/PageBG" )
-	] ( Page * page ) {
-		glm::vec4 & color = page->get_data< TestData >( ).color;
+		return 1;
+	};
+
+	func_hold = [ &client = client ] ( PComp * comp ) {
+		return 0;
+	};
+
+	func_up = [ ] ( PComp * comp ) {
+		auto & button_data = comp->get_data< ButtonData >( );
+		button_data.color = button_data.color_up;
+		comp->page->is_remesh = true;
+
+		button_data.func_action( comp );
+
+		return 1;
+	};
+
+	func_mesh = [ &client = client ] ( PComp * comp ) {
+		auto & button_data = comp->get_data< ButtonData >( );
+		auto & color = button_data.color;
 		glm::vec3 norm = { 0.0f, 0.0f, 1.0f };
 
 		int padding = 8;
@@ -63,18 +72,20 @@ TestPage::TestPage( Client & client ) {
 
 		float d_uv = d_pix * 8.0f;
 
-		float p_x[ ] = { 0.0f, padding, page->dim.x - padding, page->dim.x };
-		float p_y[ ] = { 0.0f, padding, page->dim.y - padding, page->dim.y };
+		float p_x[ ] = { comp->pos.x, comp->pos.x + padding, comp->pos.x + comp->dim.x - padding, comp->pos.x + comp->dim.x };
+		float p_y[ ] = { comp->pos.y, comp->pos.y + padding, comp->pos.y + comp->dim.y - padding, comp->pos.y + comp->dim.y };
 		float p_uv[ ] = { dh_pix, dh_pix + d_uv, 1.0f - dh_pix - d_uv, 1.0f - dh_pix };
 
-		page->vbo_mesh.push_set( VBO::IndexSet(
+		int unsigned id_subtex = button_data.id_subtex;
+
+		comp->page->vbo_mesh.push_set( VBO::IndexSet(
 			VBO::TypeGeometry::TG_Triangles,
 			"BasicOrtho",
-			page->client->texture_mgr.get_texture_id( "Gui" ),
+			client.texture_mgr.get_texture_id( "Gui" ),
 			std::vector< GLuint >{ 0, 1, 2, 2, 3, 0 }
 		) );
 
-		page->vbo_mesh.push_data( std::vector< VBO::Vertex > {
+		comp->page->vbo_mesh.push_data( std::vector< VBO::Vertex > {
 			// Corners BL/BR/UR/UL
 			{ { p_x[ 0 ], p_y[ 0 ], 0.0f }, color, norm, { p_uv[ 0 ], p_uv[ 0 ], id_subtex } },
 			{ { p_x[ 1 ], p_y[ 0 ], 0.0f }, color, norm, { p_uv[ 1 ], p_uv[ 0 ], id_subtex } },
@@ -96,7 +107,7 @@ TestPage::TestPage( Client & client ) {
 			{ { p_x[ 1 ], p_y[ 3 ], 0.0f }, color, norm, { p_uv[ 1 ], p_uv[ 3 ], id_subtex } },
 			{ { p_x[ 0 ], p_y[ 3 ], 0.0f }, color, norm, { p_uv[ 0 ], p_uv[ 3 ], id_subtex } },
 
-				// Edges B/R/U/L
+			// Edges B/R/U/L
 			{ { p_x[ 1 ], p_y[ 0 ], 0.0f }, color, norm, { p_uv[ 1 ], p_uv[ 0 ], id_subtex } },
 			{ { p_x[ 2 ], p_y[ 0 ], 0.0f }, color, norm, { p_uv[ 2 ], p_uv[ 0 ], id_subtex } },
 			{ { p_x[ 2 ], p_y[ 1 ], 0.0f }, color, norm, { p_uv[ 2 ], p_uv[ 1 ], id_subtex } },
@@ -117,24 +128,18 @@ TestPage::TestPage( Client & client ) {
 			{ { p_x[ 1 ], p_y[ 2 ], 0.0f }, color, norm, { p_uv[ 1 ], p_uv[ 2 ], id_subtex } },
 			{ { p_x[ 0 ], p_y[ 2 ], 0.0f }, color, norm, { p_uv[ 0 ], p_uv[ 2 ], id_subtex } },
 
-				// Center
+			// Center
 			{ { p_x[ 1 ], p_y[ 1 ], 0.0f }, color, norm, { p_uv[ 1 ], p_uv[ 1 ], id_subtex } },
 			{ { p_x[ 2 ], p_y[ 1 ], 0.0f }, color, norm, { p_uv[ 2 ], p_uv[ 1 ], id_subtex } },
 			{ { p_x[ 2 ], p_y[ 2 ], 0.0f }, color, norm, { p_uv[ 2 ], p_uv[ 2 ], id_subtex } },
 			{ { p_x[ 1 ], p_y[ 2 ], 0.0f }, color, norm, { p_uv[ 1 ], p_uv[ 2 ], id_subtex } },
 		} );
 
-		page->vbo_mesh.finalize_set( );
+		comp->page->vbo_mesh.finalize_set( );
 
-		return 0;
-	};
-
-	func_update = [ ] ( Page * page ) {
-		page->mat_model = glm::translate( glm::mat4( ), glm::vec3( page->pos, 0 ) );
-
-		return 0;
+		return 1;
 	};
 }
 
 
-TestPage::~TestPage( ) { }
+TextButtonComp::~TextButtonComp( ) { }

@@ -3,8 +3,7 @@
 #include "Client.h"
 #include "PageComponentLoader.h"
 
-class TestComp :
-	public PageComponentLoader {
+class TestComp : public PageComponentLoader {
 public:
 	struct CompData { 
 		glm::vec4 color;

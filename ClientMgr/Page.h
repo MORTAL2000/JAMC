@@ -46,7 +46,9 @@ private:
 
 public:
 	bool add_comp( std::string const & name, std::string const & comp, PCFunc func_custom );
-	
+	PComp * get_comp( std::string const & name );
+	PComp * get_comp_safe( std::string const & name );
+
 	bool on_down( int button );
 	bool on_hold( int button );
 	bool on_up( int button );

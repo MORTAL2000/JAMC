@@ -60,6 +60,11 @@ public:
 	void end( ) override;
 	void sec( ) override;
 
+	void update_comps( Page * page );
+	void update_comps( PComp * comp );
+
+	void mesh_comps( Page * page );
+
 	PCLoader * get_component_loader( std::string const & name_loader );
 	PCLoader * get_component_loader_safe( std::string const & name_loader );
 

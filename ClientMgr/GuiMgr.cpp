@@ -7,7 +7,10 @@
 #include "WorldSize.h"
 
 #include "TestPage.h"
+
 #include "TestComp.h"
+#include "TextButtonComp.h"
+#include "LabelComp.h"
 
 
 GuiMgr::GuiMgr( Client & client ) :
@@ -17,13 +20,17 @@ GuiMgr::GuiMgr( Client & client ) :
 GuiMgr::~GuiMgr( ) { }
 
 void GuiMgr::init( ) {
+	printf( "\n*** Gui Manager ***\n" );
 	list_pages.reserve( size_pages );
 	map_pages.reserve( size_pages );
 	//list_order.reserve( size_pages );
 
 	GL_CHECK( block_selector.init( ) );
 
+	printf( "\nLoading Components...\n\n" );
 	load_components( );
+
+	printf( "\nLoading Pages...\n\n" );
 	load_pages( );
 
 	is_visible = true;
@@ -39,9 +46,16 @@ void GuiMgr::update( ) {
 		page->page_loader->func_update( page );
 		page->reposition( );
 
+		update_comps( page );
+
 		if( page->is_visible && page->is_remesh ) {
-			client.thread_mgr.task_main( 10, [ page ] ( ) {
+			client.thread_mgr.task_main( 10, [ this, page ] ( ) {
+				page->vbo_mesh.clear( );
+
 				page->page_loader->func_mesh( page );
+				mesh_comps( page );
+
+				page->vbo_mesh.buffer( );
 			} );
 
 			page->is_remesh = false;
@@ -59,9 +73,50 @@ void GuiMgr::update( ) {
 			on_up( 0 );
 		}
 	}
+}
 
-	for( int i = 0; i < list_order.size( ); i++ ) { 
-		//list_order[ i ]->update( );
+void GuiMgr::update_comps( Page * page ) {
+	auto iter_comp = page->list_comps.begin( );
+	while( iter_comp != page->list_comps.end( ) ) {
+		update_comps( &iter_comp->get( ) );
+		++iter_comp;
+	}
+}
+
+void GuiMgr::update_comps( PComp * comp ) {
+	comp->pc_loader->func_update( comp );
+	comp->reposition( );
+
+	auto iter_comp = comp->list_comps.begin( );
+
+	while( iter_comp != comp->list_comps.end( ) ) { 
+		update_comps( &iter_comp->get( ) );
+		
+		++iter_comp;
+	}
+}
+
+void GuiMgr::mesh_comps( Page * page ) { 
+	std::queue< PComp * > queue_comps;
+
+	auto iter_comp = page->list_comps.begin( );
+	while( iter_comp != page->list_comps.end( ) ) { 
+		queue_comps.push( &iter_comp->get( ) );
+		++iter_comp;
+	}
+
+	PComp * comp;
+	while( !queue_comps.empty( ) ) { 
+		comp = queue_comps.front( );
+		queue_comps.pop( );
+
+		comp->pc_loader->func_mesh( comp );
+
+		iter_comp = comp->list_comps.begin( );
+		while( iter_comp != comp->list_comps.end( ) ) { 
+			queue_comps.push( &iter_comp->get( ) );
+			++iter_comp;
+		}
 	}
 }
 
@@ -94,6 +149,8 @@ void GuiMgr::sec( ) { }
 
 void GuiMgr::load_components( ) { 
 	add_component_loader( TestComp( client ) );
+	add_component_loader( TextButtonComp( client ) );
+	add_component_loader( LabelComp( client ) );
 }
 
 void GuiMgr::add_component_loader( PCLoader & pc_loader ) { 
@@ -141,11 +198,35 @@ PCLoader * GuiMgr::get_component_loader_safe( std::string const & name_loader ) 
 void GuiMgr::load_pages( ) { 
 	add_page_loader( TestPage( client ) );
 
-	add_page( "Test", "Test", [ ] ( Page * page ) { return 0; } );
+	add_page( "Test", "Test", [ ] ( Page * page ) {
+		page->dim = { 300, 300 };
+
+		auto & data = page->get_comp( "TestButton" )->
+			get_data< TextButtonComp::ButtonData >( );
+
+		data.func_action = [ ] ( PComp * comp ) { 
+			printf( "I am a banana!\n" );
+
+			return 0;
+		};
+		return 0; 
+	} );
+
 	add_page( "Test2", "Test", [ ] ( Page * page ) { 
 		auto & color = page->get_data< TestPage::TestData >( ).color;
-		color = { 1.0f, 0.5f, 0.5f, 0.5f };
+		color = { 0.5f, 1.0f, 0.5f, 0.5f };
 		page->dim = { 300, 300 };
+		page->offset = -page->dim / 2;
+
+		auto & data = page->get_comp( "TestButton" )->
+			get_data< TextButtonComp::ButtonData >( );
+
+		data.func_action = [ ] ( PComp * comp ) {
+			printf( "I am an Orange!\n" );
+
+			return 0;
+		};
+
 		return 0;
 	} );
 }

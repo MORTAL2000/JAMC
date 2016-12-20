@@ -5,6 +5,7 @@
 
 #include "glm\glm.hpp"
 
+#include "ResourceMgr.h"
 #include "PageComponentLoader.h"
 
 class Page;
@@ -22,7 +23,7 @@ public:
 	bool is_hold;
 
 	Page * page;
-	PageComponent * parent;
+	PComp * parent;
 	PCLoader * pc_loader;
 
 	std::string name;
@@ -33,9 +34,16 @@ public:
 	glm::ivec2 pos;
 	glm::ivec2 dim;
 
+	std::vector< Handle< PComp > > list_comps;
+	std::unordered_map< std::string, int > map_comps;
+
 private:
 
 public:
+	bool add_comp( std::string const & name, std::string const & comp, PCFunc func_custom );
+	PComp * get_comp( std::string const & name );
+	PComp * get_comp_safe( std::string const & name );
+
 	template< class T >
 	int get_data_size( ) {
 		return map_data[ typeid( T ) ].size( );

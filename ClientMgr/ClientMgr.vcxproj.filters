@@ -289,7 +289,13 @@
       <Filter>Source Files\Managers\GuiMgr\Pages</Filter>
     </ClCompile>
     <ClCompile Include="TestComp.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="TextButtonComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="LabelComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -447,7 +453,13 @@
       <Filter>Header Files\Managers\GuiMgr\Pages</Filter>
     </ClInclude>
     <ClInclude Include="TestComp.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="TextButtonComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="LabelComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
