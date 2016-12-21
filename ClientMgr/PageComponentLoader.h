@@ -5,18 +5,22 @@
 class PageComponent;
 
 using PComp = PageComponent;
+using PCRegFunc = std::function< int( ) >;
 using PCFunc = std::function< int( PComp * ) >;
 
 class PageComponentLoader {
 private:
 
 public:
+	static PCRegFunc func_reg_null;
 	static PCFunc func_null;
 
 	PageComponentLoader( );
 	~PageComponentLoader( );
 
 	std::string name;
+
+	PCRegFunc func_register;
 
 	PCFunc func_alloc;
 	PCFunc func_release;

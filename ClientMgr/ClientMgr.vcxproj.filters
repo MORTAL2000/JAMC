@@ -297,6 +297,12 @@
     <ClCompile Include="LabelComp.cpp">
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
+    <ClCompile Include="ImageComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="BorderImageComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Globals.h">
@@ -459,6 +465,12 @@
       <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
     <ClInclude Include="LabelComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="BorderImageComp.h">
       <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
   </ItemGroup>

@@ -11,6 +11,8 @@
 #include "TestComp.h"
 #include "TextButtonComp.h"
 #include "LabelComp.h"
+#include "ImageComp.h"
+#include "BorderImageComp.h"
 
 
 GuiMgr::GuiMgr( Client & client ) :
@@ -77,8 +79,10 @@ void GuiMgr::update( ) {
 
 void GuiMgr::update_comps( Page * page ) {
 	auto iter_comp = page->list_comps.begin( );
+
 	while( iter_comp != page->list_comps.end( ) ) {
 		update_comps( &iter_comp->get( ) );
+
 		++iter_comp;
 	}
 }
@@ -91,7 +95,7 @@ void GuiMgr::update_comps( PComp * comp ) {
 
 	while( iter_comp != comp->list_comps.end( ) ) { 
 		update_comps( &iter_comp->get( ) );
-		
+
 		++iter_comp;
 	}
 }
@@ -151,6 +155,8 @@ void GuiMgr::load_components( ) {
 	add_component_loader( TestComp( client ) );
 	add_component_loader( TextButtonComp( client ) );
 	add_component_loader( LabelComp( client ) );
+	add_component_loader( ImageComp( client ) );
+	add_component_loader( BorderImageComp( client ) );
 }
 
 void GuiMgr::add_component_loader( PCLoader & pc_loader ) { 
@@ -158,7 +164,12 @@ void GuiMgr::add_component_loader( PCLoader & pc_loader ) {
 		printf( "ERROR: Duplicate Page Component Loader: %s\n", pc_loader.name.c_str( ) );
 		return;
 	}
-	
+
+	if( pc_loader.func_register( ) != 0 ) { 
+		printf( "ERROR: Duplicate Registering Data Pools for Component Loader: %s\n", pc_loader.name.c_str( ) );
+		return;
+	}
+
 	PCLoader loader;
 
 	loader.name = pc_loader.name;
@@ -201,28 +212,34 @@ void GuiMgr::load_pages( ) {
 	add_page( "Test", "Test", [ ] ( Page * page ) {
 		page->dim = { 300, 300 };
 
-		auto & data = page->get_comp( "TestButton" )->
-			get_data< TextButtonComp::ButtonData >( );
+		auto button = page->get_comp( "TestButton" );
+		auto & button_data = button->get_data< TextButtonComp::ButtonData >( );
 
-		data.func_action = [ ] ( PComp * comp ) { 
+		button_data.func_action = [ ] ( PComp * comp ) {
 			printf( "I am a banana!\n" );
 
 			return 0;
 		};
+
 		return 0; 
 	} );
 
 	add_page( "Test2", "Test", [ ] ( Page * page ) { 
-		auto & color = page->get_data< TestPage::TestData >( ).color;
-		color = { 0.5f, 1.0f, 0.5f, 0.5f };
+		auto & page_data = page->get_data< TestPage::TestData >( );
+		page_data.color = { 0.5f, 1.0f, 0.5f, 0.5f };
+
 		page->dim = { 300, 300 };
-		page->offset = -page->dim / 2;
+		page->offset = -page->dim;
 
-		auto & data = page->get_comp( "TestButton" )->
-			get_data< TextButtonComp::ButtonData >( );
+		auto background = page->get_comp( "Background" );
+		auto & bg_data = background->get_data< BorderImageComp::BorderImageData >( );
+		bg_data.color = page_data.color;
 
-		data.func_action = [ ] ( PComp * comp ) {
-			printf( "I am an Orange!\n" );
+		auto button = page->get_comp( "TestButton" );
+		auto & button_data = button->get_data< TextButtonComp::ButtonData >( );
+
+		button_data.func_action = [ ] ( PComp * comp ) {
+			printf( "I am an orange!\n" );
 
 			return 0;
 		};

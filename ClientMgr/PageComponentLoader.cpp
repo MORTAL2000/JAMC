@@ -1,10 +1,15 @@
 #include "PageComponentLoader.h"
 
+PCRegFunc PageComponentLoader::func_reg_null = [ ] ( ) {
+	return 0;
+};
+
 PCFunc PageComponentLoader::func_null = [ ] ( PComp * comp ) { 
 	return 0;
 };
 
 PageComponentLoader::PageComponentLoader( ) :
+	func_register( func_reg_null ),
 	func_alloc( func_null ), 
 	func_release( func_null ),
 	func_update( func_null ),
