@@ -36,11 +36,17 @@ PComp * Page::add_comp( std::string const & name_comp, std::string const & name_
 		return nullptr;
 	}
 
+	comp->name = name_comp;
+
+	comp->is_visible = true;
+	comp->is_hold = false;
+
 	comp->page = this;
 	comp->parent = nullptr;
 	comp->pc_loader = loader;
 
-	comp->name = name_comp;
+	comp->list_comps.clear( );
+	comp->map_comps.clear( );
 
 	if( loader->func_alloc( comp ) != 0 ) { 
 		printf( "ERROR: Failed to allocate Component: %s\n", name_comp.c_str( ) );
@@ -88,6 +94,7 @@ bool Page::on_down( int button ) {
 			is_handled = comp->pc_loader->func_down( comp );
 
 			if( is_handled ) { 
+				printf( "Down handled in Component: %s\n", comp->name.c_str( ) );
 				break;
 			}
 		}

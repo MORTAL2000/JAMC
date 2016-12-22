@@ -10,12 +10,20 @@
 #include <unordered_map>
 #include <string>
 
+struct ComponentFocus { 
+	Page * page = nullptr;
+	PComp * comp = nullptr;
+};
+
 class GuiMgr : public Manager {
 private:
 	static int const size_pages = 100;
 
 	bool is_visible;
 	bool is_input;
+
+	ComponentFocus focus_over;
+	ComponentFocus focus_over_last;
 
 	std::mutex mtx_console;
 
@@ -39,7 +47,6 @@ private:
 	void load_components( );
 	void add_component_loader( PCLoader & pc_loader );
 
-
 	void load_pages( );
 	void add_page_loader( PageLoader & page_loader );
 
@@ -54,10 +61,13 @@ public:
 	void end( ) override;
 	void sec( ) override;
 
-	void update_comps( Page * page );
+	void update_page( Page * page );
 	void update_comps( PComp * comp );
 
-	void mesh_comps( Page * page );
+	void over_page( Page * page );
+	void over_comp( PComp * comp );
+
+	void mesh_page( Page * page );
 
 	PCLoader * get_component_loader( std::string const & name_loader );
 	PCLoader * get_component_loader_safe( std::string const & name_loader );

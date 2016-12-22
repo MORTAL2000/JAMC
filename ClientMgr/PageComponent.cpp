@@ -31,11 +31,17 @@ PComp * PageComponent::add_comp( std::string const & name_comp, std::string cons
 		return nullptr;
 	}
 
+	comp->name = name_comp;
+
+	comp->is_visible = true;
+	comp->is_hold = false;
+
 	comp->page = page;
 	comp->parent = this;
 	comp->pc_loader = loader;
 
-	comp->name = name_comp;
+	comp->list_comps.clear( );
+	comp->map_comps.clear( );
 
 	if( loader->func_alloc( comp ) != 0 ) {
 		printf( "ERROR: Failed to allocate Component: %s\n", name_comp.c_str( ) );

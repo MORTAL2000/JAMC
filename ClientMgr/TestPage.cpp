@@ -73,6 +73,9 @@ TestPage::TestPage( Client & client ) {
 			return 0;
 		} );
 
+		
+		page->add_comp( "TestResize", "Resize", [ ] ( PComp * comp ) { return 0; } );
+
 		return 0;
 	};
 

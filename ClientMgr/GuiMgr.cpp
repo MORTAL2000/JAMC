@@ -13,6 +13,7 @@
 #include "ImageComp.h"
 #include "BorderImageComp.h"
 #include "CheckboxComp.h"
+#include "ResizeComp.h"
 
 
 GuiMgr::GuiMgr( Client & client ) :
@@ -25,6 +26,7 @@ void GuiMgr::init( ) {
 	printf( "\n*** Gui Manager ***\n" );
 	list_pages.reserve( size_pages );
 	map_pages.reserve( size_pages );
+	client.resource_mgr.reg_pool< PComp >( 1024 );
 	//list_order.reserve( size_pages );
 
 	GL_CHECK( block_selector.init( ) );
@@ -41,27 +43,47 @@ void GuiMgr::init( ) {
 void GuiMgr::update( ) {
 	block_selector.update( );
 
+	focus_over.page = nullptr;
+	focus_over.comp = nullptr;
+
 	Page * page;
 	for( int unsigned i = 0; i < list_pages.size( ); ++i ) { 
 		page = &list_pages[ i ].get( );
 
-		page->page_loader->func_update( page );
-		page->reposition( );
+		update_page( page );
+		mesh_page( page );
+	}
 
-		update_comps( page );
+	if( focus_over_last.page || focus_over_last.comp ) {
+		PComp * comp = focus_over_last.comp;
+		comp->pc_loader->func_over( comp );
 
-		if( page->is_visible && page->is_remesh ) {
-			client.thread_mgr.task_main( 10, [ this, page ] ( ) {
-				page->vbo_mesh.clear( );
+		if( !Directional::is_point_in_rect(
+			client.input_mgr.get_mouse( ),
+			comp->page->pos + comp->pos,
+			comp->page->pos + comp->pos + comp->dim ) ) { 
+			
+			comp->pc_loader->func_exit( comp );
+			focus_over_last.page = nullptr;
+			focus_over_last.comp = nullptr;
+		}	
+	}
+	else {
+		auto iter_page = list_pages.begin( );
+		while( iter_page != list_pages.end( ) ) { 
+			over_page( &iter_page->get( ) );
 
-				page->page_loader->func_mesh( page );
-				mesh_comps( page );
+			if( focus_over.page || focus_over.comp ) { 
+				break;
+			}
 
-				page->vbo_mesh.buffer( );
-			} );
-
-			page->is_remesh = false;
+			++iter_page;
 		}
+
+		if( focus_over.page && focus_over.comp ) {
+			printf( "Over something" );
+			focus_over_last = focus_over;
+		} 
 	}
 
 	if( is_visible && client.input_mgr.is_cursor_vis( ) ) {
@@ -77,7 +99,10 @@ void GuiMgr::update( ) {
 	}
 }
 
-void GuiMgr::update_comps( Page * page ) {
+void GuiMgr::update_page( Page * page ) {
+	page->page_loader->func_update( page );
+	page->reposition( );
+
 	auto iter_comp = page->list_comps.begin( );
 
 	while( iter_comp != page->list_comps.end( ) ) {
@@ -100,27 +125,87 @@ void GuiMgr::update_comps( PComp * comp ) {
 	}
 }
 
-void GuiMgr::mesh_comps( Page * page ) { 
-	std::queue< PComp * > queue_comps;
+void GuiMgr::over_page( Page * page ) { 
+	PComp * comp_child;
+	auto iter_comp = page->list_comps.rbegin( );
 
-	auto iter_comp = page->list_comps.begin( );
-	while( iter_comp != page->list_comps.end( ) ) { 
-		queue_comps.push( &iter_comp->get( ) );
+	while( iter_comp != page->list_comps.rend( ) ) { 
+		comp_child = &iter_comp->get( );
+		over_comp( comp_child );
+
+		if( focus_over.page || focus_over.comp ) { 
+			return;
+		}
+
+		++iter_comp;
+	}
+}
+
+void GuiMgr::over_comp( PComp * comp ) { 
+	PComp * comp_child;
+	auto iter_comp = comp->list_comps.rbegin( );
+
+	while( iter_comp != comp->list_comps.rend( ) ) {
+		comp_child = &iter_comp->get( );
+		over_comp( comp_child );
+
+		if( focus_over.page || focus_over.comp ) {
+			return;
+		}
+
 		++iter_comp;
 	}
 
-	PComp * comp;
-	while( !queue_comps.empty( ) ) { 
-		comp = queue_comps.front( );
-		queue_comps.pop( );
+	if( Directional::is_point_in_rect(
+			client.input_mgr.get_mouse( ),
+			comp->page->pos + comp->pos, 
+			comp->page->pos + comp->pos + comp->dim 
+		) &&
+		comp->pc_loader->func_enter( comp ) != 0 ) {
 
-		comp->pc_loader->func_mesh( comp );
+		focus_over.page = comp->page;
+		focus_over.comp = comp;
+	}
+}
 
-		iter_comp = comp->list_comps.begin( );
-		while( iter_comp != comp->list_comps.end( ) ) { 
-			queue_comps.push( &iter_comp->get( ) );
-			++iter_comp;
-		}
+void GuiMgr::mesh_page( Page * page ) {
+	if( page->is_visible && page->is_remesh ) {
+		client.thread_mgr.task_main( 10, [ this, page ] ( ) {
+			page->vbo_mesh.clear( );
+
+			page->page_loader->func_mesh( page );
+
+			std::queue< PComp * > queue_comps;
+
+			auto iter_comp = page->list_comps.begin( );
+			while( iter_comp != page->list_comps.end( ) ) {
+				if( iter_comp->get( ).is_visible ) {
+					queue_comps.push( &iter_comp->get( ) );
+				}
+
+				++iter_comp;
+			}
+
+			PComp * comp;
+			while( !queue_comps.empty( ) ) {
+				comp = queue_comps.front( );
+				queue_comps.pop( );
+
+				if( comp->is_visible ) {
+					comp->pc_loader->func_mesh( comp );
+
+					iter_comp = comp->list_comps.begin( );
+					while( iter_comp != comp->list_comps.end( ) ) {
+						queue_comps.push( &iter_comp->get( ) );
+						++iter_comp;
+					}
+				}
+			}
+
+			page->vbo_mesh.buffer( );
+		} );
+
+		page->is_remesh = false;
 	}
 }
 
@@ -157,6 +242,7 @@ void GuiMgr::load_components( ) {
 	add_component_loader( ImageComp( client ) );
 	add_component_loader( BorderImageComp( client ) );
 	add_component_loader( CheckboxComp( client ) );
+	add_component_loader( ResizeComp( client ) );
 }
 
 void GuiMgr::add_component_loader( PCLoader & pc_loader ) { 
@@ -178,7 +264,10 @@ void GuiMgr::add_component_loader( PCLoader & pc_loader ) {
 	loader.func_update = pc_loader.func_update;
 	loader.func_release = pc_loader.func_release;
 
+	loader.func_enter = pc_loader.func_enter;
 	loader.func_over = pc_loader.func_over;
+	loader.func_exit = pc_loader.func_exit;
+
 	loader.func_down = pc_loader.func_down;
 	loader.func_hold = pc_loader.func_hold;
 	loader.func_up = pc_loader.func_up;

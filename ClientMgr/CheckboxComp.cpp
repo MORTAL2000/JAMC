@@ -46,8 +46,8 @@ CheckboxComp::CheckboxComp( Client & client ) {
 			data->id_subtex = data_checkbox->id_subtex_unchecked;
 
 			data->func_resize = [ ] ( PComp * comp ) {
-				comp->dim.x = ( int ) comp->parent->dim.x * 0.75f;
-				comp->dim.y = ( int ) comp->parent->dim.y * 0.75f;
+				comp->dim.x = ( int ) comp->parent->dim.x * 0.5f;
+				comp->dim.y = ( int ) comp->parent->dim.y * 0.5f;
 
 				comp->offset = -comp->dim / 2;
 

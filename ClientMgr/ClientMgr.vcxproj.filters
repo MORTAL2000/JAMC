@@ -303,6 +303,9 @@
     <ClCompile Include="CheckboxComp.cpp">
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
+    <ClCompile Include="ResizeComp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Globals.h">
@@ -472,6 +475,9 @@
     </ClInclude>
     <ClInclude Include="CheckboxComp.h">
       <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="ResizeComp.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

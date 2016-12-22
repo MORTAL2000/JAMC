@@ -168,6 +168,7 @@
     <ClCompile Include="CheckboxComp.cpp" />
     <ClCompile Include="ImageComp.cpp" />
     <ClCompile Include="LabelComp.cpp" />
+    <ClCompile Include="ResizeComp.cpp" />
     <ClCompile Include="TextButtonComp.cpp" />
     <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="ChunkData.cpp" />
@@ -225,6 +226,7 @@
     <ClInclude Include="CheckboxComp.h" />
     <ClInclude Include="ImageComp.h" />
     <ClInclude Include="LabelComp.h" />
+    <ClInclude Include="ResizeComp.h" />
     <ClInclude Include="TextButtonComp.h" />
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="ChunkData.h" />

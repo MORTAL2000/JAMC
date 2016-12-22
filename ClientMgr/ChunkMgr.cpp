@@ -35,7 +35,7 @@ void ChunkMgr::init( ) {
 	pos_center_chunk_lw = glm::ivec3( 0, 0, 0 );
 
 	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 6;
-	GLuint num_verts = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 8 * 4;
+	GLuint num_verts = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 8;
 	GLuint num_buff = 1024;
 	GLuint size_buff_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4 * 2;
 
