@@ -5,16 +5,21 @@
 LabelComp::LabelComp( Client & client ) { 
 	name = "Label";
 
-	func_alloc = [ &client = client ]( PComp * comp ) {
-		if( !comp->add_data< LabelData >( client ) ) { 
-			return 1;
+	func_register = [ &client = client ] ( ) {
+		if( client.resource_mgr.reg_pool< LabelData >( 128 ) ) {
+			return 0;
 		}
 
-		auto & data = comp->get_data< LabelData >( );
-		data.text = "Default";
-		data.size_text = 12;
-		data.alignment_h = LabelData::AlignHorizontal::AH_Right;
-		data.alignment_v = LabelData::AlignVertical::AV_Top;
+		return 1;
+	};
+
+	func_alloc = [ &client = client ]( PComp * comp ) {
+		auto data = comp->add_data< LabelData >( client );
+
+		data->text = "Default";
+		data->size_text = 12;
+		data->alignment_h = LabelData::AlignHorizontal::AH_Right;
+		data->alignment_v = LabelData::AlignVertical::AV_Top;
 
 		return 0;
 	};
@@ -26,28 +31,28 @@ LabelComp::LabelComp( Client & client ) {
 			std::vector< GLuint > { 0, 1, 2, 2, 3, 0 }
 		) );
 
-		auto & data = comp->get_data< LabelData >( );
+		auto data = comp->get_data< LabelData >( );
 
-		glm::ivec2 dim_text( data.size_text * 2 / 3, data.size_text );
+		glm::ivec2 dim_text( data->size_text * 2 / 3, data->size_text );
 		glm::ivec2 pos_char;
 		int unsigned id_subtex = client.texture_mgr.get_texture_layer( "Fonts", "Default/Basic" );
 
-		for( int i = 0; i < data.text.size( ); i++ ) {
-			auto & uvs = client.texture_mgr.get_uvs_fonts( data.text.at( i ) - 32 );
+		for( int i = 0; i < data->text.size( ); i++ ) {
+			auto & uvs = client.texture_mgr.get_uvs_fonts( data->text.at( i ) - 32 );
 
 			pos_char = comp->pos;
 
-			if( data.alignment_h == LabelData::AlignHorizontal::AH_Left ) {
-				pos_char.x -= ( int ) data.text.size( ) * dim_text.x;
+			if( data->alignment_h == LabelData::AlignHorizontal::AH_Left ) {
+				pos_char.x -= ( int ) data->text.size( ) * dim_text.x;
 			}
-			else if( data.alignment_h == LabelData::AlignHorizontal::AH_Center ) {
-				pos_char.x -= ( int ) data.text.size( ) * dim_text.x / 2;
+			else if( data->alignment_h == LabelData::AlignHorizontal::AH_Center ) {
+				pos_char.x -= ( int ) data->text.size( ) * dim_text.x / 2;
 			}
 
-			if( data.alignment_v == LabelData::AlignVertical::AV_Bottom ) { 
+			if( data->alignment_v == LabelData::AlignVertical::AV_Bottom ) {
 				pos_char.y -= dim_text.y;
 			}
-			else if( data.alignment_v == LabelData::AlignVertical::AV_Center ) {
+			else if( data->alignment_v == LabelData::AlignVertical::AV_Center ) {
 				pos_char.y -= dim_text.y / 2;
 			}
 

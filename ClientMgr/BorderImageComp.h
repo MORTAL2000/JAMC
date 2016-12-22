@@ -9,6 +9,7 @@ public:
 		PCFunc func_resize;
 
 		glm::vec4 color;
+
 		int unsigned padding_border;
 		int unsigned padding_texture;
 

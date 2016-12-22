@@ -45,7 +45,7 @@ public:
 private:
 
 public:
-	bool add_comp( std::string const & name, std::string const & comp, PCFunc func_custom );
+	PComp * add_comp( std::string const & name, std::string const & comp, PCFunc func_custom );
 	PComp * get_comp( std::string const & name );
 	PComp * get_comp_safe( std::string const & name );
 
@@ -61,22 +61,22 @@ public:
 	}
 
 	template< class T >
-	bool add_data( Client & client ) {
+	T * add_data( Client & client ) {
 		Handle< T > * ptr_handle = new Handle< T >( );
 
 		if( !client.resource_mgr.allocate( *ptr_handle ) ) {
 			delete ptr_handle;
-			return false;
+			return nullptr;
 		}
 
 		map_data[ typeid( T ) ].push_back( ( void * ) ptr_handle );
 
-		return true;
+		return &ptr_handle->get( );
 	}
 
 	template< class T >
-	T & get_data( int const index_data = 0 ) {
-		return ( ( Handle< T > * ) map_data[ typeid( T ) ][ index_data ] )->get( );
+	T * get_data( int const index_data = 0 ) {
+		return &( ( Handle< T > * ) map_data[ typeid( T ) ][ index_data ] )->get( );
 	}
 
 	template< class T >

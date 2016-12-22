@@ -8,11 +8,11 @@
 
 #include "TestPage.h"
 
-#include "TestComp.h"
 #include "TextButtonComp.h"
 #include "LabelComp.h"
 #include "ImageComp.h"
 #include "BorderImageComp.h"
+#include "CheckboxComp.h"
 
 
 GuiMgr::GuiMgr( Client & client ) :
@@ -152,11 +152,11 @@ void GuiMgr::end( ) { }
 void GuiMgr::sec( ) { }
 
 void GuiMgr::load_components( ) { 
-	add_component_loader( TestComp( client ) );
 	add_component_loader( TextButtonComp( client ) );
 	add_component_loader( LabelComp( client ) );
 	add_component_loader( ImageComp( client ) );
 	add_component_loader( BorderImageComp( client ) );
+	add_component_loader( CheckboxComp( client ) );
 }
 
 void GuiMgr::add_component_loader( PCLoader & pc_loader ) { 
@@ -175,6 +175,7 @@ void GuiMgr::add_component_loader( PCLoader & pc_loader ) {
 	loader.name = pc_loader.name;
 
 	loader.func_alloc = pc_loader.func_alloc;
+	loader.func_update = pc_loader.func_update;
 	loader.func_release = pc_loader.func_release;
 
 	loader.func_over = pc_loader.func_over;
@@ -209,14 +210,28 @@ PCLoader * GuiMgr::get_component_loader_safe( std::string const & name_loader ) 
 void GuiMgr::load_pages( ) { 
 	add_page_loader( TestPage( client ) );
 
-	add_page( "Test", "Test", [ ] ( Page * page ) {
+	add_page( "Test", "Test", [ &client = client ] ( Page * page ) {
 		page->dim = { 300, 300 };
 
 		auto button = page->get_comp( "TestButton" );
-		auto & button_data = button->get_data< TextButtonComp::ButtonData >( );
+		auto button_data = button->get_data< TextButtonComp::ButtonData >( );
 
-		button_data.func_action = [ ] ( PComp * comp ) {
+		button_data->func_action = [ ] ( PComp * comp ) {
 			printf( "I am a banana!\n" );
+
+			return 0;
+		};
+
+		auto checkbox = page->get_comp( "TestCheck" );
+		auto checkbox_data = checkbox->get_data< CheckboxComp::CheckboxData >( );
+		checkbox_data->func_checked = [ &client = client ] ( PComp * comp ) { 
+			client.chunk_mgr.set_sun_pause( true );
+
+			return 0;
+		};
+
+		checkbox_data->func_unchecked = [ &client = client ] ( PComp * comp ) {
+			client.chunk_mgr.set_sun_pause( false );
 
 			return 0;
 		};
@@ -224,21 +239,35 @@ void GuiMgr::load_pages( ) {
 		return 0; 
 	} );
 
-	add_page( "Test2", "Test", [ ] ( Page * page ) { 
-		auto & page_data = page->get_data< TestPage::TestData >( );
-		page_data.color = { 0.5f, 1.0f, 0.5f, 0.5f };
+	add_page( "Test2", "Test", [ &client = client ] ( Page * page ) { 
+		auto page_data = page->get_data< TestPage::TestData >( );
+		page_data->color = { 0.5f, 1.0f, 0.5f, 0.5f };
 
 		page->dim = { 300, 300 };
 		page->offset = -page->dim;
 
 		auto background = page->get_comp( "Background" );
-		auto & bg_data = background->get_data< BorderImageComp::BorderImageData >( );
-		bg_data.color = page_data.color;
+		auto bg_data = background->get_data< BorderImageComp::BorderImageData >( );
+		bg_data->color = page_data->color;
 
 		auto button = page->get_comp( "TestButton" );
-		auto & button_data = button->get_data< TextButtonComp::ButtonData >( );
+		auto button_data = button->get_data< TextButtonComp::ButtonData >( );
 
-		button_data.func_action = [ ] ( PComp * comp ) {
+		auto checkbox = page->get_comp( "TestCheck" );
+		auto checkbox_data = checkbox->get_data< CheckboxComp::CheckboxData >( );
+		checkbox_data->func_checked = [ &client = client ] ( PComp * comp ) {
+			client.chunk_mgr.toggle_flatshade( );
+
+			return 0;
+		};
+
+		checkbox_data->func_unchecked = [ &client = client ] ( PComp * comp ) {
+			client.chunk_mgr.toggle_flatshade( );
+
+			return 0;
+		};
+
+		button_data->func_action = [ ] ( PComp * comp ) {
 			printf( "I am an orange!\n" );
 
 			return 0;
@@ -284,17 +313,17 @@ PageLoader * GuiMgr::get_page_loader_safe( std::string const & name_loader ) {
 	return &list_page_loaders[ iter_map->second ];
 }
 
-void GuiMgr::add_page( std::string const & name_page, std::string const & name_loader, PageFunc func_custom ) { 
+Page * GuiMgr::add_page( std::string const & name_page, std::string const & name_loader, PageFunc func_custom ) { 
 	if( map_pages.find( name_page ) != map_pages.end( ) ) { 
 		printf( "ERROR: Duplicate Page: %s\n", name_page.c_str( ) );
-		return;
+		return nullptr;
 	}
 
 	PageLoader * loader = get_page_loader_safe( name_loader );
 
 	if( loader == nullptr ) { 
 		printf( "ERROR: No Page Loader found: %s\n", name_loader.c_str( ) );
-		return;
+		return nullptr;
 	}
 
 	Handle< Page > handle_page;
@@ -302,7 +331,7 @@ void GuiMgr::add_page( std::string const & name_page, std::string const & name_l
 
 	if( page == nullptr ) { 
 		printf( "ERROR: Cannot allocate Page Handle: %s\n", name_page.c_str( ) );
-		return;
+		return nullptr;
 	}
 
 	page->client = &client;
@@ -313,13 +342,13 @@ void GuiMgr::add_page( std::string const & name_page, std::string const & name_l
 	if( page->page_loader->func_alloc( page ) != 0 ) { 
 		printf( "ERROR: Error Allocating Page: %s\n", name_page.c_str( ) );
 		client.resource_mgr.release( handle_page );
-		return;
+		return nullptr;
 	}
 
 	page->vbo_mesh.init( );
 
 	func_custom( page );
-
+	   
 	page->reposition( );
 
 	list_pages.push_back( handle_page );
@@ -327,6 +356,7 @@ void GuiMgr::add_page( std::string const & name_page, std::string const & name_l
 	list_order.push_back( ( int ) list_pages.size( ) - 1 );
 
 	printf( "SUCCESS: Added Page: %s\n", name_page.c_str( ) );
+	return page;
 }
 
 void GuiMgr::on_down( int button ) {

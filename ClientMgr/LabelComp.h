@@ -20,6 +20,7 @@ public:
 
 		int size_text;
 		std::string text;
+
 		AlignHorizontal alignment_h = AlignHorizontal::AH_Right;
 		AlignVertical alignment_v = AlignVertical::AV_Top;
 	};

@@ -43,12 +43,6 @@ private:
 	void load_pages( );
 	void add_page_loader( PageLoader & page_loader );
 
-
-	void add_page(
-		std::string const & name,
-		std::string const & name_loader,
-		PageFunc func_custom );
-
 	void on_down( int button );
 	void on_hold( int button );
 	void on_up( int button );
@@ -70,6 +64,8 @@ public:
 
 	PageLoader * get_page_loader( std::string const & name_loader );
 	PageLoader * get_page_loader_safe( std::string const & name_loader );
+
+	Page * add_page( std::string const & name, std::string const & name_loader, PageFunc func_custom );
 
 	void toggle_input( );
 	bool get_is_input( );

@@ -165,6 +165,7 @@
     <ClCompile Include="BlockSelector.cpp" />
     <ClCompile Include="BlockSet.cpp" />
     <ClCompile Include="BorderImageComp.cpp" />
+    <ClCompile Include="CheckboxComp.cpp" />
     <ClCompile Include="ImageComp.cpp" />
     <ClCompile Include="LabelComp.cpp" />
     <ClCompile Include="TextButtonComp.cpp" />
@@ -194,7 +195,6 @@
     <ClCompile Include="PageComponent.cpp" />
     <ClCompile Include="PageComponentLoader.cpp" />
     <ClCompile Include="PageLoader.cpp" />
-    <ClCompile Include="TestComp.cpp" />
     <ClCompile Include="TestPage.cpp" />
     <ClCompile Include="ResourceMgr.cpp" />
     <ClCompile Include="ResPool.cpp" />
@@ -222,6 +222,7 @@
     <ClInclude Include="BlockSelector.h" />
     <ClInclude Include="BlockSet.h" />
     <ClInclude Include="BorderImageComp.h" />
+    <ClInclude Include="CheckboxComp.h" />
     <ClInclude Include="ImageComp.h" />
     <ClInclude Include="LabelComp.h" />
     <ClInclude Include="TextButtonComp.h" />
@@ -250,7 +251,6 @@
     <ClInclude Include="PageComponent.h" />
     <ClInclude Include="PageComponentLoader.h" />
     <ClInclude Include="PageLoader.h" />
-    <ClInclude Include="TestComp.h" />
     <ClInclude Include="TestPage.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="ResourceMgr.h" />

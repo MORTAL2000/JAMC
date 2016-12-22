@@ -288,9 +288,6 @@
     <ClCompile Include="TestPage.cpp">
       <Filter>Source Files\Managers\GuiMgr\Pages</Filter>
     </ClCompile>
-    <ClCompile Include="TestComp.cpp">
-      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
-    </ClCompile>
     <ClCompile Include="TextButtonComp.cpp">
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
@@ -301,6 +298,9 @@
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
     <ClCompile Include="BorderImageComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="CheckboxComp.cpp">
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
   </ItemGroup>
@@ -458,9 +458,6 @@
     <ClInclude Include="TestPage.h">
       <Filter>Header Files\Managers\GuiMgr\Pages</Filter>
     </ClInclude>
-    <ClInclude Include="TestComp.h">
-      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
-    </ClInclude>
     <ClInclude Include="TextButtonComp.h">
       <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
@@ -471,6 +468,9 @@
       <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
     <ClInclude Include="BorderImageComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="CheckboxComp.h">
       <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
   </ItemGroup>

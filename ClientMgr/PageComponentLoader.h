@@ -18,20 +18,21 @@ public:
 	PageComponentLoader( );
 	~PageComponentLoader( );
 
-	std::string name;
-
 	PCRegFunc func_register;
+
+	std::string name;
 
 	PCFunc func_alloc;
 	PCFunc func_release;
 	PCFunc func_update;
-	PCFunc func_mesh;
 
 	PCFunc func_over;
 	PCFunc func_down;
 	PCFunc func_hold;
 	PCFunc func_up;
 	 
+	PCFunc func_mesh;
+
 	PCFunc func_action;
 
 private:

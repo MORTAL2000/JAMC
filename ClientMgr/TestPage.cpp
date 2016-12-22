@@ -17,14 +17,13 @@ TestPage::TestPage( Client & client ) {
 		page->dim = { 500, 500 };
 
 		page->add_data< TestData >( client );
-		auto & color = page->get_data< TestData >( ).color;
+		auto & color = page->get_data< TestData >( )->color;
 		color = { 1.0f, 1.0f, 1.0f, 0.5f };
 
-		page->add_comp( "Background", "Border Image", [ ] ( PComp * comp ) { 
-			auto & data = comp->get_data< BorderImageComp::BorderImageData >( );
+		page->add_comp( "Border", "BorderImage", [ ] ( PComp * comp ) { 
+			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
 
-			data.func_resize = [ ] ( PComp * comp ) { 
-				printf( "resize" );
+			data->func_resize = [ ] ( PComp * comp ) {
 				comp->dim = comp->page->dim;
 				comp->offset = -comp->dim / 2;
 
@@ -37,10 +36,10 @@ TestPage::TestPage( Client & client ) {
 		page->add_comp( "TestButton", "Button", [ ] ( PComp * comp ) {
 			comp->anchor = { 0.5f, 0.5f };
 
-			auto & button_data = comp->get_data< TextButtonComp::ButtonData >( );
-			auto & label_data = button_data.comp_label->get_data< LabelComp::LabelData >( );
+			auto button_data = comp->get_data< TextButtonComp::ButtonData >( );
+			auto label_data = button_data->comp_label->get_data< LabelComp::LabelData >( );
 
-			label_data.text = "TestButton";
+			label_data->text = "TestButton";
 
 			comp->page->is_remesh = true;
 
@@ -48,11 +47,11 @@ TestPage::TestPage( Client & client ) {
 		} );
 
 		page->add_comp( "TitleLabel", "Label", [ ] ( PComp * comp ) { 
-			auto & data = comp->get_data< LabelComp::LabelData >( );
+			auto data = comp->get_data< LabelComp::LabelData >( );
 
-			data.alignment_v = LabelComp::LabelData::AlignVertical::AV_Bottom;
+			data->alignment_v = LabelComp::LabelData::AlignVertical::AV_Bottom;
 
-			data.text = comp->page->name + " Page";
+			data->text = comp->page->name + " Page";
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 10, -10 };
 			comp->page->is_remesh = true;
@@ -63,6 +62,13 @@ TestPage::TestPage( Client & client ) {
 		page->add_comp( "TestImage", "Image", [ ] ( PComp * comp ) { 
 			comp->anchor = { 1.0f, 1.0f };
 			comp->offset = -comp->dim - glm::ivec2( 10, 10 );
+
+			return 0;
+		} );
+
+		page->add_comp( "TestCheck", "Checkbox", [ ] ( PComp * comp ) {
+			comp->anchor = { 0.0f, 0.0f };
+			comp->offset = { 25, 25 };
 
 			return 0;
 		} );

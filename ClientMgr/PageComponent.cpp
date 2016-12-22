@@ -9,10 +9,10 @@ PageComponent::PageComponent( ) { }
 PageComponent::~PageComponent( ) { }
 
 
-bool PageComponent::add_comp( std::string const & name_comp, std::string const & name_loader, PCFunc func_custom ) {
+PComp * PageComponent::add_comp( std::string const & name_comp, std::string const & name_loader, PCFunc func_custom ) {
 	if( map_comps.find( name_comp ) != map_comps.end( ) ) {
 		printf( "ERROR: Duplicate Component Name: %s\n", name_comp.c_str( ) );
-		return false;
+		return nullptr;
 	}
 
 
@@ -20,7 +20,7 @@ bool PageComponent::add_comp( std::string const & name_comp, std::string const &
 
 	if( loader == nullptr ) {
 		printf( "ERROR: Cannot Find Loader: %s, for Component: %s\n", name_loader.c_str( ), name_comp.c_str( ) );
-		return false;
+		return nullptr;
 	}
 
 	Handle< PComp > handle_comp;
@@ -28,7 +28,7 @@ bool PageComponent::add_comp( std::string const & name_comp, std::string const &
 
 	if( comp == nullptr ) {
 		printf( "ERROR: Failed to allocate Component: %s\n", name_comp.c_str( ) );
-		return false;
+		return nullptr;
 	}
 
 	comp->page = page;
@@ -40,7 +40,7 @@ bool PageComponent::add_comp( std::string const & name_comp, std::string const &
 	if( loader->func_alloc( comp ) != 0 ) {
 		printf( "ERROR: Failed to allocate Component: %s\n", name_comp.c_str( ) );
 		page->client->resource_mgr.release( handle_comp );
-		return false;
+		return nullptr;
 	}
 
 	func_custom( comp );
@@ -52,7 +52,7 @@ bool PageComponent::add_comp( std::string const & name_comp, std::string const &
 
 	printf( "SUCCESS: Added Component: %s to Component: %s\n", name_comp.c_str( ), name.c_str( ) );
 
-	return true;
+	return comp;
 }
 
 PComp * PageComponent::get_comp( std::string const & name ) {

@@ -14,10 +14,10 @@ Page::Page( ) { }
 
 Page::~Page( ) { }
 
-bool Page::add_comp( std::string const & name_comp, std::string const & name_loader, PCFunc func_custom ) { 
+PComp * Page::add_comp( std::string const & name_comp, std::string const & name_loader, PCFunc func_custom ) { 
 	if( map_comps.find( name_comp ) != map_comps.end( ) ) { 
 		printf( "ERROR: Duplicate Component Name: %s\n", name_comp.c_str( ) );
-		return false;
+		return nullptr;
 	}
 	
 
@@ -25,7 +25,7 @@ bool Page::add_comp( std::string const & name_comp, std::string const & name_loa
 
 	if( loader == nullptr ) { 
 		printf( "ERROR: Cannot Find Loader: %s, for Component: %s\n", name_loader.c_str( ), name_comp.c_str( ) );
-		return false;
+		return nullptr;
 	}
 
 	Handle< PComp > handle_comp;
@@ -33,7 +33,7 @@ bool Page::add_comp( std::string const & name_comp, std::string const & name_loa
 
 	if( comp == nullptr ) {
 		printf( "ERROR: Failed to allocate Component: %s\n", name_comp.c_str( ) );
-		return false;
+		return nullptr;
 	}
 
 	comp->page = this;
@@ -56,8 +56,7 @@ bool Page::add_comp( std::string const & name_comp, std::string const & name_loa
 	map_comps.insert( { name_comp, ( int ) list_comps.size( ) - 1 } );
 
 	printf( "SUCCESS: Added Component: %s to Page: %s\n", name_comp.c_str( ), name.c_str( ) );
-
-	return true;
+	return comp;
 }
 
 PComp * Page::get_comp( std::string const & name ) {
