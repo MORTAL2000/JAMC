@@ -169,6 +169,7 @@
     <ClCompile Include="ClickableComp.cpp" />
     <ClCompile Include="ContainerComp.cpp" />
     <ClCompile Include="GraphComp.cpp" />
+    <ClCompile Include="GraphPage.cpp" />
     <ClCompile Include="ImageButtonComp.cpp" />
     <ClCompile Include="ImageComp.cpp" />
     <ClCompile Include="LabelComp.cpp" />
@@ -237,6 +238,7 @@
     <ClInclude Include="ClickableComp.h" />
     <ClInclude Include="ContainerComp.h" />
     <ClInclude Include="GraphComp.h" />
+    <ClInclude Include="GraphPage.h" />
     <ClInclude Include="ImageButtonComp.h" />
     <ClInclude Include="ImageComp.h" />
     <ClInclude Include="LabelComp.h" />

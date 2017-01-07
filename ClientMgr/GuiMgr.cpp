@@ -9,6 +9,7 @@
 #include "TestPage.h"
 #include "OptionsPage.h"
 #include "QuickBarPage.h"
+#include "GraphPage.h"
 
 #include "RootComp.h"
 #include "ContainerComp.h"
@@ -26,6 +27,8 @@
 #include "TextButtonComp.h"
 #include "CheckboxComp.h"
 #include "SliderComp.h"
+
+#include "GraphComp.h"
 
 
 GuiMgr::GuiMgr( Client & client ) :
@@ -69,16 +72,19 @@ void GuiMgr::load_components( ) {
 	add_component_loader( CheckboxComp( client ) );
 	add_component_loader( ResizeComp( client ) );
 	add_component_loader( SliderComp( client ) );
+
+	add_component_loader( GraphComp( client ) );
 }
 
 void GuiMgr::load_pages( ) {
 	add_page_loader( TestPage( client ) );
 	add_page_loader( OptionsPage( client ) );
 	add_page_loader( QuickBarPage( client ) );
+	add_page_loader( GraphPage( client ) );
 
 	add_page( "Options", "Options", PageLoader::func_null );
 	add_page( "QuickBar", "QuickBar", PageLoader::func_null );
-	//add_page( "TestPage", "Test", PageLoader::func_null );
+	add_page( "Graph", "Graph", PageLoader::func_null );
 }
 
 void GuiMgr::update( ) {
