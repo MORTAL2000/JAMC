@@ -10,11 +10,6 @@
 #include <unordered_map>
 #include <string>
 
-struct ComponentFocus { 
-	Page * page = nullptr;
-	PComp * comp = nullptr;
-};
-
 class GuiMgr : public Manager {
 private:
 	static int const size_pages = 100;
@@ -22,8 +17,11 @@ private:
 	bool is_visible;
 	bool is_input;
 
-	ComponentFocus focus_over;
-	ComponentFocus focus_over_last;
+	PComp * comp_over;
+	PComp * comp_over_last;
+
+	PComp * comp_down;
+	PComp * comp_down_last;
 
 	std::mutex mtx_console;
 
@@ -50,9 +48,27 @@ private:
 	void load_pages( );
 	void add_page_loader( PageLoader & page_loader );
 
-	void on_down( int button );
-	void on_hold( int button );
-	void on_up( int button );
+	void on_over( );
+
+	void over_page_all( );
+	void over_page( Page * page );
+	void over_page_self( Page * page );
+	void over_page_children( Page * page );
+
+	void over_comp( PComp * comp );
+	void over_comp_self( PComp * comp );
+	void over_comp_children( PComp * comp );
+
+	void on_click( );
+
+	void down_page_all( );
+	void down_page( Page * page );
+	void down_page_self ( Page * page );
+	void down_page_children( Page * page );
+
+	void down_comp( PComp * comp );
+	void down_comp_self( PComp * comp );
+	void down_comp_children( PComp * comp );
 
 public:
 	void init( ) override;
@@ -62,12 +78,12 @@ public:
 	void sec( ) override;
 
 	void update_page( Page * page );
-	void update_comps( PComp * comp );
-
-	void over_page( Page * page );
-	void over_comp( PComp * comp );
+	void update_comp( PComp * comp );
+	void update_comp_self( PComp * comp );
+	void update_comp_children( PComp * comp );
 
 	void mesh_page( Page * page );
+	void mesh_comp( PComp * comp );
 
 	PCLoader * get_component_loader( std::string const & name_loader );
 	PCLoader * get_component_loader_safe( std::string const & name_loader );
@@ -76,6 +92,8 @@ public:
 	PageLoader * get_page_loader_safe( std::string const & name_loader );
 
 	Page * add_page( std::string const & name, std::string const & name_loader, PageFunc func_custom );
+	Page * get_page( std::string const & name );
+	Page * get_page_safe( std::string const & name );
 
 	void toggle_input( );
 	bool get_is_input( );

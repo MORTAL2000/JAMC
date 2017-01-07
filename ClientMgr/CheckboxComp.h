@@ -2,7 +2,9 @@
 
 #include "Client.h"
 #include "PageComponentLoader.h"
+#include "BorderImageComp.h"
 #include "ImageComp.h"
+#include "LabelComp.h"
 
 class CheckboxComp : public PageComponentLoader {
 public:
@@ -18,7 +20,22 @@ public:
 
 		PComp * comp_border;
 		PComp * comp_image;
+		PComp * comp_label;
+
+		BorderImageComp::BorderImageData * data_border;
 		ImageComp::ImageData * data_image;
+		LabelComp::LabelData * data_label;
+
+		void set_checked( bool is_checked ) { 
+			this->is_checked = is_checked;
+
+			if( is_checked ) {
+				data_image->id_subtex = id_subtex_checked;
+			}
+			else { 
+				data_image->id_subtex = id_subtex_unchecked;
+			}
+		}
 	};
 
 	CheckboxComp( Client & client );

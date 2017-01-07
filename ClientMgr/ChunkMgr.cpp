@@ -109,6 +109,7 @@ void ChunkMgr::init( ) {
 	is_chunk_debug = false;
 	is_shadow_debug = false;
 	is_shadows = true;
+	is_wireframe = false;
 }
 
 int time_last_map = 0;
@@ -265,14 +266,32 @@ void ChunkMgr::update( ) {
 }
 
 void ChunkMgr::render( ) {
-	GL_CHECK( render_skybox( ) );
-	GL_CHECK( render_exlude( ) );
-	GL_CHECK( render_sort( ) );
-	GL_CHECK( render_build( ) );
-	GL_CHECK( render_pass_shadow( ) );
-	GL_CHECK( render_pass_solid( ) );
-	GL_CHECK( render_pass_trans( ) );
-	GL_CHECK( render_debug( ) );
+	if( is_wireframe ) {
+		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		glDisable( GL_CULL_FACE );
+
+		GL_CHECK( render_skybox( ) );
+		GL_CHECK( render_exlude( ) );
+		GL_CHECK( render_sort( ) );
+		GL_CHECK( render_build( ) );
+		GL_CHECK( render_pass_shadow( ) );
+		GL_CHECK( render_pass_solid( ) );
+		GL_CHECK( render_pass_trans( ) );
+		GL_CHECK( render_debug( ) );
+
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		glEnable( GL_CULL_FACE );
+	}
+	else { 
+		GL_CHECK( render_skybox( ) );
+		GL_CHECK( render_exlude( ) );
+		GL_CHECK( render_sort( ) );
+		GL_CHECK( render_build( ) );
+		GL_CHECK( render_pass_shadow( ) );
+		GL_CHECK( render_pass_solid( ) );
+		GL_CHECK( render_pass_trans( ) );
+		GL_CHECK( render_debug( ) );
+	}
 }
 
 void ChunkMgr::render_skybox( ) {
@@ -320,7 +339,7 @@ void ChunkMgr::render_exlude( ) {
 		);
 
 		for( GLuint i = 0; i < 8; ++i ) {
-			if( dist < 4.0f ) { 
+			if( dist < 3.0f ) { 
 				list_render.push_back( &chunk );
 				break;
 			}
@@ -2313,6 +2332,10 @@ void ChunkMgr::toggle_flatshade( ) {
 	else { 
 		is_shadows = true;
 	}
+}
+
+void ChunkMgr::toggle_wireframe( ) { 
+	is_wireframe = !is_wireframe;
 }
 
 int ChunkMgr::get_block( glm::vec3 const & pos_gw ) {

@@ -26,6 +26,9 @@ public:
 	PCFunc func_release;
 	PCFunc func_update;
 
+	PCFunc func_is_over;
+	PCFunc func_is_down;
+
 	PCFunc func_enter;
 	PCFunc func_over;
 	PCFunc func_exit;

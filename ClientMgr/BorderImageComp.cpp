@@ -1,5 +1,7 @@
 #include "BorderImageComp.h"
 
+#include "ResizableComp.h"
+
 BorderImageComp::BorderImageComp( Client & client ) { 
 	name = "BorderImage";
 
@@ -16,8 +18,7 @@ BorderImageComp::BorderImageComp( Client & client ) {
 		comp->dim = { 100, 100 };
 		comp->offset = -comp->dim / 2;
 
-		auto data = comp->add_data< BorderImageData >( client );
-		data->func_resize = func_null;
+		auto data = comp->add_data< BorderImageData >( );
 		data->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		data->padding_border = 8;
 		data->set_texture( client, "Gui", "Default/PageBG", 8 );
@@ -26,8 +27,6 @@ BorderImageComp::BorderImageComp( Client & client ) {
 	};
 
 	func_update = [ &client = client ] ( PComp * comp ) {
-		auto data = comp->get_data< BorderImageData >( );
-		data->func_resize( comp );
 
 		return 0;
 	};

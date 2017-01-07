@@ -105,6 +105,7 @@ private:
 	bool is_shadow_debug;
 	bool is_shadows;
 	bool is_flatshade;
+	bool is_wireframe;
 
 	GLuint id_vbo_chunk_outline;
 	int size_chunk_outline;
@@ -230,6 +231,7 @@ public:
 	void toggle_shadow_debug( );
 	void toggle_shadows( );
 	void toggle_flatshade( );
+	void toggle_wireframe( );
 
 	int get_block( glm::vec3 const & pos_gw );
 
@@ -257,12 +259,20 @@ public:
 	void explode_sphere( glm::vec3 const & pos_gw, int const size );
 	void explode_sphere_recur( glm::vec3 const & pos_gw, int const size, int depth );
 
-	void set_sun( int deg ) {
+	void set_sun_deg( int deg ) {
 		pos_deg_light = deg;
+	}
+
+	float get_sun_deg( ) { 
+		return pos_deg_light;
 	}
 
 	void set_sun_pause( bool is_paused ) { 
 		is_sun_pause = is_paused;
+	}
+
+	bool get_sun_pause( ) { 
+		return is_sun_pause;
 	}
 
 	void print_dirty( );

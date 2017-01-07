@@ -15,8 +15,7 @@ PComp * PageComponent::add_comp( std::string const & name_comp, std::string cons
 		return nullptr;
 	}
 
-
-	PCLoader * loader = page->client->gui_mgr.get_component_loader_safe( name_loader );
+	PCLoader * loader = client->gui_mgr.get_component_loader_safe( name_loader );
 
 	if( loader == nullptr ) {
 		printf( "ERROR: Cannot Find Loader: %s, for Component: %s\n", name_loader.c_str( ), name_comp.c_str( ) );
@@ -24,7 +23,7 @@ PComp * PageComponent::add_comp( std::string const & name_comp, std::string cons
 	}
 
 	Handle< PComp > handle_comp;
-	PComp * comp = page->client->resource_mgr.allocate( handle_comp );
+	PComp * comp = client->resource_mgr.allocate( handle_comp );
 
 	if( comp == nullptr ) {
 		printf( "ERROR: Failed to allocate Component: %s\n", name_comp.c_str( ) );
@@ -36,6 +35,7 @@ PComp * PageComponent::add_comp( std::string const & name_comp, std::string cons
 	comp->is_visible = true;
 	comp->is_hold = false;
 
+	comp->client = client;
 	comp->page = page;
 	comp->parent = this;
 	comp->pc_loader = loader;
@@ -45,7 +45,7 @@ PComp * PageComponent::add_comp( std::string const & name_comp, std::string cons
 
 	if( loader->func_alloc( comp ) != 0 ) {
 		printf( "ERROR: Failed to allocate Component: %s\n", name_comp.c_str( ) );
-		page->client->resource_mgr.release( handle_comp );
+		client->resource_mgr.release( handle_comp );
 		return nullptr;
 	}
 
@@ -75,12 +75,6 @@ PComp * PageComponent::get_comp_safe( std::string const & name ) {
 }
 
 void PageComponent::reposition( ) {
-	if( parent == nullptr ) {
-		pos.x = page->dim.x * anchor.x + offset.x;
-		pos.y = page->dim.y * anchor.y + offset.y;
-	}
-	else { 
-		pos.x = parent->pos.x + parent->dim.x * anchor.x + offset.x;
-		pos.y = parent->pos.y + parent->dim.y * anchor.y + offset.y;
-	}
+	pos.x = parent->pos.x + parent->dim.x * anchor.x + offset.x;
+	pos.y = parent->pos.y + parent->dim.y * anchor.y + offset.y;
 }

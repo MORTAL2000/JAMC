@@ -282,9 +282,6 @@
     <ClCompile Include="PageComponentLoader.cpp">
       <Filter>Source Files\Managers\GuiMgr</Filter>
     </ClCompile>
-    <ClCompile Include="PageComponent.cpp">
-      <Filter>Source Files\Managers\GuiMgr</Filter>
-    </ClCompile>
     <ClCompile Include="TestPage.cpp">
       <Filter>Source Files\Managers\GuiMgr\Pages</Filter>
     </ClCompile>
@@ -304,6 +301,39 @@
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
     <ClCompile Include="ResizeComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="SliderComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="QuickBarPage.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Pages</Filter>
+    </ClCompile>
+    <ClCompile Include="ClickableComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="OverableComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="ResizableComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RootComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="PageComponent.cpp">
+      <Filter>Source Files\Managers\GuiMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="OptionsPage.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Pages</Filter>
+    </ClCompile>
+    <ClCompile Include="ContainerComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageButtonComp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphComp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -477,6 +507,36 @@
       <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
     <ClInclude Include="ResizeComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="SliderComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="QuickBarPage.h">
+      <Filter>Header Files\Managers\GuiMgr\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="ClickableComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="OverableComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="ResizableComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RootComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="OptionsPage.h">
+      <Filter>Header Files\Managers\GuiMgr\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="ContainerComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageButtonComp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphComp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

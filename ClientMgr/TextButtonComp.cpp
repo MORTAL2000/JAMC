@@ -1,33 +1,56 @@
 #include "TextButtonComp.h"
 
-#include "LabelComp.h"
-
 TextButtonComp::TextButtonComp( Client & client ) {
-	name = "Button";
+	name = "TextButton";
 
 	func_register = [ &client = client ] ( ) {
-		if( client.resource_mgr.reg_pool< ButtonData >( 128 ) ) {
-			return 0;
+		if( !client.resource_mgr.reg_pool< TextButtonData >( 128 ) ) {
+			return 1;
 		}
 
-		return 1;
+		return 0;
 	};
 
 	func_alloc = [ &client = client ] ( PComp * comp ) {
 		comp->is_visible = true;
 		comp->is_hold = false;
 
-		comp->pos = { 0, 0 };
 		comp->dim = { 100, 32 };
 		comp->offset = -comp->dim / 2;
 
-		// Button Border
-		auto comp_border = comp->add_comp( "Border", "BorderImage", [ &client = client ] ( PComp * comp ) { 
-			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
-			data->set_texture( client, "Gui", "Default/ButtonBG", 8 );
-			data->func_resize = [ ] ( PComp * comp ) { 
-				comp->dim = comp->parent->dim;
-				comp->offset = -comp->dim / 2;
+		auto data = comp->add_data< TextButtonData >( );
+
+		data->func_action = func_null;
+		data->color_default = { 1.0f, 1.0f, 1.0f, 1.0f };
+		data->color_over = { 0.5f, 0.5f, 0.5f, 1.0f };
+		data->color_down = { 1.0f, 0.5f, 0.5f, 1.0f };
+
+		// Clickable
+		data->comp_clickable = comp->add_comp( "Clickable", "Clickable", [ &client = client, data ] ( PComp * comp ) { 
+			data->data_clickable = comp->get_data < ClickableComp::ClickableData >( );
+
+			data->data_clickable->func_down = [ &client = client, data ] ( PComp * comp ) { 
+				data->data_border->color = data->color_down;
+				comp->page->is_remesh = true;
+
+				return 0;
+			};
+
+			data->data_clickable->func_up = [ &client = client, data ] ( PComp * comp ) {
+				if( Directional::is_point_in_rect(
+					client.input_mgr.get_mouse( ),
+					comp->page->pos + comp->pos,
+					comp->page->pos + comp->pos + comp->dim ) ) {
+
+					data->func_action( comp );
+
+					data->data_border->color = data->color_over;
+					comp->page->is_remesh = true;
+				}
+				else { 
+					data->data_border->color = data->color_default;
+					comp->page->is_remesh = true;
+				}
 
 				return 0;
 			};
@@ -35,50 +58,65 @@ TextButtonComp::TextButtonComp( Client & client ) {
 			return 0;
 		} );
 
-		// Button Label
-		auto comp_label = comp->add_comp( "Label", "Label", [ ] ( PComp * comp ) { 
-			comp->anchor = { 0.5f, 0.5f };
+		// Overable
+		data->comp_overable = comp->add_comp( "Overable", "Overable", [ &client = client, data ] ( PComp * comp ) {
+			data->data_overable = comp->get_data < OverableComp::OverableData >( );
 
-			auto data = comp->get_data< LabelComp::LabelData >( );
-			data->size_text = 12;
-			data->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Center;
-			data->alignment_v = LabelComp::LabelData::AlignVertical::AV_Center;
+			data->data_overable->func_enter = [ &client = client, data ] ( PComp * comp ) {
+				if( !( data->data_border->color == data->color_down ) ) {
+					data->data_border->color = data->color_over;
+					comp->page->is_remesh = true;
+				}
+
+				return 0;
+			};
+
+			data->data_overable->func_exit = [ &client = client, data ] ( PComp * comp ) {
+				if( !( data->data_border->color == data->color_down ) ) {
+					data->data_border->color = data->color_default;
+					comp->page->is_remesh = true;
+				}
+
+				return 0;
+			};
 
 			return 0;
 		} );
 
-		// Button Data
-		auto data_button = comp->add_data< ButtonData >( client );
-		data_button->func_action = func_null;
-		data_button->color_down = { 1.0f, 0.5f, 0.5f, 1.0f };
-		data_button->color_up = { 1.0f, 1.0f, 1.0f, 1.0f };
-		data_button->comp_border = comp_border;
-		data_button->comp_label = comp_label;
-		data_button->data_border = comp_border->get_data< BorderImageComp::BorderImageData >( );
+		// Button Border
+		data->comp_border = comp->add_comp( "Border", "BorderImage", [ &client = client, data ] ( PComp * comp ) {
+
+			data->data_border = comp->get_data< BorderImageComp::BorderImageData >( );
+
+			data->data_border->set_texture( client, "Gui", "Default/ButtonBG", 8 );
+			data->data_border->padding_border = 4;
+
+			return 0;
+		} );
+
+		// Button Label
+		data->comp_label = comp->add_comp( "Label", "Label", [ data ] ( PComp * comp ) {
+			comp->anchor = { 0.5f, 0.5f };
+
+			data->data_label = comp->get_data< LabelComp::LabelData >( );
+
+			data->data_label->size_text = 12;
+			data->data_label->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Center;
+			data->data_label->alignment_v = LabelComp::LabelData::AlignVertical::AV_Center;
+
+			return 0;
+		} );
 
 		return 0;
 	};
 
-	func_down = [ &client = client ] ( PComp * comp ) {
-		auto data_button = comp->get_data< ButtonData >( );
-		data_button->data_border->color = data_button->color_down;
-		comp->page->is_remesh = true;
+	func_update = [ ] ( PComp * comp ) { 
+		auto data = comp->get_data< TextButtonData >( );
 
-		return 1;
-	};
+		data->comp_border->dim = comp->dim;
+		data->comp_border->offset = -data->comp_border->dim / 2;
 
-	func_hold = [ &client = client ] ( PComp * comp ) {
 		return 0;
-	};
-
-	func_up = [ ] ( PComp * comp ) {
-		auto data_button = comp->get_data< ButtonData >( );
-		data_button->data_border->color = data_button->color_up;
-		comp->page->is_remesh = true;
-
-		data_button->func_action( comp );
-
-		return 1;
 	};
 }
 

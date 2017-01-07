@@ -1,7 +1,9 @@
 #include "CheckboxComp.h"
 
-#include "BorderImageComp.h"
+#include "ResizableComp.h"
+#include "OverableComp.h"
 #include "ImageComp.h"
+#include "ClickableComp.h"
 
 CheckboxComp::CheckboxComp( Client & client ) { 
 	name = "Checkbox";
@@ -16,20 +18,18 @@ CheckboxComp::CheckboxComp( Client & client ) {
 		comp->dim = { 25, 25 };
 		comp->anchor = { 0.5f, 0.5f };
 
-		auto data_checkbox = comp->add_data< CheckboxData >( client );
-		data_checkbox->is_checked = false;
-		data_checkbox->id_texture = client.texture_mgr.get_texture_id( "Gui" );
-		data_checkbox->id_subtex_unchecked = client.texture_mgr.get_texture_layer( "Gui", "Default/Unchecked" );
-		data_checkbox->id_subtex_checked = client.texture_mgr.get_texture_layer( "Gui", "Default/Checked" );
-		data_checkbox->func_checked = func_null;
-		data_checkbox->func_unchecked = func_null;
+		auto data = comp->add_data< CheckboxData >( );
+		data->is_checked = false;
+		data->id_texture = client.texture_mgr.get_texture_id( "Gui" );
+		data->id_subtex_unchecked = client.texture_mgr.get_texture_layer( "Gui", "Default/Unchecked" );
+		data->id_subtex_checked = client.texture_mgr.get_texture_layer( "Gui", "Default/Checked" );
+		data->func_checked = func_null;
+		data->func_unchecked = func_null;
 
-		auto comp_border = comp->add_comp( "Border", "BorderImage", [ &client = client ] ( PComp * comp ) { 
-			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
+		auto resizable = comp->add_comp( "Resizable", "Resizable", [ &client = client ] ( PComp * comp ) { 
+			auto data = comp->get_data< ResizableComp::ResizableData >( );
 
-			data->set_texture( client, "Gui", "Default/CheckboxBG", 8 );
-			data->padding_border = 4;
-			data->func_resize = [ ] ( PComp * comp ) { 
+			data->func_resize = [ &client = client ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim;
 				comp->offset = -comp->dim / 2;
 
@@ -39,16 +39,69 @@ CheckboxComp::CheckboxComp( Client & client ) {
 			return 0;
 		} );
 
-		auto comp_image = comp->add_comp( "Image", "Image", [ &client = client, data_checkbox ] ( PComp * comp ) {
-			auto data = comp->get_data< ImageComp::ImageData >( );
+		data->comp_border = resizable->add_comp( "Border", "BorderImage", [ &client = client, data ] ( PComp * comp ) {
+			data->data_border = comp->get_data< BorderImageComp::BorderImageData >( );
 
-			data->id_texture = data_checkbox->id_texture;
-			data->id_subtex = data_checkbox->id_subtex_unchecked;
+			data->data_border->set_texture( client, "Gui", "Default/CheckboxBG", 8 );
+			data->data_border->padding_border = 4;
 
-			data->func_resize = [ ] ( PComp * comp ) {
-				comp->dim.x = ( int ) comp->parent->dim.x * 0.5f;
-				comp->dim.y = ( int ) comp->parent->dim.y * 0.5f;
+			comp->add_comp( "Clickable", "Clickable", [ &client = client, data ] ( PComp * comp ) { 
+				auto data_clickable = comp->get_data< ClickableComp::ClickableData >( );
 
+				data_clickable->func_up = [ &client = client, data ] ( PComp * comp ) {
+					if( Directional::is_point_in_rect(
+						client.input_mgr.get_mouse( ),
+						comp->page->get_pos( ) + comp->pos,
+						comp->page->get_pos( ) + comp->pos + comp->dim ) ) {
+
+						if( !data->is_checked ) {
+							data->func_checked( comp );
+							data->data_image->id_subtex = data->id_subtex_checked;
+							comp->page->is_remesh = true;
+						}
+						else {
+							data->func_unchecked( comp );
+							data->data_image->id_subtex = data->id_subtex_unchecked;
+							comp->page->is_remesh = true;
+						}
+
+						data->is_checked = !data->is_checked;
+					}
+
+					return 0;
+				};
+
+				return 0;
+			} );
+
+			return 0;
+		} );
+
+		auto overable = comp->add_comp( "Overable", "Overable", [ &client = client, data ] ( PComp * comp ) {
+			auto data_overable = comp->get_data< OverableComp::OverableData >( );
+
+			data_overable->func_enter = [ &client = client, data ] ( PComp * comp ) { 
+				data->data_border->color = { 0.5f, 0.5f, 0.5f, 1.0f };
+				comp->page->is_remesh = true;
+
+				return 0;
+			};
+
+			data_overable->func_exit = [ &client = client, data ] ( PComp * comp ) {
+				data->data_border->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+				comp->page->is_remesh = true;
+
+				return 0;
+			};
+
+			return 0;
+		} );
+
+		auto resizable_half = comp->add_comp( "ResizableHalf", "Resizable", [ &client = client ] ( PComp * comp ) {
+			auto data = comp->get_data< ResizableComp::ResizableData >( );
+
+			data->func_resize = [ &client = client ] ( PComp * comp ) {
+				comp->dim = comp->parent->dim / 2;
 				comp->offset = -comp->dim / 2;
 
 				return 0;
@@ -57,46 +110,27 @@ CheckboxComp::CheckboxComp( Client & client ) {
 			return 0;
 		} );
 
-		data_checkbox->comp_border = comp_border;
-		data_checkbox->comp_image = comp_image;
-		data_checkbox->data_image = comp_image->get_data< ImageComp::ImageData >( );
+		data->comp_image = resizable_half->add_comp( "Image", "Image", [ &client = client, data ] ( PComp * comp ) {
+			data->data_image = comp->get_data< ImageComp::ImageData >( );
 
-		return 0;
-	};
-
-	func_down = [ ] ( PComp * comp ) { 
-		comp->is_hold = true;
-
-		return 1;
-	};
-
-	func_hold = [ ] ( PComp * comp ) {
-		if( comp->is_hold ) { 
-			return 1;
-		}
-
-		return 0;
-	};
-
-	func_up = [ ] ( PComp * comp ) {
-		auto data = comp->get_data< CheckboxData >( );
-
-		comp->is_hold = false;
-
-		if( !data->is_checked ) { 
-			data->func_checked( comp );
-			data->data_image->id_subtex = data->id_subtex_checked;
-			comp->page->is_remesh = true;
-		}
-		else { 
-			data->func_unchecked( comp );
+			data->data_image->id_texture = data->id_texture;
 			data->data_image->id_subtex = data->id_subtex_unchecked;
-			comp->page->is_remesh = true;
-		}
 
-		data->is_checked = !data->is_checked;
+			return 0;
+		} );
 
-		return 1;
+		data->comp_label = comp->add_comp( "Label", "Label", [ &client = client, data ] ( PComp * comp ) {
+			comp->anchor = { 1.0f, 0.5f };
+			comp->offset = { 5.0f, 0.0f };
+
+			data->data_label = comp->get_data< LabelComp::LabelData >( );
+			data->data_label->text = "Checkbox";
+			data->data_label->alignment_v = LabelComp::LabelData::AlignVertical::AV_Center;
+
+			return 0;
+		} );
+
+		return 0;
 	};
 }
 

@@ -258,7 +258,7 @@ void TextureMgr::load_textures( ) {
 		glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 		glTexStorage3D( GL_TEXTURE_2D_ARRAY, entry.num_mipmap, GL_RGBA8, entry.dim_texture.x, entry.dim_texture.y, num_tex );
 
-		// Lets iterate over all the sub textures in their folders!
+		// Lets iterate down all the sub textures in their folders!
 		for( directory_iterator iter_multitex( path_multitex ); iter_multitex != directory_iterator( ); ++iter_multitex ) {
 			if( !is_directory( iter_multitex->status( ) ) ) {
 				continue;

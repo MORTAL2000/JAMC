@@ -6,7 +6,7 @@
 class BorderImageComp : public PageComponentLoader {
 public:
 	struct BorderImageData {
-		PCFunc func_resize;
+		//PCFunc func_resize;
 
 		glm::vec4 color;
 

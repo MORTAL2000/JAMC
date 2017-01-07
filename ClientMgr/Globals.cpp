@@ -31,7 +31,7 @@ inline std::string getGLErrorString( int error ) {
 		case GL_INVALID_OPERATION:
 		return "GL_INVALID_OPERATION!";
 		case GL_STACK_OVERFLOW:
-		return "GL_STACK_OVERFLOW!";
+		return "GL_STACK_downFLOW!";
 		case GL_STACK_UNDERFLOW:
 		return "GL_STACK_UNDERFLOW!";
 		case GL_OUT_OF_MEMORY:

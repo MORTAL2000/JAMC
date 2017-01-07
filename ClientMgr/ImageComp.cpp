@@ -16,18 +16,10 @@ ImageComp::ImageComp( Client & client ) {
 		comp->dim = { 50, 50 };
 		comp->offset = -comp->dim / 2;
 
-		auto data = comp->add_data< ImageData >( client );
+		auto data = comp->add_data< ImageData >( );
 		data->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		data->id_texture = client.texture_mgr.get_texture_id( "Gui" );
 		data->id_subtex = client.texture_mgr.get_texture_layer( "Gui", "Default/Image" );
-		data->func_resize = func_null;
-
-		return 0;
-	};
-
-	func_update = [ ] ( PComp * comp ) {
-		auto data = comp->get_data< ImageData >( );
-		data->func_resize( comp );
 
 		return 0;
 	};

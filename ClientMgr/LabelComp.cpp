@@ -14,7 +14,7 @@ LabelComp::LabelComp( Client & client ) {
 	};
 
 	func_alloc = [ &client = client ]( PComp * comp ) {
-		auto data = comp->add_data< LabelData >( client );
+		auto data = comp->add_data< LabelData >( );
 
 		data->text = "Default";
 		data->size_text = 12;

@@ -14,6 +14,8 @@ PageComponentLoader::PageComponentLoader( ) :
 	func_release( func_null ),
 	func_update( func_null ),
 	func_mesh( func_null ),
+	func_is_over( func_null ),
+	func_is_down( func_null ),
 	func_enter( func_null ),
 	func_over( func_null ),
 	func_exit( func_null ),

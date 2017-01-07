@@ -7,13 +7,25 @@
 #include "WorldSize.h"
 
 #include "TestPage.h"
+#include "OptionsPage.h"
+#include "QuickBarPage.h"
+
+#include "RootComp.h"
+#include "ContainerComp.h"
+
+#include "ResizableComp.h"
+#include "ClickableComp.h"
+#include "OverableComp.h"
+
+#include "ImageComp.h"
+#include "LabelComp.h"
+#include "ResizeComp.h"
+
+#include "BorderImageComp.h"
 
 #include "TextButtonComp.h"
-#include "LabelComp.h"
-#include "ImageComp.h"
-#include "BorderImageComp.h"
 #include "CheckboxComp.h"
-#include "ResizeComp.h"
+#include "SliderComp.h"
 
 
 GuiMgr::GuiMgr( Client & client ) :
@@ -40,13 +52,42 @@ void GuiMgr::init( ) {
 	is_visible = true;
 }
 
+void GuiMgr::load_components( ) {
+	add_component_loader( RootComp( client ) );
+	add_component_loader( ContainerComp( client ) );
+
+	add_component_loader( ResizableComp( client ) );
+	add_component_loader( ClickableComp( client ) );
+	add_component_loader( OverableComp( client ) );
+
+	add_component_loader( LabelComp( client ) );
+	add_component_loader( ImageComp( client ) );
+
+	add_component_loader( BorderImageComp( client ) );
+
+	add_component_loader( TextButtonComp( client ) );
+	add_component_loader( CheckboxComp( client ) );
+	add_component_loader( ResizeComp( client ) );
+	add_component_loader( SliderComp( client ) );
+}
+
+void GuiMgr::load_pages( ) {
+	add_page_loader( TestPage( client ) );
+	add_page_loader( OptionsPage( client ) );
+	add_page_loader( QuickBarPage( client ) );
+
+	add_page( "Options", "Options", PageLoader::func_null );
+	add_page( "QuickBar", "QuickBar", PageLoader::func_null );
+	//add_page( "TestPage", "Test", PageLoader::func_null );
+}
+
 void GuiMgr::update( ) {
 	block_selector.update( );
 
-	focus_over.page = nullptr;
-	focus_over.comp = nullptr;
+	comp_over = nullptr;
 
 	Page * page;
+	// Update/remesh
 	for( int unsigned i = 0; i < list_pages.size( ); ++i ) { 
 		page = &list_pages[ i ].get( );
 
@@ -54,117 +95,265 @@ void GuiMgr::update( ) {
 		mesh_page( page );
 	}
 
-	if( focus_over_last.page || focus_over_last.comp ) {
-		PComp * comp = focus_over_last.comp;
-		comp->pc_loader->func_over( comp );
-
-		if( !Directional::is_point_in_rect(
-			client.input_mgr.get_mouse( ),
-			comp->page->pos + comp->pos,
-			comp->page->pos + comp->pos + comp->dim ) ) { 
-			
-			comp->pc_loader->func_exit( comp );
-			focus_over_last.page = nullptr;
-			focus_over_last.comp = nullptr;
-		}	
-	}
-	else {
-		auto iter_page = list_pages.begin( );
-		while( iter_page != list_pages.end( ) ) { 
-			over_page( &iter_page->get( ) );
-
-			if( focus_over.page || focus_over.comp ) { 
-				break;
-			}
-
-			++iter_page;
-		}
-
-		if( focus_over.page && focus_over.comp ) {
-			printf( "Over something" );
-			focus_over_last = focus_over;
-		} 
-	}
-
 	if( is_visible && client.input_mgr.is_cursor_vis( ) ) {
-		if( client.input_mgr.is_mouse_down( 0 ) ) {
-			on_down( 0 );
-		}
-		if( client.input_mgr.get_mouse_hold( 0 ) ) {
-			on_hold( 0 );
-		}
-		if( client.input_mgr.is_mouse_up( 0 ) ) {
-			on_up( 0 );
-		}
+		on_over( );
+		on_click( );
 	}
 }
 
 void GuiMgr::update_page( Page * page ) {
-	page->page_loader->func_update( page );
+	page->loader->func_update( page );
 	page->reposition( );
 
-	auto iter_comp = page->list_comps.begin( );
-
-	while( iter_comp != page->list_comps.end( ) ) {
-		update_comps( &iter_comp->get( ) );
-
-		++iter_comp;
-	}
+	update_comp_children( page->root );
 }
 
-void GuiMgr::update_comps( PComp * comp ) {
+void GuiMgr::update_comp( PComp * comp ) {
+	update_comp_self( comp );
+	update_comp_children( comp );
+}
+
+void GuiMgr::update_comp_self( PComp * comp ) {
 	comp->pc_loader->func_update( comp );
 	comp->reposition( );
+}
 
+void GuiMgr::update_comp_children( PComp * comp ) {
 	auto iter_comp = comp->list_comps.begin( );
 
 	while( iter_comp != comp->list_comps.end( ) ) { 
-		update_comps( &iter_comp->get( ) );
+		update_comp( &iter_comp->get( ) );
 
 		++iter_comp;
 	}
 }
 
-void GuiMgr::over_page( Page * page ) { 
-	PComp * comp_child;
-	auto iter_comp = page->list_comps.rbegin( );
+void GuiMgr::on_over( ) {
+	// If we were over a component
+	if( comp_over_last ) {
+		// If we move into a child
+		comp_over = nullptr;
+		over_page( comp_over_last->page );
 
-	while( iter_comp != page->list_comps.rend( ) ) { 
-		comp_child = &iter_comp->get( );
-		over_comp( comp_child );
+		if( comp_over ) {
+			if( comp_over == comp_over_last ) {
+				comp_over_last->pc_loader->func_over( comp_over_last );
 
-		if( focus_over.page || focus_over.comp ) { 
+				return;
+			}
+
+			//printf( "Exiting comp: %s, Entering comp: %s\n", comp_over_last->name.c_str( ), comp_over->name.c_str( ) );
+			comp_over_last->pc_loader->func_exit( comp_over_last );
+			comp_over_last = comp_over;
+			comp_over_last->pc_loader->func_enter( comp_over_last );
+
 			return;
 		}
 
-		++iter_comp;
+		// Else we have no over - let a full traverse decide the next over.
+		//printf( "Exiting comp: %s\n", comp_over_last->name.c_str( ) );
+		comp_over_last->pc_loader->func_exit( comp_over_last );
+		comp_over_last = nullptr;
+
+		return;
+	}
+
+	comp_over = nullptr;
+	over_page_all( );
+
+	if( comp_over ) {
+		//printf( "Entering comp: %s\n", comp_over->name.c_str( ) );
+		comp_over_last = comp_over;
+		comp_over_last->pc_loader->func_enter( comp_over_last );
+		return;
 	}
 }
 
-void GuiMgr::over_comp( PComp * comp ) { 
-	PComp * comp_child;
-	auto iter_comp = comp->list_comps.rbegin( );
+void  GuiMgr::over_page_all( ) {
+	auto iter_order = list_order.begin( );
+	while( !comp_over && iter_order != list_order.end( ) ) { 
+		over_page( &list_pages[ *iter_order ].get( ) );
 
-	while( iter_comp != comp->list_comps.rend( ) ) {
-		comp_child = &iter_comp->get( );
-		over_comp( comp_child );
+		++iter_order;
+	}
+}
 
-		if( focus_over.page || focus_over.comp ) {
-			return;
-		}
+void GuiMgr::over_page( Page * page ) {
+	if( !page->is_visible ) { 
+		return;
+	}
 
-		++iter_comp;
+	over_page_children( page );
+	//over_page_self( page );
+}
+
+void GuiMgr::over_page_self( Page * page ) { 
+	if( comp_over ) {
+		return;
+	}
+}
+
+void GuiMgr::over_page_children( Page * page ) { 
+	if( comp_over ) { 
+		return;
+	}
+
+	over_comp( page->root );
+}
+
+void GuiMgr::over_comp( PComp * comp ) {
+	if( !comp->is_visible ) { 
+		return;
+	}
+
+	over_comp_children( comp );
+	over_comp_self( comp );
+}
+
+void GuiMgr::over_comp_self( PComp * comp ) {
+	if( comp_over ) { 
+		return;
 	}
 
 	if( Directional::is_point_in_rect(
 			client.input_mgr.get_mouse( ),
-			comp->page->pos + comp->pos, 
-			comp->page->pos + comp->pos + comp->dim 
-		) &&
-		comp->pc_loader->func_enter( comp ) != 0 ) {
+			comp->page->pos + comp->pos,
+			comp->page->pos + comp->pos + comp->dim ) &&
+		comp->pc_loader->func_is_over( comp ) != 0 ) {
 
-		focus_over.page = comp->page;
-		focus_over.comp = comp;
+		comp_over = comp;
+	}
+}
+
+void GuiMgr::over_comp_children( PComp * comp ) {
+	if( comp_over ) { 
+		return;
+	}
+
+	auto iter_comp = comp->list_comps.rbegin( );
+
+	while( !comp_over && iter_comp != comp->list_comps.rend( ) ) {
+		over_comp( &iter_comp->get( ) );
+
+		++iter_comp;
+	}
+}
+
+
+void GuiMgr::on_click( ) {
+	if( client.input_mgr.is_mouse_down( 0 ) || client.input_mgr.is_mouse_down( 1 ) ) {
+		comp_down = nullptr;
+		down_page_all( );
+
+		if( comp_down ) {
+			//printf( "Down comp: %s\n", comp_down->name.c_str( ) );
+			comp_down->pc_loader->func_down( comp_down );
+
+			return;
+		}
+
+		return;
+	}
+
+	if( client.input_mgr.get_mouse_hold( 0 ) || client.input_mgr.get_mouse_hold( 1 ) ) { 
+		if( comp_down ) {
+			//printf( "Hold comp: %s\n", comp_down->name.c_str( ) );
+			comp_down->pc_loader->func_hold( comp_down );
+			
+			return;
+		}
+
+		return;
+	}
+
+	if( client.input_mgr.is_mouse_up( 0 ) || client.input_mgr.is_mouse_up( 1 ) ) { 
+		if( comp_down ) {
+			//printf( "Up comp: %s\n", comp_down->name.c_str( ) );
+			comp_down->pc_loader->func_up( comp_down );
+
+			return;
+		}
+
+		return;
+	}
+}
+
+void  GuiMgr::down_page_all( ) {
+	auto iter_order = list_order.begin( );
+	while( !comp_down && iter_order != list_order.end( ) ) {
+		down_page( &list_pages[ *iter_order ].get( ) );
+
+		++iter_order;
+	}
+
+	if( comp_down ) { 
+		--iter_order;
+		int temp = *iter_order;
+		list_order.erase( iter_order );
+		list_order.push_front( temp );
+	}
+}
+
+void GuiMgr::down_page( Page * page ) {
+	if( !page->is_visible ) {
+		return;
+	}
+
+	down_page_children( page );
+	//down_page_self( page );
+}
+
+void GuiMgr::down_page_self( Page * page ) {
+	if( comp_down ) {
+		return;
+	}
+}
+
+void GuiMgr::down_page_children( Page * page ) {
+	if( comp_down ) {
+		return;
+	}
+
+	down_comp( page->root );
+}
+
+void GuiMgr::down_comp( PComp * comp ) {
+	if( !comp->is_visible ) {
+		return;
+	}
+
+	down_comp_children( comp );
+	down_comp_self( comp );
+}
+
+void GuiMgr::down_comp_self( PComp * comp ) {
+	if( comp_down ) {
+		return;
+	}
+
+	if( Directional::is_point_in_rect(
+			client.input_mgr.get_mouse( ),
+			comp->page->pos + comp->pos,
+			comp->page->pos + comp->pos + comp->dim ) &&
+		comp->pc_loader->func_is_down( comp ) ) {
+
+		comp_down = comp;
+	}
+}
+
+void GuiMgr::down_comp_children( PComp * comp ) {
+	if( comp_down ) {
+		return;
+	}
+
+	PComp * comp_child;
+	auto iter_comp = comp->list_comps.rbegin( );
+
+	while( !comp_down && iter_comp != comp->list_comps.rend( ) ) {
+		comp_child = &iter_comp->get( );
+		down_comp( comp_child );
+
+		++iter_comp;
 	}
 }
 
@@ -173,39 +362,28 @@ void GuiMgr::mesh_page( Page * page ) {
 		client.thread_mgr.task_main( 10, [ this, page ] ( ) {
 			page->vbo_mesh.clear( );
 
-			page->page_loader->func_mesh( page );
+			page->loader->func_mesh( page );
 
-			std::queue< PComp * > queue_comps;
-
-			auto iter_comp = page->list_comps.begin( );
-			while( iter_comp != page->list_comps.end( ) ) {
-				if( iter_comp->get( ).is_visible ) {
-					queue_comps.push( &iter_comp->get( ) );
-				}
-
-				++iter_comp;
-			}
-
-			PComp * comp;
-			while( !queue_comps.empty( ) ) {
-				comp = queue_comps.front( );
-				queue_comps.pop( );
-
-				if( comp->is_visible ) {
-					comp->pc_loader->func_mesh( comp );
-
-					iter_comp = comp->list_comps.begin( );
-					while( iter_comp != comp->list_comps.end( ) ) {
-						queue_comps.push( &iter_comp->get( ) );
-						++iter_comp;
-					}
-				}
-			}
+			mesh_comp( page->root );
 
 			page->vbo_mesh.buffer( );
 		} );
 
 		page->is_remesh = false;
+	}
+}
+
+void GuiMgr::mesh_comp( PComp * comp ) { 
+	if( !comp->is_visible ) { 
+		return;
+	}
+
+	comp->pc_loader->func_mesh( comp );
+
+	auto iter_child = comp->list_comps.begin( );
+	while( iter_child != comp->list_comps.end( ) ) {
+		mesh_comp( &iter_child->get( ) );
+		++iter_child;
 	}
 }
 
@@ -222,28 +400,20 @@ void GuiMgr::render( ) {
 		auto page = &list_pages[ *iter_order ].get( );
 
 		if( !page->is_visible ) {
+			++iter_order;
 			continue;
 		}
 
 		client.texture_mgr.update_uniform( "BasicOrtho", "mat_model", page->mat_model );
 		page->vbo_mesh.render( client, true );
 
-		iter_order++;
+		++iter_order;
 	}
 }
 
 void GuiMgr::end( ) { }
 
 void GuiMgr::sec( ) { }
-
-void GuiMgr::load_components( ) { 
-	add_component_loader( TextButtonComp( client ) );
-	add_component_loader( LabelComp( client ) );
-	add_component_loader( ImageComp( client ) );
-	add_component_loader( BorderImageComp( client ) );
-	add_component_loader( CheckboxComp( client ) );
-	add_component_loader( ResizeComp( client ) );
-}
 
 void GuiMgr::add_component_loader( PCLoader & pc_loader ) { 
 	if( map_page_component_loaders.find( pc_loader.name ) != map_page_component_loaders.end( ) ) { 
@@ -263,6 +433,10 @@ void GuiMgr::add_component_loader( PCLoader & pc_loader ) {
 	loader.func_alloc = pc_loader.func_alloc;
 	loader.func_update = pc_loader.func_update;
 	loader.func_release = pc_loader.func_release;
+
+
+	loader.func_is_over = pc_loader.func_is_over;
+	loader.func_is_down = pc_loader.func_is_down;
 
 	loader.func_enter = pc_loader.func_enter;
 	loader.func_over = pc_loader.func_over;
@@ -294,76 +468,6 @@ PCLoader * GuiMgr::get_component_loader_safe( std::string const & name_loader ) 
 	}
 
 	return &list_page_component_loaders[ iter_loader->second ];
-}
-
-void GuiMgr::load_pages( ) { 
-	add_page_loader( TestPage( client ) );
-
-	add_page( "Test", "Test", [ &client = client ] ( Page * page ) {
-		page->dim = { 300, 300 };
-
-		auto button = page->get_comp( "TestButton" );
-		auto button_data = button->get_data< TextButtonComp::ButtonData >( );
-
-		button_data->func_action = [ ] ( PComp * comp ) {
-			printf( "I am a banana!\n" );
-
-			return 0;
-		};
-
-		auto checkbox = page->get_comp( "TestCheck" );
-		auto checkbox_data = checkbox->get_data< CheckboxComp::CheckboxData >( );
-		checkbox_data->func_checked = [ &client = client ] ( PComp * comp ) { 
-			client.chunk_mgr.set_sun_pause( true );
-
-			return 0;
-		};
-
-		checkbox_data->func_unchecked = [ &client = client ] ( PComp * comp ) {
-			client.chunk_mgr.set_sun_pause( false );
-
-			return 0;
-		};
-
-		return 0; 
-	} );
-
-	add_page( "Test2", "Test", [ &client = client ] ( Page * page ) { 
-		auto page_data = page->get_data< TestPage::TestData >( );
-		page_data->color = { 0.5f, 1.0f, 0.5f, 0.5f };
-
-		page->dim = { 300, 300 };
-		page->offset = -page->dim;
-
-		auto background = page->get_comp( "Background" );
-		auto bg_data = background->get_data< BorderImageComp::BorderImageData >( );
-		bg_data->color = page_data->color;
-
-		auto button = page->get_comp( "TestButton" );
-		auto button_data = button->get_data< TextButtonComp::ButtonData >( );
-
-		auto checkbox = page->get_comp( "TestCheck" );
-		auto checkbox_data = checkbox->get_data< CheckboxComp::CheckboxData >( );
-		checkbox_data->func_checked = [ &client = client ] ( PComp * comp ) {
-			client.chunk_mgr.toggle_flatshade( );
-
-			return 0;
-		};
-
-		checkbox_data->func_unchecked = [ &client = client ] ( PComp * comp ) {
-			client.chunk_mgr.toggle_flatshade( );
-
-			return 0;
-		};
-
-		button_data->func_action = [ ] ( PComp * comp ) {
-			printf( "I am an orange!\n" );
-
-			return 0;
-		};
-
-		return 0;
-	} );
 }
 
 void GuiMgr::add_page_loader( PageLoader & page_loader ) { 
@@ -422,14 +526,42 @@ Page * GuiMgr::add_page( std::string const & name_page, std::string const & name
 		printf( "ERROR: Cannot allocate Page Handle: %s\n", name_page.c_str( ) );
 		return nullptr;
 	}
+	page->root = client.resource_mgr.allocate( page->h_root );
+
+	if( !page->root ) { 
+		printf( "ERROR: Cannot allocate Root Handle: %s\n", name_page.c_str( ) );
+		client.resource_mgr.release( handle_page );
+		return nullptr;
+	}
+
+	page->root->anchor = { 0.0f, 0.0f };
+	page->root->dim = { 100, 100 };
+	page->root->offset = { 0.0f, 0.0f };
+
+	page->root->name = "Root";
+	page->root->is_visible = true;
+	page->root->client = &client;
+	page->root->page = page;
+	page->root->parent = nullptr;
+	page->root->pc_loader = get_component_loader_safe( "Root" );
+
+	if( !page->root->pc_loader ) {
+		printf( "ERROR: No Component Loader found for Root\n" );
+		client.resource_mgr.release( page->h_root );
+		client.resource_mgr.release( handle_page );
+		return nullptr;
+	}
 
 	page->client = &client;
 
 	page->name = name_page;
-	page->page_loader = loader;
+	page->loader = loader;
 
-	if( page->page_loader->func_alloc( page ) != 0 ) { 
+	page->is_visible = true;
+
+	if( page->loader->func_alloc( page ) != 0 ) { 
 		printf( "ERROR: Error Allocating Page: %s\n", name_page.c_str( ) );
+		client.resource_mgr.release( page->h_root );
 		client.resource_mgr.release( handle_page );
 		return nullptr;
 	}
@@ -448,66 +580,18 @@ Page * GuiMgr::add_page( std::string const & name_page, std::string const & name
 	return page;
 }
 
-void GuiMgr::on_down( int button ) {
-	bool is_handled = false;
-
-	auto & pos_mouse = client.input_mgr.get_mouse_down( button );
-
-	Page * page;
-	auto iter_order = list_order.begin( );
-	while( !is_handled && iter_order != list_order.end( ) ) {
-		page = &list_pages[ *iter_order ].get( );
-
-		if( page->is_visible ) {
-			if( Directional::is_point_in_rect( pos_mouse, page->pos, page->pos + page->dim ) ) {
-				is_handled = page->on_down( button );
-
-				if( is_handled ) { 
-					int id_order = *iter_order;
-					iter_order = list_order.erase( iter_order );
-					list_order.push_front( id_order );
-				}
-			}
-		}
-
-		iter_order++;
-	}
+Page * GuiMgr::get_page( std::string const & name ) {
+	return &list_pages[ map_pages[ name ] ].get( );
 }
 
-void GuiMgr::on_hold( int button ) {
-	bool is_handled = false;
-	auto iter_order = list_order.begin( );
+Page * GuiMgr::get_page_safe( std::string const & name ) {
+	auto iter_map = map_pages.find( name );
 
-	Page * page;
-	while( !is_handled && iter_order != list_order.end( ) ) {
-		page = &list_pages[ *iter_order ].get( );
-
-		if( page->is_visible ) {
-			is_handled = page->on_hold( button );
-		}
-
-		iter_order++;
+	if( iter_map == map_pages.end( ) ) { 
+		return nullptr;
 	}
-}
 
-void GuiMgr::on_up( int button ) {
-	bool is_handled = false;
-
-	auto & pos_mouse = client.input_mgr.get_mouse_up( button );
-
-	Page * page;
-	auto iter_order = list_order.begin( );
-	while( !is_handled && iter_order != list_order.end( ) ) {
-		page = &list_pages[ *iter_order ].get( );
-
-		if( page->is_visible ) {
-			if( Directional::is_point_in_rect( pos_mouse, page->pos, page->pos + page->dim ) ) {
-				is_handled = page->on_up( button );
-			}
-		}
-
-		iter_order++;
-	}
+	return &list_pages[ map_pages[ name ] ].get( );
 }
 
 /*

@@ -459,7 +459,7 @@ float raw_noise_4d( const float x, const float y, const float z, const float w )
         n4 = t4 * t4 * dot(grad4[gi4], x4, y4, z4, w4);
     }
 
-    // Sum up and scale the result to cover the range [-1,1]
+    // Sum up and scale the result to cdown the range [-1,1]
     return 27.0 * (n0 + n1 + n2 + n3 + n4);
 }
 

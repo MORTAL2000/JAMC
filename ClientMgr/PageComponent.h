@@ -19,6 +19,8 @@ public:
 	PageComponent( );
 	~PageComponent( );
 
+	Client * client;
+
 	bool is_visible;
 	bool is_hold;
 
@@ -50,10 +52,10 @@ public:
 	}
 
 	template< class T >
-	T * add_data( Client & client ) {
+	T * add_data() {
 		Handle< T > * ptr_handle = new Handle< T >( );
 
-		if( !client.resource_mgr.allocate( *ptr_handle ) ) {
+		if( !client->resource_mgr.allocate( *ptr_handle ) ) {
 			delete ptr_handle;
 			return nullptr;
 		}
