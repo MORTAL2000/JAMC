@@ -77,4 +77,12 @@ PComp * PageComponent::get_comp_safe( std::string const & name ) {
 void PageComponent::reposition( ) {
 	pos.x = parent->pos.x + parent->dim.x * anchor.x + offset.x;
 	pos.y = parent->pos.y + parent->dim.y * anchor.y + offset.y;
+
+	auto iter_comp = list_comps.begin( );
+
+	while( iter_comp != list_comps.end( ) ) {
+		iter_comp->get( ).reposition( );
+
+		++iter_comp;
+	}
 }

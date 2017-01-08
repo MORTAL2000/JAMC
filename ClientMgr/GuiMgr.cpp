@@ -113,7 +113,15 @@ void GuiMgr::update_page( Page * page ) {
 	page->loader->func_update( page );
 	page->reposition( );
 
-	update_comp_children( page->root );
+	auto iter_comp = page->root->list_comps.begin( );
+
+	while( iter_comp != page->root->list_comps.end( ) ) {
+		update_comp( &iter_comp->get( ) );
+
+		++iter_comp;
+	}
+
+	//update_comp_children( page->root );
 }
 
 void GuiMgr::update_comp( PComp * comp ) {
@@ -150,7 +158,7 @@ void GuiMgr::on_over( ) {
 				return;
 			}
 
-			//printf( "Exiting comp: %s, Entering comp: %s\n", comp_over_last->name.c_str( ), comp_over->name.c_str( ) );
+			printf( "Exiting comp: %s, Entering comp: %s\n", comp_over_last->name.c_str( ), comp_over->name.c_str( ) );
 			comp_over_last->pc_loader->func_exit( comp_over_last );
 			comp_over_last = comp_over;
 			comp_over_last->pc_loader->func_enter( comp_over_last );
@@ -159,7 +167,7 @@ void GuiMgr::on_over( ) {
 		}
 
 		// Else we have no over - let a full traverse decide the next over.
-		//printf( "Exiting comp: %s\n", comp_over_last->name.c_str( ) );
+		printf( "Exiting comp: %s\n", comp_over_last->name.c_str( ) );
 		comp_over_last->pc_loader->func_exit( comp_over_last );
 		comp_over_last = nullptr;
 
@@ -170,7 +178,7 @@ void GuiMgr::on_over( ) {
 	over_page_all( );
 
 	if( comp_over ) {
-		//printf( "Entering comp: %s\n", comp_over->name.c_str( ) );
+		printf( "Entering comp: %s\n", comp_over->name.c_str( ) );
 		comp_over_last = comp_over;
 		comp_over_last->pc_loader->func_enter( comp_over_last );
 		return;
@@ -246,7 +254,6 @@ void GuiMgr::over_comp_children( PComp * comp ) {
 		++iter_comp;
 	}
 }
-
 
 void GuiMgr::on_click( ) {
 	if( client.input_mgr.is_mouse_down( 0 ) || client.input_mgr.is_mouse_down( 1 ) ) {

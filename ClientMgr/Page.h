@@ -68,8 +68,8 @@ public:
 	}
 
 	template< class T >
-	T * add_data( Client & client ) {
-		return root->add_data< T >( client );
+	T * add_data( ) {
+		return root->add_data< T >( );
 	}
 
 	template< class T >

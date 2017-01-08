@@ -4,7 +4,7 @@
 #include "ClickableComp.h"
 #include "GraphComp.h"
 #include "ImageComp.h"
-#include "MenuComp.h"
+
 
 GraphPage::GraphPage( Client & client ) { 
 	name = "Graph";
@@ -12,6 +12,35 @@ GraphPage::GraphPage( Client & client ) {
 	func_alloc = [ &client = client ] ( Page * page ) {
 		page->is_visible = false;
 		page->set_dim( glm::vec2( 500, 250 ) );
+
+		auto data_page = page->add_data< GraphPageData >( );
+
+		auto clickable = page->add_comp( "Clickable", "Clickable", [ &client = client, data_page ] ( PComp * comp ) {
+			auto data = comp->get_data< ClickableComp::ClickableData >( );
+
+			data->func_hold = [ &client = client ] ( PComp * comp ) {
+				comp->offset += client.input_mgr.get_mouse_delta( );
+
+				return 0;
+			};
+
+			data->func_up = [ &client = client, data_page ] ( PComp * comp ) {
+				if( client.input_mgr.is_mouse_up( 1 ) &&
+					Directional::is_point_in_rect(
+						client.input_mgr.get_mouse( ),
+						comp->page->pos + comp->pos,
+						comp->page->pos + comp->pos + comp->dim ) ) {
+
+					data_page->comp_menu->offset = client.input_mgr.get_mouse( ) - comp->page->pos - comp->pos - comp->dim / 2;
+					data_page->comp_menu->is_visible = true;
+					data_page->comp_menu->reposition( );
+				}
+
+				return 0;
+			};
+
+			return 0;
+		} );
 
 		auto resizable = page->add_comp( "Resizable", "Resizable", [ &client = client ] ( PComp * comp ) {
 			auto data = comp->get_data< ResizableComp::ResizableData >( );
@@ -50,24 +79,13 @@ GraphPage::GraphPage( Client & client ) {
 			return 0;
 		} );
 
-		auto clickable = page->add_comp( "Clickable", "Clickable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ClickableComp::ClickableData >( );
+		data_page->comp_menu = page->add_comp( "Menu", "Menu", PageComponentLoader::func_null );
+		data_page->data_menu = data_page->comp_menu->get_data< MenuComp::MenuData >( );
 
-			data->func_hold = [ &client = client ] ( PComp * comp ) {
-				comp->offset += client.input_mgr.get_mouse_delta( );
+		data_page->comp_menu->anchor = { 0.5f, 0.5f };
 
-				return 0;
-			};
-
-			return 0;
-		} );
-
-		auto menu = page->add_comp( "Menu", "Menu", PageComponentLoader::func_null );
-		menu->anchor = { 0.5f, 0.5f };
-
-		auto menu_data = menu->get_data< MenuComp::MenuData >( );
 		for( auto & name_record : { RecordStrings::FRAME, RecordStrings::UPDATE, RecordStrings::TASK_MAIN,  RecordStrings::RENDER } ) { 
-			menu_data->add_entry( client, name_record, [ &client = client, graph, name_record ] ( PComp * comp ) {
+			data_page->data_menu->add_entry( client, name_record, [ &client = client, graph, name_record ] ( PComp * comp ) {
 				auto data = graph->get_data< GraphComp::GraphData >( );
 				data->data_label_title->text = name_record;
 				data->record = &client.time_mgr.get_record( name_record );

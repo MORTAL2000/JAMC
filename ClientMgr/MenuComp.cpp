@@ -126,6 +126,20 @@ MenuComp::MenuComp( Client & client ) {
 
 		return 0;
 	};
+
+	func_update = [ &client = client ] ( PComp * comp ) {
+		if( client.input_mgr.is_mouse_up( 0 ) || client.input_mgr.is_mouse_up( 1 ) ) { 
+			//if( !Directional::is_point_in_rect(
+			//	client.input_mgr.get_mouse( ),
+			//	comp->page->pos + comp->pos,
+			//	comp->page->pos + comp->pos + comp->dim ) ) {
+			
+				comp->is_visible = false;
+			//}
+		}
+
+		return 0;
+	};
 }
 
 MenuComp::~MenuComp( ) { }
