@@ -173,6 +173,7 @@
     <ClCompile Include="ImageButtonComp.cpp" />
     <ClCompile Include="ImageComp.cpp" />
     <ClCompile Include="LabelComp.cpp" />
+    <ClCompile Include="MenuComp.cpp" />
     <ClCompile Include="OptionsPage.cpp" />
     <ClCompile Include="OverableComp.cpp" />
     <ClCompile Include="RootComp.cpp" />
@@ -242,6 +243,7 @@
     <ClInclude Include="ImageButtonComp.h" />
     <ClInclude Include="ImageComp.h" />
     <ClInclude Include="LabelComp.h" />
+    <ClInclude Include="MenuComp.h" />
     <ClInclude Include="OptionsPage.h" />
     <ClInclude Include="OverableComp.h" />
     <ClInclude Include="RootComp.h" />
@@ -327,6 +329,9 @@
     <Xml Include="Blocks\Default.xml">
       <SubType>Designer</SubType>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Copyright.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

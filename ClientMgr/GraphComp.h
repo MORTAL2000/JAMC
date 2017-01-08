@@ -9,7 +9,7 @@ public:
 	struct GraphData {
 		TimeRecord * record;
 		int num_entries;
-		int unsigned updates;
+		int updates;
 
 		glm::ivec2 padding;
 
@@ -23,4 +23,3 @@ public:
 	GraphComp( Client & client );
 	~GraphComp( );
 };
-

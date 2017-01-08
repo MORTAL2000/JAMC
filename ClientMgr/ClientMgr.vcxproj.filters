@@ -309,9 +309,6 @@
     <ClCompile Include="QuickBarPage.cpp">
       <Filter>Source Files\Managers\GuiMgr\Pages</Filter>
     </ClCompile>
-    <ClCompile Include="ClickableComp.cpp">
-      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
-    </ClCompile>
     <ClCompile Include="OverableComp.cpp">
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
@@ -331,12 +328,18 @@
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
     <ClCompile Include="ImageButtonComp.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
     <ClCompile Include="GraphComp.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
     <ClCompile Include="GraphPage.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Pages</Filter>
+    </ClCompile>
+    <ClCompile Include="ClickableComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="MenuComp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -545,6 +548,9 @@
     <ClInclude Include="GraphPage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MenuComp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\SMBasic.frag">
@@ -630,5 +636,10 @@
     <Xml Include="Blocks\Default.xml">
       <Filter>Resource Files\Xml\Block Descriptor</Filter>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Copyright.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

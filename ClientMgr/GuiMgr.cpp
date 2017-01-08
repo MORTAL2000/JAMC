@@ -27,6 +27,7 @@
 #include "TextButtonComp.h"
 #include "CheckboxComp.h"
 #include "SliderComp.h"
+#include "MenuComp.h"
 
 #include "GraphComp.h"
 
@@ -72,6 +73,7 @@ void GuiMgr::load_components( ) {
 	add_component_loader( CheckboxComp( client ) );
 	add_component_loader( ResizeComp( client ) );
 	add_component_loader( SliderComp( client ) );
+	add_component_loader( MenuComp( client ) );
 
 	add_component_loader( GraphComp( client ) );
 }
