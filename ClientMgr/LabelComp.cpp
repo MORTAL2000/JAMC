@@ -6,7 +6,7 @@ LabelComp::LabelComp( Client & client ) {
 	name = "Label";
 
 	func_register = [ &client = client ] ( ) {
-		if( client.resource_mgr.reg_pool< LabelData >( 128 ) ) {
+		if( client.resource_mgr.reg_pool< LabelData >( num_comp_default ) ) {
 			return 0;
 		}
 

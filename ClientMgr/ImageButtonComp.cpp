@@ -6,8 +6,14 @@
 ImageButtonComp::ImageButtonComp( Client & client ) { 
 	name = "ImageButton";
 
+	func_register = [ &client = client ] () {
+		client.resource_mgr.reg_pool< ImageButtonData >( num_comp_default );
+
+		return 0;
+	};
+
 	func_alloc = [ &client = client ] ( PComp * comp ) {
-		auto data = comp->add_data< ImageButtonComp::ImageButtonData >( );
+		auto data = comp->add_data< ImageButtonData >( );
 
 		data->color_default = { 1.0f, 1.0f, 1.0f, 1.0f };
 		data->color_over = { 0.5f, 0.5f, 0.5f, 1.0f };

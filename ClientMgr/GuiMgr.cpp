@@ -40,9 +40,9 @@ GuiMgr::~GuiMgr( ) { }
 
 void GuiMgr::init( ) {
 	printf( "\n*** Gui Manager ***\n" );
-	list_pages.reserve( size_pages );
 	map_pages.reserve( size_pages );
-	client.resource_mgr.reg_pool< PComp >( 1024 );
+	client.resource_mgr.reg_pool< Page >( 128 );
+	client.resource_mgr.reg_pool< PComp >( PageComponentLoader::num_comp_default );
 	//list_order.reserve( size_pages );
 
 	GL_CHECK( block_selector.init( ) );
@@ -86,7 +86,7 @@ void GuiMgr::load_pages( ) {
 
 	add_page( "Options", "Options", PageLoader::func_null );
 	add_page( "QuickBar", "QuickBar", PageLoader::func_null );
-	add_page( "Graph", "Graph", PageLoader::func_null );
+	//add_page( "Graph", "Graph", PageLoader::func_null );
 }
 
 void GuiMgr::update( ) {
@@ -95,33 +95,29 @@ void GuiMgr::update( ) {
 	comp_over = nullptr;
 
 	Page * page;
-	// Update/remesh
-	for( int unsigned i = 0; i < list_pages.size( ); ++i ) { 
-		page = &list_pages[ i ].get( );
 
+	// Update/remesh
+	auto iter_order = list_order.begin( );
+	while( iter_order != list_order.end( ) ) { 
+		page = &iter_order->get( );
 		update_page( page );
 		mesh_page( page );
+		++iter_order;
 	}
 
 	if( is_visible && client.input_mgr.is_cursor_vis( ) ) {
-		on_over( );
 		on_click( );
+		on_over( );
 	}
+
+	process_remove( );
 }
 
 void GuiMgr::update_page( Page * page ) {
 	page->loader->func_update( page );
 	page->reposition( );
 
-	auto iter_comp = page->root->list_comps.begin( );
-
-	while( iter_comp != page->root->list_comps.end( ) ) {
-		update_comp( &iter_comp->get( ) );
-
-		++iter_comp;
-	}
-
-	//update_comp_children( page->root );
+	update_comp_children( page->root );
 }
 
 void GuiMgr::update_comp( PComp * comp ) {
@@ -145,6 +141,29 @@ void GuiMgr::update_comp_children( PComp * comp ) {
 }
 
 void GuiMgr::on_over( ) {
+	comp_over = nullptr;
+
+	over_page_all( );
+
+	if( comp_over_last ) { 
+		if( comp_over_last == comp_over ) { 
+			comp_over_last->pc_loader->func_over( comp_over_last );
+		}
+		else if( comp_over ) { 
+			comp_over_last->pc_loader->func_exit( comp_over_last );
+			comp_over_last = comp_over;
+			comp_over_last->pc_loader->func_enter( comp_over_last );
+		}
+		else { 
+			comp_over_last->pc_loader->func_exit( comp_over_last );
+			comp_over_last = nullptr;
+		}
+	}
+	else if( comp_over ) { 
+		comp_over_last = comp_over;
+		comp_over_last->pc_loader->func_enter( comp_over_last );
+	}
+	/*
 	// If we were over a component
 	if( comp_over_last ) {
 		// If we move into a child
@@ -158,7 +177,7 @@ void GuiMgr::on_over( ) {
 				return;
 			}
 
-			printf( "Exiting comp: %s, Entering comp: %s\n", comp_over_last->name.c_str( ), comp_over->name.c_str( ) );
+			//printf( "Exiting comp: %s, Entering comp: %s\n", comp_over_last->name.c_str( ), comp_over->name.c_str( ) );
 			comp_over_last->pc_loader->func_exit( comp_over_last );
 			comp_over_last = comp_over;
 			comp_over_last->pc_loader->func_enter( comp_over_last );
@@ -167,7 +186,7 @@ void GuiMgr::on_over( ) {
 		}
 
 		// Else we have no over - let a full traverse decide the next over.
-		printf( "Exiting comp: %s\n", comp_over_last->name.c_str( ) );
+		//printf( "Exiting comp: %s\n", comp_over_last->name.c_str( ) );
 		comp_over_last->pc_loader->func_exit( comp_over_last );
 		comp_over_last = nullptr;
 
@@ -178,17 +197,18 @@ void GuiMgr::on_over( ) {
 	over_page_all( );
 
 	if( comp_over ) {
-		printf( "Entering comp: %s\n", comp_over->name.c_str( ) );
+		//printf( "Entering comp: %s\n", comp_over->name.c_str( ) );
 		comp_over_last = comp_over;
 		comp_over_last->pc_loader->func_enter( comp_over_last );
 		return;
 	}
+	*/
 }
 
 void  GuiMgr::over_page_all( ) {
 	auto iter_order = list_order.begin( );
 	while( !comp_over && iter_order != list_order.end( ) ) { 
-		over_page( &list_pages[ *iter_order ].get( ) );
+		over_page( &iter_order->get( ) );
 
 		++iter_order;
 	}
@@ -296,14 +316,14 @@ void GuiMgr::on_click( ) {
 void  GuiMgr::down_page_all( ) {
 	auto iter_order = list_order.begin( );
 	while( !comp_down && iter_order != list_order.end( ) ) {
-		down_page( &list_pages[ *iter_order ].get( ) );
+		down_page( &iter_order->get( ) );
 
 		++iter_order;
 	}
 
 	if( comp_down ) { 
 		--iter_order;
-		int temp = *iter_order;
+		auto temp = *iter_order;
 		list_order.erase( iter_order );
 		list_order.push_front( temp );
 	}
@@ -372,9 +392,38 @@ void GuiMgr::down_comp_children( PComp * comp ) {
 	}
 }
 
+void GuiMgr::remove_page( std::string const & name_page ) {
+	queue_remove.push( name_page );
+}
+
+void GuiMgr::remove_comp( PComp * comp ) { 
+	remove_comp_children( comp );
+	remove_comp_self( comp );
+}
+
+void GuiMgr::remove_comp_self( PComp * comp ) { 
+	comp->clear_data( );
+	comp->page = nullptr;
+	comp->parent = nullptr;
+	comp->pc_loader = nullptr;
+}
+
+void GuiMgr::remove_comp_children( PComp * comp ) { 
+	auto iter_children = comp->list_comps.rbegin( );
+	while( iter_children != comp->list_comps.rend( ) ) { 
+		remove_comp( &iter_children->get( ) );
+		iter_children->release( );
+		++iter_children;
+	}
+
+	comp->list_comps.clear( );
+	comp->list_comps.shrink_to_fit( );
+	comp->map_comps.clear( );
+}
+
 void GuiMgr::mesh_page( Page * page ) {
 	if( page->is_visible && page->is_remesh ) {
-		client.thread_mgr.task_main( 10, [ this, page ] ( ) {
+		//client.thread_mgr.task_main( 10, [ this, page ] ( ) {
 			page->vbo_mesh.clear( );
 
 			page->loader->func_mesh( page );
@@ -382,7 +431,7 @@ void GuiMgr::mesh_page( Page * page ) {
 			mesh_comp( page->root );
 
 			page->vbo_mesh.buffer( );
-		} );
+		//} );
 
 		page->is_remesh = false;
 	}
@@ -412,7 +461,7 @@ void GuiMgr::render( ) {
 	auto iter_order = list_order.rbegin( );
 
 	while( iter_order != list_order.rend( ) ) {
-		auto page = &list_pages[ *iter_order ].get( );
+		auto page = &iter_order->get( );
 
 		if( !page->is_visible ) {
 			++iter_order;
@@ -490,6 +539,11 @@ void GuiMgr::add_page_loader( PageLoader & page_loader ) {
 		printf( "ERROR: Duplicate Page Loader: %s\n", page_loader.name.c_str( ) );
 		return;
 	}
+	
+	if( page_loader.func_register( ) != 0 ) {
+		printf( "ERROR: Duplicate Registering Data Pools for Page Loader: %s\n", page_loader.name.c_str( ) );
+		return;
+	}
 
 	PageLoader loader;
 
@@ -505,6 +559,31 @@ void GuiMgr::add_page_loader( PageLoader & page_loader ) {
 	map_page_loaders.insert( { loader.name, ( int ) list_page_loaders.size( ) - 1 } );
 
 	printf( "SUCCESS: Added Page Loader: %s\n", loader.name.c_str( ) );
+}
+
+void GuiMgr::process_remove( ) { 
+	while( !queue_remove.empty( ) ) {
+		auto iter_page = map_pages.find( queue_remove.front( ) );
+		queue_remove.pop( );
+
+		if( iter_page == map_pages.end( ) ) {
+			return;
+		}
+
+		auto iter_order = std::find( list_order.begin( ), list_order.end( ), iter_page->second );
+		if( iter_order == list_order.end( ) ) {
+			return;
+		}
+
+		auto page = &iter_page->second.get( );
+		remove_comp( page->root );
+		page->h_root.release( );
+		page->vbo_mesh.clear( );
+
+		iter_page->second.release( );
+		list_order.erase( iter_order );
+		map_pages.erase( iter_page );
+	}
 }
 
 PageLoader * GuiMgr::get_page_loader( std::string const & name_loader ) { 
@@ -587,16 +666,15 @@ Page * GuiMgr::add_page( std::string const & name_page, std::string const & name
 	   
 	page->reposition( );
 
-	list_pages.push_back( handle_page );
-	map_pages.insert( { name_page, ( int ) list_pages.size( ) - 1 } );
-	list_order.push_back( ( int ) list_pages.size( ) - 1 );
+	map_pages.insert( { name_page, handle_page } );
+	list_order.push_front( handle_page );
 
 	printf( "SUCCESS: Added Page: %s\n", name_page.c_str( ) );
 	return page;
 }
 
 Page * GuiMgr::get_page( std::string const & name ) {
-	return &list_pages[ map_pages[ name ] ].get( );
+	return &map_pages[ name ].get( );
 }
 
 Page * GuiMgr::get_page_safe( std::string const & name ) {
@@ -606,7 +684,7 @@ Page * GuiMgr::get_page_safe( std::string const & name ) {
 		return nullptr;
 	}
 
-	return &list_pages[ map_pages[ name ] ].get( );
+	return &map_pages[ name ].get( );
 }
 
 /*

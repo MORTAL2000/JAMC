@@ -4,7 +4,7 @@ OverableComp::OverableComp( Client & client ) {
 	name = "Overable";
 
 	func_register = [ &client = client ] ( ) {
-		if( !client.resource_mgr.reg_pool< OverableData >( 128 ) ) {
+		if( !client.resource_mgr.reg_pool< OverableData >( num_comp_default ) ) {
 			return 1;
 		}
 

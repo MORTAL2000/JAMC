@@ -12,16 +12,6 @@
 #include "PageComponent.h"
 #include "VBO.h"
 
-enum ClickReturn {
-	CE_Unhandled,
-	CE_Handled_Comp,
-	CE_Size
-};
-
-enum OverReturn { 
-	
-};
-
 class Page {
 public:
 	Page( );

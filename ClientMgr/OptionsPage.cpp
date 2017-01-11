@@ -16,7 +16,7 @@ OptionsPage::OptionsPage( Client & client ) {
 		page->is_visible = false;
 		page->root->anchor = { 0.5f, 0.5f };
 		page->root->offset = { 0, 0 };
-		page->root->dim = { 200, 300 };
+		page->root->dim = { 200, 470 };
 
 		auto resizable = page->add_comp( "Resizable", "Resizable", [ &client = client ] ( PComp * comp ) {
 			auto data = comp->get_data< ResizableComp::ResizableData >( );
@@ -200,6 +200,156 @@ OptionsPage::OptionsPage( Client & client ) {
 			};
 
 			data->set_checked( false );
+
+			return 0;
+		} );
+
+		auto checkbox_limiter = page->add_comp( "CheckboxLimiter", "Checkbox", [ &client = client ] ( PComp * comp ) {
+			comp->anchor = { 0.0f, 1.0f };
+			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 4 * ( 25 + 5 ) };
+
+			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+
+			data->data_label->text = "FPS Limiter";
+
+			data->func_checked = [ &client = client ] ( PComp * comp ) {
+				client.display_mgr.toggle_limiter( );
+
+				return 0;
+			};
+
+			data->func_unchecked = [ &client = client ] ( PComp * comp ) {
+				client.display_mgr.toggle_limiter( );
+
+				return 0;
+			};
+
+			data->set_checked( true );
+
+			return 0;
+		} );
+
+		auto checkbox_vsync = page->add_comp( "CheckboxVsync", "Checkbox", [ &client = client ] ( PComp * comp ) {
+			comp->anchor = { 0.0f, 1.0f };
+			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 5 * ( 25 + 5 ) };
+
+			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+
+			data->data_label->text = "Vsync";
+
+			data->func_checked = [ &client = client ] ( PComp * comp ) {
+				client.display_mgr.toggle_vsync( );
+
+				return 0;
+			};
+
+			data->func_unchecked = [ &client = client ] ( PComp * comp ) {
+				client.display_mgr.toggle_vsync( );
+
+				return 0;
+			};
+
+			data->set_checked( false );
+
+			return 0;
+		} );
+
+		auto checkbox_render_solid = page->add_comp( "CheckboxRenderSolid", "Checkbox", [ &client = client ] ( PComp * comp ) {
+			comp->anchor = { 0.0f, 1.0f };
+			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 6 * ( 25 + 5 ) };
+
+			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+
+			data->data_label->text = "Render Solid";
+
+			data->func_checked = [ &client = client ] ( PComp * comp ) {
+				client.chunk_mgr.toggle_render_solid( );
+
+				return 0;
+			};
+
+			data->func_unchecked = [ &client = client ] ( PComp * comp ) {
+				client.chunk_mgr.toggle_render_solid( );
+
+				return 0;
+			};
+
+			data->set_checked( true );
+
+			return 0;
+		} );
+
+		auto checkbox_render_trans = page->add_comp( "CheckboxRenderTrans", "Checkbox", [ &client = client ] ( PComp * comp ) {
+			comp->anchor = { 0.0f, 1.0f };
+			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 7 * ( 25 + 5 ) };
+
+			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+
+			data->data_label->text = "Render Transparent";
+
+			data->func_checked = [ &client = client ] ( PComp * comp ) {
+				client.chunk_mgr.toggle_render_trans( );
+
+				return 0;
+			};
+
+			data->func_unchecked = [ &client = client ] ( PComp * comp ) {
+				client.chunk_mgr.toggle_render_trans( );
+
+				return 0;
+			};
+
+			data->set_checked( true );
+
+			return 0;
+		} );
+
+		auto checkbox_shadow_solid = page->add_comp( "CheckboxShadowSolid", "Checkbox", [ &client = client ] ( PComp * comp ) {
+			comp->anchor = { 0.0f, 1.0f };
+			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 8 * ( 25 + 5 ) };
+
+			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+
+			data->data_label->text = "Shadow Solids";
+
+			data->func_checked = [ &client = client ] ( PComp * comp ) {
+				client.chunk_mgr.toggle_shadow_solid( );
+
+				return 0;
+			};
+
+			data->func_unchecked = [ &client = client ] ( PComp * comp ) {
+				client.chunk_mgr.toggle_shadow_solid( );
+
+				return 0;
+			};
+
+			data->set_checked( true );
+
+			return 0;
+		} );
+
+		auto checkbox_shadow_trans = page->add_comp( "CheckboxShadowTrans", "Checkbox", [ &client = client ] ( PComp * comp ) {
+			comp->anchor = { 0.0f, 1.0f };
+			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 9 * ( 25 + 5 ) };
+
+			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+
+			data->data_label->text = "Shadow Transparents";
+
+			data->func_checked = [ &client = client ] ( PComp * comp ) {
+				client.chunk_mgr.toggle_shadow_trans( );
+
+				return 0;
+			};
+
+			data->func_unchecked = [ &client = client ] ( PComp * comp ) {
+				client.chunk_mgr.toggle_shadow_trans( );
+
+				return 0;
+			};
+
+			data->set_checked( true );
 
 			return 0;
 		} );

@@ -9,6 +9,12 @@
 GraphPage::GraphPage( Client & client ) { 
 	name = "Graph";
 
+	func_register = [ &client = client ] ( ) {
+		client.resource_mgr.reg_pool< GraphPageData >( 1024 );
+
+		return 0;
+	};
+
 	func_alloc = [ &client = client ] ( Page * page ) {
 		page->is_visible = false;
 		page->set_dim( glm::vec2( 500, 250 ) );
@@ -82,9 +88,17 @@ GraphPage::GraphPage( Client & client ) {
 		data_page->comp_menu = page->add_comp( "Menu", "Menu", PageComponentLoader::func_null );
 		data_page->data_menu = data_page->comp_menu->get_data< MenuComp::MenuData >( );
 
+		data_page->comp_menu->is_visible = false;
 		data_page->comp_menu->anchor = { 0.5f, 0.5f };
 
-		for( auto & name_record : { RecordStrings::FRAME, RecordStrings::UPDATE, RecordStrings::TASK_MAIN,  RecordStrings::RENDER } ) { 
+		data_page->data_menu->add_entry( client, "Close", [ &client = client ] ( PComp * comp ) {
+			//comp->page->is_visible = false;
+			client.gui_mgr.remove_page( comp->page->name );
+
+			return 0;
+		} );
+
+		for( auto & name_record : { RecordStrings::FRAME, RecordStrings::UPDATE, RecordStrings::TASK_MAIN,  RecordStrings::RENDER, RecordStrings::SLEEP } ) { 
 			data_page->data_menu->add_entry( client, name_record, [ &client = client, graph, name_record ] ( PComp * comp ) {
 				auto data = graph->get_data< GraphComp::GraphData >( );
 				data->data_label_title->text = name_record;

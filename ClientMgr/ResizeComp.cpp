@@ -5,6 +5,12 @@
 ResizeComp::ResizeComp( Client & client ) {
 	name = "Resize";
 
+	func_register = [ &client = client ] ( ) {
+		client.resource_mgr.reg_pool< ResizeData >( num_comp_default );
+
+		return 0;
+	};
+
 	func_alloc = [ &client = client ] ( PComp * comp ) {
 		comp->dim = { 16, 16 };
 		comp->anchor = { 1.0f, 1.0f };

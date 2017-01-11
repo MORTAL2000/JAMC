@@ -7,7 +7,7 @@ SliderComp::SliderComp( Client & client ) {
 	name = "Slider";
 
 	func_register = [ &client = client ] ( ) { 
-		client.resource_mgr.reg_pool< SliderData >( 128 );
+		client.resource_mgr.reg_pool< SliderData >( num_comp_default );
 
 		return 0;
 	};

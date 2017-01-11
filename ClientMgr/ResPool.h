@@ -36,6 +36,10 @@ public:
 	}
 	//Handle(Handle< T > const & rho) = delete;
 
+	bool operator==( Handle< T > const & other ) { 
+		return this->id == other.id && this->pool == other.pool;
+	}
+
 	T& get( ) { return pool->list_data[ id ]; }
 	void release( ) { if( id != -1 ) pool->release( *this ); }
 	bool is_live( ) { return id != -1; }

@@ -340,7 +340,7 @@
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
     <ClCompile Include="MenuComp.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -539,17 +539,17 @@
     <ClInclude Include="ContainerComp.h">
       <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
-    <ClInclude Include="ImageButtonComp.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="MenuComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
     <ClInclude Include="GraphComp.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
     <ClInclude Include="GraphPage.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Managers\GuiMgr\Pages</Filter>
     </ClInclude>
-    <ClInclude Include="MenuComp.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="ImageButtonComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

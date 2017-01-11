@@ -4,7 +4,7 @@ TextButtonComp::TextButtonComp( Client & client ) {
 	name = "TextButton";
 
 	func_register = [ &client = client ] ( ) {
-		if( !client.resource_mgr.reg_pool< TextButtonData >( 128 ) ) {
+		if( !client.resource_mgr.reg_pool< TextButtonData >( num_comp_default ) ) {
 			return 1;
 		}
 

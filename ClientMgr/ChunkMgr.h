@@ -104,6 +104,10 @@ private:
 	bool is_chunk_debug;
 	bool is_shadow_debug;
 	bool is_shadows;
+	bool is_shadow_solid;
+	bool is_shadow_trans;
+	bool is_render_solid;
+	bool is_render_trans;
 	bool is_flatshade;
 	bool is_wireframe;
 
@@ -230,8 +234,12 @@ public:
 	void toggle_chunk_debug( );
 	void toggle_shadow_debug( );
 	void toggle_shadows( );
+	void toggle_shadow_solid( );
+	void toggle_shadow_trans( );
 	void toggle_flatshade( );
 	void toggle_wireframe( );
+	void toggle_render_solid( );
+	void toggle_render_trans( );
 
 	int get_block( glm::vec3 const & pos_gw );
 

@@ -13,6 +13,7 @@ class PageComponentLoader {
 private:
 
 public:
+	static const int num_comp_default = 4096;
 	static PCRegFunc func_reg_null;
 	static PCFunc func_null;
 

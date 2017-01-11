@@ -9,7 +9,7 @@ CheckboxComp::CheckboxComp( Client & client ) {
 	name = "Checkbox";
 
 	func_register = [ &client = client ]( ) { 
-		client.resource_mgr.reg_pool< CheckboxData >( 128 );
+		client.resource_mgr.reg_pool< CheckboxData >( num_comp_default );
 
 		return 0;
 	};

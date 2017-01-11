@@ -31,9 +31,9 @@ private:
 	std::vector< PageLoader > list_page_loaders;
 	std::unordered_map< std::string, int > map_page_loaders;
 
-	std::vector< Handle< Page > > list_pages;
-	std::unordered_map< std::string, int > map_pages;
-	std::list< int > list_order;
+	std::unordered_map< std::string, Handle< Page > > map_pages;
+	std::list< Handle< Page > > list_order;
+	std::queue< std::string > queue_remove;
 
 public:
 	BlockSelector block_selector;
@@ -47,6 +47,7 @@ private:
 
 	void load_pages( );
 	void add_page_loader( PageLoader & page_loader );
+	void process_remove( );
 
 	void on_over( );
 
@@ -69,6 +70,10 @@ private:
 	void down_comp( PComp * comp );
 	void down_comp_self( PComp * comp );
 	void down_comp_children( PComp * comp );
+
+	void remove_comp( PComp * comp );
+	void remove_comp_self( PComp * comp );
+	void remove_comp_children( PComp * comp );
 
 public:
 	void init( ) override;
@@ -94,6 +99,8 @@ public:
 	Page * add_page( std::string const & name, std::string const & name_loader, PageFunc func_custom );
 	Page * get_page( std::string const & name );
 	Page * get_page_safe( std::string const & name );
+
+	void remove_page( std::string const & name_page );
 
 	void toggle_input( );
 	bool get_is_input( );

@@ -109,7 +109,11 @@ void ChunkMgr::init( ) {
 	is_chunk_debug = false;
 	is_shadow_debug = false;
 	is_shadows = true;
+	is_shadow_solid = true;
+	is_shadow_trans = true;
 	is_wireframe = false;
+	is_render_solid = true;
+	is_render_trans = true;
 }
 
 int time_last_map = 0;
@@ -587,23 +591,27 @@ void ChunkMgr::render_pass_shadow( ) {
 			glViewport( 0, 0, SHADOW_WIDTH, SHADOW_HEIGHT );
 			glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
 
-			client.texture_mgr.bind_program( "SMShadowMapSolid" );
-			glUniformMatrix4fv( idx_mat_light_solid, 1, GL_FALSE, glm::value_ptr( mat_ortho_light[ i ] ) );
+			if( is_shadow_solid ) {
+				client.texture_mgr.bind_program( "SMShadowMapSolid" );
+				glUniformMatrix4fv( idx_mat_light_solid, 1, GL_FALSE, glm::value_ptr( mat_ortho_light[ i ] ) );
 
-			client.texture_mgr.bind_texture_array( 0, id_blocks );
+				client.texture_mgr.bind_texture_array( 0, id_blocks );
 
-			glDisable( GL_BLEND );
-			sm_terrain.render_range( client, 0, idx_solid );
-			glEnable( GL_BLEND );
+				glDisable( GL_BLEND );
+				sm_terrain.render_range( client, 0, idx_solid );
+				glEnable( GL_BLEND );
+			}
 
-			client.texture_mgr.bind_program( "SMShadowMapTrans" );
-			glUniformMatrix4fv( idx_mat_light_trans, 1, GL_FALSE, glm::value_ptr( mat_ortho_light[ i ] ) );
+			if( is_shadow_trans ) {
+				client.texture_mgr.bind_program( "SMShadowMapTrans" );
+				glUniformMatrix4fv( idx_mat_light_trans, 1, GL_FALSE, glm::value_ptr( mat_ortho_light[ i ] ) );
 
-			glDisable( GL_CULL_FACE );
-			sm_terrain.render_range( client, idx_solid, idx_trans - idx_solid );
-			glEnable( GL_CULL_FACE );
+				glDisable( GL_CULL_FACE );
+				sm_terrain.render_range( client, idx_solid, idx_trans - idx_solid );
+				glEnable( GL_CULL_FACE );
+			}
 
-			client.entity_mgr.render( );
+			//client.entity_mgr.render( );
 		//}
 
 		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -628,6 +636,10 @@ void ChunkMgr::render_pass_shadow( ) {
 }
 
 void ChunkMgr::render_pass_solid( ) {
+	if( !is_render_solid ) { 
+		return;
+	}
+
 	client.texture_mgr.update_uniform( "SMTerrain", "mat_light", mat_ortho_light );
 	if( is_flatshade )
 		client.texture_mgr.bind_program( "SMTerrainBasic" );
@@ -641,6 +653,10 @@ void ChunkMgr::render_pass_solid( ) {
 }
 
 void ChunkMgr::render_pass_trans( ) {
+	if( !is_render_trans ) {
+		return;
+	}
+
 	client.texture_mgr.update_uniform( "SMTerrain", "mat_light", mat_ortho_light );
 	if( is_flatshade )
 		client.texture_mgr.bind_program( "SMTerrainBasic" );
@@ -2324,6 +2340,14 @@ void ChunkMgr::toggle_shadows( ) {
 	is_shadows = !is_shadows;
 }
 
+void ChunkMgr::toggle_shadow_solid( ) { 
+	is_shadow_solid = !is_shadow_solid;
+}
+
+void ChunkMgr::toggle_shadow_trans( ) { 
+	is_shadow_trans = !is_shadow_trans;
+}
+
 void ChunkMgr::toggle_flatshade( ) { 
 	is_flatshade = !is_flatshade;
 	if( is_flatshade ) { 
@@ -2336,6 +2360,14 @@ void ChunkMgr::toggle_flatshade( ) {
 
 void ChunkMgr::toggle_wireframe( ) { 
 	is_wireframe = !is_wireframe;
+}
+
+void ChunkMgr::toggle_render_solid( ) { 
+	is_render_solid = !is_render_solid;
+}
+
+void ChunkMgr::toggle_render_trans( ) { 
+	is_render_trans = !is_render_trans;
 }
 
 int ChunkMgr::get_block( glm::vec3 const & pos_gw ) {

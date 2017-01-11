@@ -6,7 +6,7 @@ BorderImageComp::BorderImageComp( Client & client ) {
 	name = "BorderImage";
 
 	func_register = [ &client = client ] ( ) {
-		if( client.resource_mgr.reg_pool< BorderImageData >( 128 ) ) { 
+		if( client.resource_mgr.reg_pool< BorderImageData >( num_comp_default ) ) {
 			return 0;
 		}
 

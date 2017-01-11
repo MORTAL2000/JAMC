@@ -5,7 +5,7 @@ ClickableComp::ClickableComp( Client & client ) {
 	name = "Clickable";
 
 	func_register = [ &client = client ] ( ) { 
-		if( !client.resource_mgr.reg_pool< ClickableData >( 128 ) ) { 
+		if( !client.resource_mgr.reg_pool< ClickableData >( num_comp_default ) ) {
 			return 1;
 		}
 

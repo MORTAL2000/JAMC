@@ -107,11 +107,16 @@ QuickBarPage::QuickBarPage( Client & client ) {
 				auto data = comp->get_data< ClickableComp::ClickableData >( );
 
 				data->func_up = [ &client = client ] ( PComp * comp ) {
+					static int id_graph = 0;
+
 					if( Directional::is_point_in_rect(
 						client.input_mgr.get_mouse( ),
 						comp->page->get_pos( ) + comp->pos,
 						comp->page->get_pos( ) + comp->pos + comp->dim ) ) {
 
+						auto page = client.gui_mgr.add_page( "Graph" + std::to_string( id_graph++ ), "Graph", func_null );
+						page->is_visible = true;
+						/*
 						auto page = client.gui_mgr.get_page_safe( "Graph" );
 						if( !page ) {
 							return 0;
@@ -120,7 +125,7 @@ QuickBarPage::QuickBarPage( Client & client ) {
 						page->is_visible = !page->is_visible;
 						if( page->is_visible ) {
 							page->is_remesh = true;
-						}
+						}*/
 					}
 
 					return 0;

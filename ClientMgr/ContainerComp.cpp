@@ -6,7 +6,7 @@ ContainerComp::ContainerComp( Client & client ) {
 	name = "Container";
 
 	func_register = [ &client = client ] ( ) { 
-		if( !client.resource_mgr.reg_pool< ContainerData >( 128 ) ) { 
+		if( !client.resource_mgr.reg_pool< ContainerData >( num_comp_default ) ) {
 			return 1;
 		}
 

@@ -4,7 +4,7 @@ ImageComp::ImageComp( Client & client ) {
 	name = "Image";
 
 	func_register = [ &client = client ] ( ) {
-		if( client.resource_mgr.reg_pool< ImageData >( 128 ) ) {
+		if( client.resource_mgr.reg_pool< ImageData >( num_comp_default ) ) {
 			return 0;
 		}
 

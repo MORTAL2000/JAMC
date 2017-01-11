@@ -95,7 +95,7 @@ MenuComp::MenuComp( Client & client ) {
 	name = "Menu";
 
 	func_register = [ &client = client ] () {
-		if( !client.resource_mgr.reg_pool< MenuData >( 128 ) ) { 
+		if( !client.resource_mgr.reg_pool< MenuData >( num_comp_default ) ) {
 
 			return 1;
 		}

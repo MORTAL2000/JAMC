@@ -80,15 +80,6 @@ private:
 	std::unordered_map< std::string, float > time_map;
 	std::unordered_map< std::string, TimeRecord > record_map;
 
-	std::vector< std::string const * > list_render;
-
-	static const int padding = 5;
-	static glm::ivec2 dim_graph;
-
-	VBO vbo;
-	bool is_dirty;
-	void mesh_graphs( );
-
 public:
 	TimeMgr( Client & client );
 	~TimeMgr();

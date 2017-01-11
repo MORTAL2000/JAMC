@@ -56,7 +56,7 @@ PComp * PageComponent::add_comp( std::string const & name_comp, std::string cons
 	list_comps.push_back( handle_comp );
 	map_comps.insert( { name_comp, ( int ) list_comps.size( ) - 1 } );
 
-	printf( "SUCCESS: Added Component: %s to Component: %s\n", name_comp.c_str( ), name.c_str( ) );
+	//printf( "SUCCESS: Added Component: %s to Component: %s\n", name_comp.c_str( ), name.c_str( ) );
 
 	return comp;
 }

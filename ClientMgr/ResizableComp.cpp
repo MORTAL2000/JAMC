@@ -5,7 +5,7 @@ ResizableComp::ResizableComp( Client & client ) {
 	name = "Resizable";
 
 	func_register = [ &client = client ] () { 
-		if( !client.resource_mgr.reg_pool< ResizableData >( 128 ) ) { 
+		if( !client.resource_mgr.reg_pool< ResizableData >( num_comp_default ) ) {
 			return 1;
 		}
 

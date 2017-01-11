@@ -82,8 +82,9 @@ public:
 		map_data.vect_data.erase( index_data );
 	}
 
-	template< class T >
+	//template< class T >
 	void clear_data( ) {
+		/*
 		std::type_index index_type = typeid( T );
 
 		auto & vect_data = map_data[ index_type ];
@@ -95,6 +96,18 @@ public:
 
 		vect_data.clear( );
 		map_data.erase( index_type );
+		*/
+
+		for( auto & vec_data : map_data ) {
+			for( auto & data : vec_data.second ) {
+				( ( AbstractHandle * ) ( data ) )->release( );
+				delete ( AbstractHandle * ) ( data );
+			}
+			vec_data.second.clear( );
+			vec_data.second.shrink_to_fit( );
+		}
+
+		map_data.clear( );
 	}
 
 	void reposition( );
