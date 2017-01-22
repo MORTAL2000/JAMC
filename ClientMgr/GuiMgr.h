@@ -23,6 +23,8 @@ private:
 	PComp * comp_down;
 	PComp * comp_down_last;
 
+	PComp * comp_selected;
+
 	std::mutex mtx_console;
 
 	std::vector< PCLoader > list_page_component_loaders;

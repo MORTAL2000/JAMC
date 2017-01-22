@@ -217,6 +217,7 @@
     <ClCompile Include="simplexnoise.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SpawnBlock.cpp" />
+    <ClCompile Include="TextFieldComp.cpp" />
     <ClCompile Include="TextureMgr.cpp" />
     <ClCompile Include="ThreadMgr.cpp" />
     <ClCompile Include="TimeMgr.cpp" />
@@ -288,6 +289,7 @@
     <ClInclude Include="SharedMeshTerrain.h" />
     <ClInclude Include="simplexnoise.h" />
     <ClInclude Include="SpawnBlock.h" />
+    <ClInclude Include="TextFieldComp.h" />
     <ClInclude Include="TextureMgr.h" />
     <ClInclude Include="ThreadMgr.h" />
     <ClInclude Include="TimeMgr.h" />

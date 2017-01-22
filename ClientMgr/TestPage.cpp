@@ -5,6 +5,9 @@
 #include "TextButtonComp.h"
 #include "BorderImageComp.h"
 #include "SliderComp.h"
+#include "ClickableComp.h"
+#include "TextFieldComp.h"
+
 
 TestPage::TestPage( Client & client ) {
 	name = "Test";
@@ -17,22 +20,36 @@ TestPage::TestPage( Client & client ) {
 		page->root->offset = { 0, 0 };
 		page->root->dim = { 500, 500 };
 
-		auto comp_resize = page->add_comp( "RootResizable", "Resizable", PageComponentLoader::func_null );
-		auto data_resize = comp_resize->get_data< ResizableComp::ResizableData >( );
-		data_resize->func_resize = [ &client = client, parent = comp_resize->parent ] 
-		( PComp * comp ) { 
-			comp->dim = parent->dim;
-			comp->offset += -comp->dim / 2;
+		auto comp_resize = page->add_comp( "RootResizable", "Resizable", [ &client = client ] ( PComp * comp ) {
+			auto data = comp->get_data< ResizableComp::ResizableData >( );
+
+			data->func_resize = [ &client = client ] ( PComp * comp ) {
+				comp->dim = comp->parent->dim;
+				comp->offset = -comp->dim / 2;
+
+				return 0;
+			};
 
 			return 0;
-		};
+		} );
 
 		auto comp_border = comp_resize->add_comp( "Border", "BorderImage", [ ] ( PComp * comp ) {
 
 			return 0;
 		} );
 
-		comp_border->add_comp( "TestButton", "Button", [ ] ( PComp * comp ) {
+		auto clickable = comp_border->add_comp( "ClickableBorder", "Clickable", [ &client = client ] ( PComp * comp ) {
+			auto data = comp->get_data< ClickableComp::ClickableData >( );
+			data->func_hold = [ &client = client ] ( PComp * comp ) {
+				comp->page->root->offset += client.input_mgr.get_mouse_delta( );
+
+				return 0;
+			};
+
+			return 0;
+		} );
+
+		comp_border->add_comp( "TestButton", "TextButton", [ ] ( PComp * comp ) {
 			comp->anchor = { 0.5f, 0.5f };
 
 			auto button_data = comp->get_data< TextButtonComp::TextButtonData >( );
@@ -74,6 +91,8 @@ TestPage::TestPage( Client & client ) {
 
 		
 		comp_border->add_comp( "TestSlider", "Slider", [ &client = client ] ( PComp * comp ) {
+			comp->offset += glm::ivec2{ 0, 100 };
+
 			auto data = comp->get_data< SliderComp::SliderData >( );
 			data->set_bounds( 0.0f, 359.0f );
 			data->set_value( 180 );
@@ -94,6 +113,32 @@ TestPage::TestPage( Client & client ) {
 		} );
 
 		page->add_comp( "TestResize", "Resize", [ ] ( PComp * comp ) { return 0; } );
+
+		comp_border->add_comp( "TestTextField", "TextField", [ &client = client ] ( PComp * comp ) {
+			comp->dim = { 400, 33 };
+			comp->offset = { -200, 0 };
+			auto data = comp->get_data< TextFieldComp::TextFieldData >( );
+			data->data_label->text = "Hello World";
+
+			return 0;
+		} );
+
+		auto button = page->add_comp( "CloseButton", "TextButton", [ &client = client ] ( PComp * comp ) {
+			comp->anchor = { 0.0f, 0.0f };
+			comp->offset = { 16 + 300, 16 };
+
+			auto data = comp->get_data< TextButtonComp::TextButtonData >( );
+
+			data->data_label->text = "Close";
+
+			data->func_action = [ ] ( PComp * comp ) {
+				comp->page->is_visible = false;
+
+				return 0;
+			};
+
+			return 0;
+		} );
 
 		return 0;
 	};

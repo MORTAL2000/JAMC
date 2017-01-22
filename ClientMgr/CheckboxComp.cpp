@@ -20,6 +20,9 @@ CheckboxComp::CheckboxComp( Client & client ) {
 
 		auto data = comp->add_data< CheckboxData >( );
 		data->is_checked = false;
+		data->color_default = { 1.0f, 1.0f, 1.0f, 1.0f };
+		data->color_over = { 0.5f, 0.5f, 0.5f, 1.0f };
+		data->color_down = { 1.0f, 0.5f, 0.5f, 1.0f };
 		data->id_texture = client.texture_mgr.get_texture_id( "Gui" );
 		data->id_subtex_unchecked = client.texture_mgr.get_texture_layer( "Gui", "Default/Unchecked" );
 		data->id_subtex_checked = client.texture_mgr.get_texture_layer( "Gui", "Default/Checked" );
@@ -45,34 +48,42 @@ CheckboxComp::CheckboxComp( Client & client ) {
 			data->data_border->set_texture( client, "Gui", "Default/CheckboxBG", 8 );
 			data->data_border->padding_border = 4;
 
-			comp->add_comp( "Clickable", "Clickable", [ &client = client, data ] ( PComp * comp ) { 
-				auto data_clickable = comp->get_data< ClickableComp::ClickableData >( );
+			return 0;
+		} );
 
-				data_clickable->func_up = [ &client = client, data ] ( PComp * comp ) {
-					if( Directional::is_point_in_rect(
-						client.input_mgr.get_mouse( ),
-						comp->page->get_pos( ) + comp->pos,
-						comp->page->get_pos( ) + comp->pos + comp->dim ) ) {
-
-						if( !data->is_checked ) {
-							data->func_checked( comp );
-							data->data_image->id_subtex = data->id_subtex_checked;
-							comp->page->is_remesh = true;
-						}
-						else {
-							data->func_unchecked( comp );
-							data->data_image->id_subtex = data->id_subtex_unchecked;
-							comp->page->is_remesh = true;
-						}
-
-						data->is_checked = !data->is_checked;
-					}
-
-					return 0;
-				};
+		auto clickable = data->comp_border->add_comp( "Clickable", "Clickable", [ &client = client, data ] ( PComp * comp ) {
+			auto data_clickable = comp->get_data< ClickableComp::ClickableData >( );
+			
+			data_clickable->func_down = [ &client = client, data ] ( PComp * comp ) {
+				data->data_border->color = data->color_down;
 
 				return 0;
-			} );
+			};
+
+			data_clickable->func_up = [ &client = client, data ] ( PComp * comp ) {
+				if( Directional::is_point_in_rect(
+					client.input_mgr.get_mouse( ),
+					comp->page->get_pos( ) + comp->pos,
+					comp->page->get_pos( ) + comp->pos + comp->dim ) ) {
+
+					if( !data->is_checked ) {
+						data->func_checked( comp );
+						data->data_image->id_subtex = data->id_subtex_checked;
+						comp->page->is_remesh = true;
+					}
+					else {
+						data->func_unchecked( comp );
+						data->data_image->id_subtex = data->id_subtex_unchecked;
+						comp->page->is_remesh = true;
+					}
+
+					data->is_checked = !data->is_checked;
+				}
+
+				data->data_border->color = data->color_default;
+
+				return 0;
+			};
 
 			return 0;
 		} );
@@ -81,14 +92,17 @@ CheckboxComp::CheckboxComp( Client & client ) {
 			auto data_overable = comp->get_data< OverableComp::OverableData >( );
 
 			data_overable->func_enter = [ &client = client, data ] ( PComp * comp ) { 
-				data->data_border->color = { 0.5f, 0.5f, 0.5f, 1.0f };
+				data->data_border->color = data->color_over;
 				comp->page->is_remesh = true;
 
 				return 0;
 			};
 
 			data_overable->func_exit = [ &client = client, data ] ( PComp * comp ) {
-				data->data_border->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+				if( data->data_border->color != data->color_down ) {
+					data->data_border->color = data->color_default;
+				}
+
 				comp->page->is_remesh = true;
 
 				return 0;

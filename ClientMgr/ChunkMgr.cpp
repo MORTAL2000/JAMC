@@ -51,7 +51,7 @@ void ChunkMgr::init( ) {
 	shared_mesh_inclusive.init(
 		4 * 6 * 50, ( GLuint ) list_block_data.size( ),
 		6 * 6 * 50, ( GLuint ) list_block_data.size( ),
-		4, 4 * 6 * 50, 6 * 6 * 50 );
+		4, 4 * 6 * 50, 6 * 6 * 50 );																																																													
 
 	load_block_mesh( );
 
@@ -562,8 +562,8 @@ void ChunkMgr::render_pass_shadow( ) {
 				-sides_ortho[ i ][ 1 ],
 				-sides_ortho[ i ][ 2 ],
 				-sides_ortho[ i ][ 3 ],
-				-768.0f, 768.0f
-				//sides_ortho[ i ][ 4 ], 
+				-256.0f, 256.0f
+				//-sides_ortho[ i ][ 4 ], 
 				//sides_ortho[ i ][ 5 ]
 				//sides_ortho[ i ][ 4 ], sides_ortho[ i ][ 5 ]
 			) * mat_view_light;
@@ -591,11 +591,11 @@ void ChunkMgr::render_pass_shadow( ) {
 			glViewport( 0, 0, SHADOW_WIDTH, SHADOW_HEIGHT );
 			glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
 
+			client.texture_mgr.bind_texture_array( 0, id_blocks );
+
 			if( is_shadow_solid ) {
 				client.texture_mgr.bind_program( "SMShadowMapSolid" );
 				glUniformMatrix4fv( idx_mat_light_solid, 1, GL_FALSE, glm::value_ptr( mat_ortho_light[ i ] ) );
-
-				client.texture_mgr.bind_texture_array( 0, id_blocks );
 
 				glDisable( GL_BLEND );
 				sm_terrain.render_range( client, 0, idx_solid );

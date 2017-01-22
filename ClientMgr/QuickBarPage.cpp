@@ -15,6 +15,8 @@ QuickBarPage::QuickBarPage( Client & client ) {
 		page->set_anchor( { 0.5f, 1.0f } );
 		page->set_offset( { -page->get_dim( ).x / 2, -page->get_dim( ).y } );
 
+		page->is_visible = true;
+
 		auto clickable_page = page->add_comp( "ClickablePage", "Clickable", [ &client = client ] ( PComp * comp ) {
 			auto data = comp->get_data< ClickableComp::ClickableData >( );
 
@@ -167,6 +169,8 @@ QuickBarPage::QuickBarPage( Client & client ) {
 
 			return 0;
 		} );
+
+		page->is_remesh = true;
 
 		return 0;
 	};

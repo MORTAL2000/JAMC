@@ -32,14 +32,12 @@ GraphComp::GraphComp( Client & client ) {
 
 			data->data_label_title = comp->get_data< LabelComp::LabelData >( );
 			data->data_label_title->size_text = 16;
-			data->data_label_title->text = RecordStrings::RENDER + " Graph";
+			data->data_label_title->text = RecordStrings::RENDER;
 			data->data_label_title->alignment_h = LabelComp::LabelData::AH_Right;
 			data->data_label_title->alignment_v = LabelComp::LabelData::AV_Bottom;
 
 			return 0;
 		} );
-
-
 
 		return 0;
 	};
@@ -48,6 +46,7 @@ GraphComp::GraphComp( Client & client ) {
 		auto data = comp->get_data< GraphData >( );
 		++data->updates;
 
+		//if( data->updates % 4 == 0 )
 		comp->page->is_remesh = true;
 
 		return 0;

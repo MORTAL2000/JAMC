@@ -17,7 +17,7 @@ GraphPage::GraphPage( Client & client ) {
 
 	func_alloc = [ &client = client ] ( Page * page ) {
 		page->is_visible = false;
-		page->set_dim( glm::vec2( 500, 250 ) );
+		page->set_dim( glm::vec2( 500, 150 ) );
 
 		auto data_page = page->add_data< GraphPageData >( );
 

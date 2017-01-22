@@ -11,6 +11,10 @@ public:
 	struct CheckboxData { 
 		bool is_checked;
 
+		glm::vec4 color_default;
+		glm::vec4 color_down;
+		glm::vec4 color_over;
+
 		int unsigned id_texture;
 		int unsigned id_subtex_checked;
 		int unsigned id_subtex_unchecked;
