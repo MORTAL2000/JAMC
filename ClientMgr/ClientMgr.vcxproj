@@ -167,6 +167,7 @@
     <ClCompile Include="BorderImageComp.cpp" />
     <ClCompile Include="CheckboxComp.cpp" />
     <ClCompile Include="ClickableComp.cpp" />
+    <ClCompile Include="ConsolePage.cpp" />
     <ClCompile Include="ContainerComp.cpp" />
     <ClCompile Include="GraphComp.cpp" />
     <ClCompile Include="GraphPage.cpp" />
@@ -238,6 +239,7 @@
     <ClInclude Include="BorderImageComp.h" />
     <ClInclude Include="CheckboxComp.h" />
     <ClInclude Include="ClickableComp.h" />
+    <ClInclude Include="ConsolePage.h" />
     <ClInclude Include="ContainerComp.h" />
     <ClInclude Include="GraphComp.h" />
     <ClInclude Include="GraphPage.h" />

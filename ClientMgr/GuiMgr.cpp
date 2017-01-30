@@ -10,6 +10,7 @@
 #include "OptionsPage.h"
 #include "QuickBarPage.h"
 #include "GraphPage.h"
+#include "ConsolePage.h"
 
 #include "RootComp.h"
 #include "ContainerComp.h"
@@ -85,11 +86,12 @@ void GuiMgr::load_pages( ) {
 	add_page_loader( OptionsPage( client ) );
 	add_page_loader( QuickBarPage( client ) );
 	add_page_loader( GraphPage( client ) );
+	add_page_loader( ConsolePage( client ) ); 
 
 	add_page( "Options", "Options", PageLoader::func_null );
 	add_page( "QuickBar", "QuickBar", PageLoader::func_null );
 	add_page( "TestPage", "Test", PageLoader::func_null );
-	//add_page( "Graph", "Graph", PageLoader::func_null );
+	add_page( "Console", "Console", PageLoader::func_null );
 }
 
 void GuiMgr::update( ) {
@@ -434,6 +436,18 @@ void GuiMgr::remove_comp_children( PComp * comp ) {
 	comp->list_comps.clear( );
 	comp->list_comps.shrink_to_fit( );
 	comp->map_comps.clear( );
+}
+
+PComp * GuiMgr::get_named_parent( PComp * comp, std::string const & name ) {
+	while( comp != nullptr ) { 
+		if( comp->pc_loader->name == name ) { 
+			return comp;
+		}
+
+		comp = comp->parent;
+	}
+
+	return nullptr;
 }
 
 void GuiMgr::mesh_page( Page * page ) {
@@ -809,504 +823,275 @@ bool GuiMgr::get_is_input( ) {
 	return is_input;
 }
 
-static bool is_shift = false;
+/*
+bool GuiMgr::get_input_char( int const key, char & character ) {
+	LPWORD test_char = new WORD;
+	ToAscii( key, 0, nullptr, test_char, 0 );
 
-void GuiMgr::handle_input_char( int const key, bool const is_down ) {
-	if( !comp_selected ) { 
-		return;
-	}
-
-	if( key == VK_SHIFT ) {
-		is_shift = is_down;
-		return;
-	}
-
-	if( !is_down ) {
-		return;
-	}
+	std::cout << (char)test_char << std::endl;
 
 	if( !is_shift ) {
-		auto data = comp_selected->parent->parent->parent->get_data< TextFieldComp::TextFieldData >( );
-		auto & command = data->text;
-
 		if( key >= 65 && key <= 90 ) {
-			if( data->pos_hl_e != data->pos_hl_s ) { 
-				command.erase(
-					command.begin( ) + data->pos_hl_s,
-					command.begin( ) + data->pos_hl_e );
-				data->pos_hl_e = data->pos_hl_s;
-				data->pos_curs = data->pos_hl_s;
-			}
-			command.insert( command.begin( ) + data->pos_curs, key + 32 );
-			data->pos_curs += 1;
+			character = key + 32;
+			return true;
 		}
 		else if( key >= 48 && key <= 57 ) {
-			if( data->pos_hl_e != data->pos_hl_s ) {
-				command.erase(
-					command.begin( ) + data->pos_hl_s,
-					command.begin( ) + data->pos_hl_e );
-				data->pos_hl_e = data->pos_hl_s;
-				data->pos_curs = data->pos_hl_s;
-			}
-			command.insert( command.begin( ) + data->pos_curs, key );
-			data->pos_curs += 1;
+			character = key;
+			return true;
 		}
 		else {
 			switch( key ) {
-				case VK_BACK:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					else if( command.size( ) > 0 ) {
-						command.erase( command.end( ) - 1 );
-					}
-				break;
-				case VK_UP:
-					/*data_command.index_history -= 1;
-					if( data_command.index_history < 0 ) data_command.index_history += PCDCommand::size_max;
-					data_command.str_command = data_command.list_strings[ data_command.index_history ];
-					//data_text.ptr_str = &data_command.list_strings[ data_command.index ];*/
-				break;
-				case VK_DOWN:
-					/*data_command.index_history += 1;
-					if( data_command.index_history >= PCDCommand::size_max ) data_command.index_history -= PCDCommand::size_max;
-					data_command.str_command = data_command.list_strings[ data_command.index_history ];
-					//data_text.ptr_str = &data_command.list_strings[ data_command.index ];*/
-				case VK_LEFT:
-					data->pos_curs -= 1;
-					if( data->pos_curs < 0 ) { 
-						data->pos_curs = 0;
-					}
-				break;
-				case VK_RIGHT:
-					data->pos_curs += 1;
-				break;
-				break;
 				case VK_SPACE:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, ' ' );
-					data->pos_curs += 1;
-				break;
+					character = ' ';
+					return true;
+
 				case VK_OEM_1:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, ';' );
-					data->pos_curs += 1;
-				break;
+					character = ';';
+					return true;
+
 				case VK_OEM_2:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '/' );
-					data->pos_curs += 1;
-				break;
+					character = '/';
+					return true;
+
 				case VK_OEM_3:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '`' );
-					data->pos_curs += 1;
-				break;
+					character = '`';
+					return true;
+
 				case VK_OEM_4:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '[' );
-					data->pos_curs += 1;
-				break;
+					character = '[';
+					return true;
+
 				case VK_OEM_5:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '\\' );
-					data->pos_curs += 1;
-				break;
+					character = '\\';
+					return true;
+
 				case VK_OEM_6:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, ']' );
-					data->pos_curs += 1;
-				break;
+					character = ']';
+					return true;
+
 				case VK_OEM_7:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '\'' );
-					data->pos_curs += 1;
-				break;
+					character = '\'';
+					return true;
+
 				case VK_OEM_MINUS:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '-' );
-					data->pos_curs += 1;
-				break;
+					character = '-';
+					return true;
+
 				case VK_OEM_PLUS:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '=' );
-					data->pos_curs += 1;
-				break;
+					character = '=';
+					return true;
+
 				case VK_OEM_COMMA:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, ',' );
-					data->pos_curs += 1;
-				break;
+					character = ',';
+					return true;
+
 				case VK_OEM_PERIOD:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '.' );
-					data->pos_curs += 1;
-				break;
-				default:
-				break;
+					character = '.';
+					return true;
 			}
 		}
 	}
 	else {
-		auto data = comp_selected->parent->parent->parent->get_data< TextFieldComp::TextFieldData >( );
-		auto & command = data->text;
-
 		if( key >= 65 && key <= 90 ) {
-			if( data->pos_hl_e != data->pos_hl_s ) {
-				command.erase(
-					command.begin( ) + data->pos_hl_s,
-					command.begin( ) + data->pos_hl_e );
-				data->pos_hl_e = data->pos_hl_s;
-				data->pos_curs = data->pos_hl_s;
-			}
-			command.insert( command.begin( ) + data->pos_curs, key );
-			data->pos_curs += 1;
+			character = key;
+			return true;
 		}
 		else if( key >= 48 && key <= 57 ) {
 			switch( key ) {
 				case 48:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, ')' );
-					data->pos_curs += 1;
-				break;
+					character = ')';
+					return true;
+
 				case 49:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '!' );
-					data->pos_curs += 1;
-				break;
+					character = '!';
+					return true;
+
 				case 50:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '@' );
-					data->pos_curs += 1;
-				break;
+					character = '@';
+					return true;
+
 				case 51:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '#' );
-					data->pos_curs += 1;
-				break;
+					character = '#';
+					return true;
+
 				case 52:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '$' );
-					data->pos_curs += 1;
-				break;
+					character = '$';
+					return true;
+
 				case 53:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '%' );
-					data->pos_curs += 1;
-				break;
+					character = '%';
+					return true;
+
 				case 54:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '^' );
-					data->pos_curs += 1;
-				break;
+					character = '^';
+					return true;
+
 				case 55:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '&' );
-					data->pos_curs += 1;
-				break;
+					character = '&';
+					return true;
+
 				case 56:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '*' );
-					data->pos_curs += 1;
-				break;
+					character = '*';
+					return true;
+
 				case 57:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '(' );
-					data->pos_curs += 1;
-				break;
+					character = '(';
+					return true;
 			}
 		}
 		else {
 			switch( key ) {
-				case VK_BACK:
-				if( command.size( ) > 0 ) {
-					command.clear( );
-				}
-				break;
-				case VK_SPACE:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, ' ' );
-					data->pos_curs += 1;
-				break;
 				case VK_OEM_1:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, ':' );
-					data->pos_curs += 1;
-				break;
+					character = ':';
+					return true;
+
 				case VK_OEM_2:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '?' );
-					data->pos_curs += 1;
-				break;
+					character = '?';
+					return true;
+
 				case VK_OEM_3:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '~' );
-					data->pos_curs += 1;
-				break;
+					character = '~';
+					return true;
+
 				case VK_OEM_4:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '{' );
-					data->pos_curs += 1;
-				break;
+					character = '{';
+					return true;
+
 				case VK_OEM_5:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '|' );
-					data->pos_curs += 1;
-				break;
+					character = '|';
+					return true;
 				case VK_OEM_6:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '}' );
-					data->pos_curs += 1;
-				break;
+					character = '}';
+					return true;
+
 				case VK_OEM_7:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '\"' );
-					data->pos_curs += 1;
-				break;
+					character = '\"';
+					return true;
+
 				case VK_OEM_MINUS:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '_' );
-					data->pos_curs += 1;
-				break;
+					character = '_';
+					return true;
+
 				case VK_OEM_PLUS:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '+' );
-					data->pos_curs += 1;
-				break;
+					character = '+';
+					return true;
+
 				case VK_OEM_COMMA:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '<' );
-					data->pos_curs += 1;
-				break;
+					character = '<';
+					return true;
+
 				case VK_OEM_PERIOD:
-					if( data->pos_hl_e != data->pos_hl_s ) {
-						command.erase(
-							command.begin( ) + data->pos_hl_s,
-							command.begin( ) + data->pos_hl_e );
-						data->pos_hl_e = data->pos_hl_s;
-						data->pos_curs = data->pos_hl_s;
-					}
-					command.insert( command.begin( ) + data->pos_curs, '>' );
-					data->pos_curs += 1;
-				break;
-				default:
-				break;
+					character = '>';
+					return true;
 			}
 		}
+	}
 
-		comp_selected->parent->parent->parent->page->is_remesh = true;
+	return false;
+}
+*/
+
+void GuiMgr::handle_char( char const c ) {
+	if( !comp_selected ) { 
+		return;
+	}
+
+	if( !isprint( c ) ) {
+		return;
+	}
+
+	PComp * parent = get_named_parent( comp_selected, "TextField" );
+
+	if( !parent ) { 
+		return;
+	}
+
+	auto data = parent->get_data< TextFieldComp::TextFieldData >( );
+	data->text += c;
+	data->pos_curs += 1;
+}
+
+void GuiMgr::handle_vkey( int const key, bool const is_down ) {
+	if( key == VK_SHIFT ) { 
+		is_shift = is_down;
+		return;
+	}
+
+	if( !is_down ) { 
+		return;
+	}
+
+	PComp * parent = get_named_parent( comp_selected, "TextField" );
+
+	if( !parent ) { 
+		return;
+	}
+
+	auto data = parent->get_data< TextFieldComp::TextFieldData >( );
+
+	switch( key ) { 
+		case VK_BACK:
+			if( data->pos_hl_e > data->pos_hl_s ) { 
+				data->text.erase(
+					data->text.begin( ) + data->pos_hl_s,
+					data->text.begin( ) + data->pos_hl_e );
+				data->pos_hl_e = data->pos_hl_s;
+				data->pos_curs = data->pos_hl_s;
+			}
+			else { 
+				if( data->text.empty( ) ) { 
+					return;
+				}
+
+				if( data->pos_curs <= 0 ) { 
+					return;
+				}
+
+				data->text.erase( data->text.begin( ) + data->pos_curs - 1 );
+				data->pos_curs -= 1;
+			}
+
+			return;
+
+		case VK_LEFT:
+			if( data->pos_curs > 0 ) { 
+				data->pos_curs -= 1;
+				data->pos_hl_e = data->pos_hl_s;
+			}
+
+			return;
+
+		case VK_RIGHT:
+			data->pos_curs += 1;
+			data->pos_hl_e = data->pos_hl_s;
+
+			return;
+
+		case VK_RETURN: {
+			process_input( );
+
+			auto page = parent->page;
+			if( page->loader->name == "Console" ) { 
+				auto data = page->get_data< ConsolePage::ConsoleData >( );
+				data->push_command( );
+			}
+
+			//comp_selected = nullptr;
+
+			return;
+		}
 	}
 }
 
 void GuiMgr::process_input( ) { 
-	/*
-	std::string str_console( "Console" );
-	auto & page = get_page( str_console );
-	auto & data_command = page.get_data< PCDCommand >( str_console );
-	//auto & data_text = page.get_data< PCDTextField >( std::string( "Command" ) );
-	auto & str_command = data_command.str_command;
+	PComp * parent = get_named_parent( comp_selected, "TextField" );
+	if( !parent ) { 
+		return;
+	}
+
+	auto data = parent->get_data< TextFieldComp::TextFieldData >( );
+
+	auto & str_command = data->text;
 	auto & out = client.display_mgr.out;
 	int pos_start = 0;
 	int pos_end = 0;
@@ -1325,7 +1110,7 @@ void GuiMgr::process_input( ) {
 			auto & pos = client.entity_mgr.entity_player->h_state.get( ).pos;
 			pos = glm::vec3( 0, WorldSize::Chunk::size_y / 2 + 5.0f, 0 );
 			out << "Command: Resetting position to " << Directional::print_vec( pos );
-			print_to_console( out.str( ) );
+			//print_to_console( out.str( ) );
 		}
 		else if( token == "printprio" ) {
 			int range = 0;
@@ -1398,7 +1183,7 @@ void GuiMgr::process_input( ) {
 
 				out.str( "" );
 				out << "Command: Sphere at:" << Directional::print_vec( vec_pos ) << " radius:" << r << " type:" << client.block_mgr.get_block_string( id ) << ".";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 				client.thread_mgr.task_async( 10, [ &, vec_pos, r, id ] ( ) { 
 					client.chunk_mgr.set_sphere( vec_pos, r, id );
 				} );
@@ -1406,10 +1191,10 @@ void GuiMgr::process_input( ) {
 			else { 
 				out.str( "" );
 				out << "Command: Incorrect sphere usage - <required> [optional]";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 				out.str( "" );
 				out << "Command Format is: '/cmd <sphere> <r:int> [p:int int int | id:int]'.";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 			}
 		}
 		else if( token == "rectangle" ) {
@@ -1464,7 +1249,7 @@ void GuiMgr::process_input( ) {
 
 				out.str( "" );
 				out << "Command: Rectangle at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.block_mgr.get_block_string( id ) << ".";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 
 				client.thread_mgr.task_async( 10, [ &, vec_pos, vec_dim, id ] ( ) {
 					client.chunk_mgr.set_rect( vec_pos, vec_dim, id );
@@ -1473,10 +1258,10 @@ void GuiMgr::process_input( ) {
 			else { 
 				out.str( "" );
 				out << "Command: Incorrect rectangle usage - <required> [optional]";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 				out.str( "" );
 				out << "Command Format is: '/cmd <rectangle> <d:int int int> [p:int int int | id:int]'.";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 			}
 		}
 		else if( token == "ellipsoid" ) {
@@ -1531,7 +1316,7 @@ void GuiMgr::process_input( ) {
 
 				out.str( "" );
 				out << "Command: Ellipsoid at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.block_mgr.get_block_string( id ) << ".";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 
 				client.thread_mgr.task_async( 10, [ &, vec_pos, vec_dim, id ] ( ) {
 					client.chunk_mgr.set_ellipsoid( vec_pos, vec_dim, id );
@@ -1540,10 +1325,10 @@ void GuiMgr::process_input( ) {
 			else {
 				out.str( "" );
 				out << "Command: Incorrect ellipsoid usage - <required> [optional]";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 				out.str( "" );
 				out << "Command Format is: '/cmd <ellipsoid> <d:int int int> [p:int int int | id:int]'.";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 			}
 		}
 		else if( token == "setsun" ) { 
@@ -1552,15 +1337,15 @@ void GuiMgr::process_input( ) {
 
 			auto iter_map = map.find( list_delim[ 0 ] );
 			if( iter_map != map.end( ) && iter_map->second.size( ) == 1 ) {
-				client.chunk_mgr.set_sun( iter_map->second[ 0 ] );
+				//client.chunk_mgr.set_sun( iter_map->second[ 0 ] );
 			}
 			else { 
 				out.str( "" );
 				out << "Command: Incorrect setsun usage - <required> [optional]";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 				out.str( "" );
 				out << "Command Format is: '/cmd <setsun> <d:int> [p:bool]'.";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 				return;
 			}
 
@@ -1580,7 +1365,7 @@ void GuiMgr::process_input( ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			out << "Setting fov to: \'" << fov << "\'";
-			print_to_console( out.str( ) );
+			//print_to_console( out.str( ) );
 
 			client.display_mgr.fov = fov;
 			client.display_mgr.set_proj( );
@@ -1597,7 +1382,7 @@ void GuiMgr::process_input( ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			out << "Setting bias_l to: \'" << bias << "\'";
-			print_to_console( out.str( ) );
+			//print_to_console( out.str( ) );
 
 			client.texture_mgr.bind_program( "Terrain" );
 			int idx_bias = glGetUniformLocation( client.texture_mgr.id_bound_program, "bias_l" );
@@ -1615,7 +1400,7 @@ void GuiMgr::process_input( ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			out << "Setting bias_b to: \'" << bias << "\'";
-			print_to_console( out.str( ) );
+			//print_to_console( out.str( ) );
 
 			client.texture_mgr.bind_program( "Terrain" );
 			int idx_bias = glGetUniformLocation( client.texture_mgr.id_bound_program, "bias_l" );
@@ -1635,7 +1420,7 @@ void GuiMgr::process_input( ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			out << "Setting bias_h to: \'" << bias << "\'";
-			print_to_console( out.str( ) );
+			//print_to_console( out.str( ) );
 
 			client.texture_mgr.bind_program( "Terrain" );
 			int idx_bias = glGetUniformLocation( client.texture_mgr.id_bound_program, "bias_h" );
@@ -1676,15 +1461,15 @@ void GuiMgr::process_input( ) {
 				out << "Command: Emitter added at " << Directional::print_vec( e.pos ) << 
 					" with color " << Directional::print_vec( e.color ) << 
 					" and radius " << e.radius << ".";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 			}
 			else {
 				out.str( "" );
 				out << "Command: Incorrect addemitter usage - <required> [optional] (range)";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 				out.str( "" );
 				out << "Command Format is: '/cmd <addemitter> <p:int, int, int> [c:int, int, int](0-255) [r:int]'.";
-				print_to_console( out.str( ) );
+				//print_to_console( out.str( ) );
 			}
 		}
 		else if( token == "clearemitters" ) {
@@ -1724,40 +1509,28 @@ void GuiMgr::process_input( ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			//out << checkGlErrors( );
-			client.gui_mgr.print_to_console( out.str( ) );
+			//client.gui_mgr.print_to_console( out.str( ) );
 		}
 		else if( token == "printchunkmesh" ) {
 			client.chunk_mgr.print_center_chunk_mesh( );
 		}
-		/*else if( token == "clearmesh" ) { 
-			block_selector.clear_mesh( );
-		}
-		else if( token == "releasemesh" ) {
-			block_selector.release_mesh( );
-		}
-		else if( token == "makemesh" ) {
-			client.thread_mgr.task_async( 10, [ & ] ( ) {
-				block_selector.make_mesh( );
-			} );
-		}
 		else {
 			out.str( "" );
 			out << "Command: '" << token << "' is not a valid command.";
-			print_to_console( out.str( ) );
+			//print_to_console( out.str( ) );
 
 			out.str( "" );
 			out << "Command: Format is: '/cmd <command> <required arguements> [optional arguements]'.";
-			print_to_console( out.str( ) );
+			//print_to_console( out.str( ) );
 
 			out.str( "" );
 			out << "Command: Valid Commands: 'resetpos', 'sphere', 'rectangle', 'ellipsoid', 'setsun', 'printdirty', 'addemitter'";
-			print_to_console( out.str( ) );
+			//print_to_console( out.str( ) );
 		}
 	}
 	else {
-		print_to_console( "Say: " + str_command );
+		//print_to_console( "Say: " + str_command );
 	}
-	*/
 }
 
 std::unordered_map< std::string, std::vector< int > > get_tokenized_ints( 

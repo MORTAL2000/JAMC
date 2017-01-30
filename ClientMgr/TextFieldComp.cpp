@@ -89,32 +89,33 @@ TextFieldComp::TextFieldComp( Client & client ) {
 				data->pos_curs /= data->data_label->size_text * 2 / 3;
 
 				data->pos_hl_s = data->pos_d + data->pos_curs;
+				data->pos_hl_e = data->pos_hl_s;
+				comp->page->is_remesh = true;
 
 				return 0;
 			};
 
-			data_clickable->func_up = [ &client = client, data ] ( PComp * comp ) {
-				if( Directional::is_point_in_rect(
-					client.input_mgr.get_mouse( ),
-					comp->page->pos + comp->pos,
-					comp->page->pos + comp->pos + comp->dim ) ) {
-				
-					data->pos_curs = client.input_mgr.get_mouse( ).x - comp->page->pos.x - comp->pos.x - data->padding;
-					data->pos_curs /= data->data_label->size_text * 2 / 3;
+			data_clickable->func_hold = [ &client = client, data ] ( PComp * comp ) {
+				data->pos_curs = client.input_mgr.get_mouse( ).x - comp->page->pos.x - comp->pos.x - data->padding;
+				data->pos_curs /= data->data_label->size_text * 2 / 3;
+
+				if( data->pos_d + data->pos_curs < data->pos_hl_s ) { 
+					data->pos_hl_s = data->pos_d + data->pos_curs;
+					comp->page->is_remesh = true;
 				}
-
-				data->pos_hl_e = data->pos_d + data->pos_curs;
-
-				if( data->pos_hl_e < data->pos_hl_s ) { 
-					std::swap( data->pos_hl_s, data->pos_hl_e );
+				else if( data->pos_d + data->pos_curs > data->pos_hl_e ) { 
+					data->pos_hl_e = data->pos_d + data->pos_curs;
+					comp->page->is_remesh = true;
 				}
 
 				if( data->pos_hl_e > data->text.size( ) ) {
 					data->pos_hl_e = data->text.size( );
+					comp->page->is_remesh = true;
 				}
 
 				if( data->pos_hl_s > data->text.size( ) ) {
 					data->pos_hl_s = data->text.size( );
+					comp->page->is_remesh = true;
 				}
 
 				return 0;
@@ -130,8 +131,8 @@ TextFieldComp::TextFieldComp( Client & client ) {
 		auto data = comp->get_data< TextFieldData >( );
 		data->num_d = ( comp->dim.x - data->padding * 2 ) / ( data->data_label->size_text * 2 / 3 );
 
+		data->data_label->text.clear( );
 		data->data_label->text = data->text;
-		data->data_label->text.resize( data->num_d );
 
 		if( data->pos_curs > data->text.size( ) ) {
 			data->pos_curs = data->text.size( );
@@ -158,6 +159,7 @@ TextFieldComp::TextFieldComp( Client & client ) {
 
 		if( ++data->updates % 30 == 0 ) { 
 			data->comp_cursor->is_visible = !data->comp_cursor->is_visible;
+			comp->page->is_remesh = true;
 		}
 
 		return 0;

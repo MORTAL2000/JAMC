@@ -820,7 +820,8 @@ void ChunkMgr::mesh_skybox( ) {
 			"Miramar Day NS",
 			"Stormy Day",
 			"Summer Sky",
-			"The Wizard"
+			"The Wizard",
+			"Poppy"
 		};
 
 		static glm::vec4 const color = { 0.5f, 0.5f, 0.5f, 1.0f };

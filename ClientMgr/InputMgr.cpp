@@ -200,6 +200,10 @@ void InputMgr::process_input( ) {
 			//client.gui_mgr.page_show_all( );
 			time_last_cmd = time;
 		}
+		else if( is_key( '9' ) ) {
+			client.chunk_mgr.set_rect( client.entity_mgr.entity_player->h_state.get( ).pos, { 100, 100, 100 }, client.gui_mgr.block_selector.get_id_block( ) );
+			time_last_cmd = time;
+		}
 		else if( is_key( 'F' ) ) {
 			client.entity_mgr.entity_add(
 				"Line Block",
@@ -332,14 +336,11 @@ void InputMgr::process_input( ) {
 }
 
 void InputMgr::set_key( int const key, bool const is_down ) {
-	if( key == VK_RETURN && is_down ) {
-		client.gui_mgr.toggle_input( );
-	}
-	else if( client.gui_mgr.get_is_input( ) ) {
-		client.gui_mgr.handle_input_char( key, is_down );
-	}
-	else {
+	if( !client.gui_mgr.get_is_input( ) ) {
 		keyboard.keys[ key ] = is_down;
+	}
+	else { 
+		client.gui_mgr.handle_vkey( key, is_down );
 	}
 }
 

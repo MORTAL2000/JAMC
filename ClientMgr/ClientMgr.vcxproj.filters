@@ -343,6 +343,9 @@
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
     <ClCompile Include="TextFieldComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="ConsolePage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -555,6 +558,9 @@
       <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
     <ClInclude Include="TextFieldComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="ConsolePage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -16,6 +16,7 @@ LabelComp::LabelComp( Client & client ) {
 	func_alloc = [ &client = client ]( PComp * comp ) {
 		auto data = comp->add_data< LabelData >( );
 
+		data->text.clear( );
 		data->text = "Default";
 		data->size_text = 12;
 		data->alignment_h = LabelData::AlignHorizontal::AH_Right;

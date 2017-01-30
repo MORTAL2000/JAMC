@@ -17,6 +17,8 @@ private:
 	bool is_visible;
 	bool is_input;
 
+	bool is_shift;
+
 	PComp * comp_over;
 	PComp * comp_over_last;
 
@@ -77,6 +79,8 @@ private:
 	void remove_comp_self( PComp * comp );
 	void remove_comp_children( PComp * comp );
 
+	PComp * get_named_parent( PComp * comp, std::string const & name );
+
 public:
 	void init( ) override;
 	void update( ) override;
@@ -106,7 +110,10 @@ public:
 
 	void toggle_input( );
 	bool get_is_input( );
-	void handle_input_char( int const key, bool const is_down );
+
+	void handle_char( char const c );
+	void handle_vkey( int const key, bool const is_down );
+
 	void process_input( );
 
 };
