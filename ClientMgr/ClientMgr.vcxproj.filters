@@ -346,7 +346,10 @@
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
     <ClCompile Include="ConsolePage.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Managers\GuiMgr\Pages</Filter>
+    </ClCompile>
+    <ClCompile Include="SliderVComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -561,7 +564,10 @@
       <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
     <ClInclude Include="ConsolePage.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Managers\GuiMgr\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="SliderVComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

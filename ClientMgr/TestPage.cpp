@@ -5,6 +5,7 @@
 #include "TextButtonComp.h"
 #include "BorderImageComp.h"
 #include "SliderComp.h"
+#include "SliderVComp.h"
 #include "ClickableComp.h"
 #include "TextFieldComp.h"
 
@@ -110,6 +111,28 @@ TestPage::TestPage( Client & client ) {
 			};
 
 			return 1; 
+		} );
+
+		comp_border->add_comp( "TestSliderV", "SliderV", [ &client = client ] ( PComp * comp ) {
+			comp->offset += glm::ivec2 { 0, -200 };
+
+			auto data = comp->get_data< SliderVComp::SliderVData >( );
+			data->set_bounds( 0.0f, 359.0f );
+			data->set_value( 180 );
+
+			data->func_read = [ &client = client, data ] ( PComp * comp ) {
+				data->set_value( client.chunk_mgr.get_sun_deg( ) );
+
+				return 0;
+			};
+
+			data->func_write = [ &client = client, data ] ( PComp * comp ) {
+				client.chunk_mgr.set_sun_deg( data->value );
+
+				return 0;
+			};
+
+			return 1;
 		} );
 
 		page->add_comp( "TestResize", "Resize", [ ] ( PComp * comp ) { return 0; } );

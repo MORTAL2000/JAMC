@@ -1,22 +1,31 @@
 #pragma once
 
 #include "Client.h"
+
 #include "PageLoader.h"
+
 #include "TextFieldComp.h"
+#include "SliderVComp.h"
 
 class ConsolePage : public PageLoader {
 public:
 	struct ConsoleData {
+		static unsigned int const num_text_max = 128;
+
 		int padding;
+
 		int dy_input;
 
+		int padding_text;
 		int size_text;
 
 		int num_visible;
 
-		int id_labels;
+		int idx_visible;
 
-		std::vector< std::string  > list_strings;
+		int idx_labels;
+		int size_labels;
+
 		std::vector< PComp * > list_labels;
 
 		Page * console;
@@ -24,6 +33,9 @@ public:
 		PComp * comp_border_text;
 
 		TextFieldComp::TextFieldData * data_input;
+
+		PComp * comp_slider;
+		SliderVComp::SliderVData * data_slider;
 
 		void set_text_size( unsigned int const size ) {
 			size_text = size;
@@ -34,64 +46,139 @@ public:
 		}
 
 		void check_visibles( ) { 
-			int new_num_visible = ( comp_border_text->dim.y - padding ) / ( size_text + 0
-				
-				);
+			int new_num_visible = ( comp_border_text->dim.y - padding ) / ( size_text + padding_text );
 
-			if( new_num_visible > list_strings.size( ) ) { 
-				new_num_visible = list_strings.size( );
+			if( new_num_visible > size_labels - idx_visible ) { 
+				new_num_visible = size_labels - idx_visible;
 			}
 
-			if( new_num_visible > num_visible ) { 
-				for( unsigned int i = 0; i < new_num_visible - num_visible; ++i ) { 
-					auto label = comp_border_text->add_comp( "Label" + std::to_string( id_labels++ ), "Label", [ this ] ( PComp * comp ) {
-						auto data = comp->get_data< LabelComp::LabelData >( );
-						data->size_text = this->size_text;
-						data->text = "Test";
-						data->alignment_h = LabelComp::LabelData::AH_Right;
-						data->alignment_v = LabelComp::LabelData::AV_Top;
+			if( new_num_visible > num_visible ) {
+				int idx;
 
-						return 0;
-					} );
+				for( int i = num_visible; i < new_num_visible; ++i ) {
+					idx = idx_labels - idx_visible - i;
+					idx = ( ( idx % num_text_max ) + num_text_max ) % num_text_max;
 
-					list_labels.push_back( label );
+					list_labels[ idx ]->is_visible = true;
 				}
-
-				copy_texts( );
-				reposition_labels( );
 			}
-			else if( new_num_visible < num_visible ) { 
-				list_labels.erase( 
-					list_labels.end( ) - 1 - ( num_visible - new_num_visible ), 
-					list_labels.end( ) - 1 );
-				reposition_labels( );
+			else if( new_num_visible < num_visible ) {
+				int idx;
+
+				for( int i = new_num_visible; i < num_visible; ++i ) {
+					idx = idx_labels - idx_visible - i;
+					idx = ( ( idx % num_text_max ) + num_text_max ) % num_text_max;
+
+					list_labels[ idx ]->is_visible = false;
+				}
 			}
 
 			num_visible = new_num_visible;
 		}
 
-		void copy_texts( ) { 
-			for( unsigned int i = 0; i < list_labels.size( ); ++i ) {
-				auto data = list_labels[ i ]->get_data< LabelComp::LabelData >( );
-				data->text = list_strings[ list_strings.size( ) - 1 - i ];
-			}
-		}
-
 		void reposition_labels( ) {
-			for( unsigned int i = 0; i < list_labels.size( ); ++i ) { 
-				list_labels[ i ]->anchor = { 0.0f, 0.0f };
-				list_labels[ i ]->offset = { 
-					padding, 
-					padding + i * ( size_text + 0 ) 
+			int idx;
+
+			for( int i = 0; i < num_visible; ++i ) { 
+				idx = idx_labels - idx_visible - i;
+				while( idx < 0 ) { idx += num_text_max; }
+				idx = idx % num_text_max;
+
+				list_labels[ idx ]->offset = {
+					padding,
+					padding + i * ( size_text + padding_text )
 				};
 			}
 		}
 
 		void push_command( ) { 
-			list_strings.push_back( "" );
-			std::swap( list_strings.back( ), data_input->text );
+			if( !data_input->text.size( ) ) { 
+				return; 
+			}
+
+			idx_labels++;
+			idx_labels = idx_labels % num_text_max;
+
+			std::swap(
+				list_labels[ idx_labels ]->get_data< LabelComp::LabelData >( )->text,
+				data_input->text );
+			data_input->text.clear( );
+
+			list_labels[ idx_labels - idx_visible ]->is_visible = true;
+
+			if( size_labels < num_text_max ) { 
+				size_labels++;
+			}
+
+			if( size_labels > num_visible ) {
+				int idx = idx_labels - idx_visible - num_visible;
+				idx = ( ( idx % num_text_max ) + num_text_max ) % num_text_max;
+
+				list_labels[ idx ]->is_visible = false;
+			}
+
 			check_visibles( );
-			//reposition_labels( );
+			reposition_labels( );
+			data_slider->set_ratio( 0.0f );
+			data_slider->func_write( comp_slider );
+		}
+
+		void push_text( std::string const & string ) { 
+			idx_labels++;
+			idx_labels = idx_labels % num_text_max;
+
+			list_labels[ idx_labels ]->get_data< LabelComp::LabelData >( )->text = string;
+
+			list_labels[ idx_labels - idx_visible ]->is_visible = true;
+
+			if( size_labels < num_text_max ) {
+				size_labels++;
+			}
+
+			if( size_labels > num_visible ) {
+				int idx = idx_labels - idx_visible - num_visible;
+				idx = ( ( idx % num_text_max ) + num_text_max ) % num_text_max;
+
+				list_labels[ idx ]->is_visible = false;
+			}
+
+			check_visibles( );
+			reposition_labels( );
+			data_slider->set_ratio( 0.0f );
+			data_slider->func_write( comp_slider );
+		}
+
+		void set_idx_visible( int new_idx_visible ) { 
+			if( new_idx_visible > idx_visible ) {
+				int idx;
+				
+				for( int i = idx_visible; i < new_idx_visible; ++i ) { 
+					idx = idx_labels - i;
+					idx = ( ( idx % num_text_max ) + num_text_max ) % num_text_max;
+					list_labels[ idx ]->is_visible = false;
+
+					idx = idx = idx_labels - i - num_visible;
+					idx = ( ( idx % num_text_max ) + num_text_max ) % num_text_max;
+					list_labels[ idx ]->is_visible = true;
+				}
+
+				reposition_labels( );
+			}
+			else if( new_idx_visible < idx_visible ) {
+				int idx;
+
+				for( int i = idx_visible; i >= new_idx_visible; --i ) {
+					idx = idx_labels - i;
+					idx = ( ( idx % num_text_max ) + num_text_max ) % num_text_max;
+					list_labels[ idx ]->is_visible = true;
+
+					idx = idx = idx_labels - i - num_visible;
+					idx = ( ( idx % num_text_max ) + num_text_max ) % num_text_max;
+					list_labels[ idx ]->is_visible = false;
+				}
+			}
+
+			idx_visible = new_idx_visible;
 		}
 	};
 

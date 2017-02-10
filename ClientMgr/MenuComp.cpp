@@ -57,7 +57,6 @@ void MenuComp::MenuData::add_entry( Client & client, std::string const & label_t
 			comp->page->is_remesh = true;
 		}
 
-
 		return 0;
 	};
 

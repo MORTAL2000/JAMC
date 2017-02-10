@@ -116,6 +116,7 @@ public:
 
 	void process_input( );
 
+	void print_to_console( std::string const & str_out );
 };
 
 extern std::unordered_map< std::string, std::vector< int > > 

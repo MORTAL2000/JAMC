@@ -23,7 +23,14 @@ private:
 	std::mutex mutex_thead_ids;
 	std::vector< std::string > list_thread_ids;
 
+	MSG msg;
+
+	std::thread thread_moving;
+
+	bool is_moving;
+
 	void thread_main_loop();
+	void main_loop( );
 
 	int update_last, render_last;
 	int update_cnt, render_cnt;

@@ -16,7 +16,7 @@ OptionsPage::OptionsPage( Client & client ) {
 		page->is_visible = false;
 		page->root->anchor = { 0.5f, 0.5f };
 		page->root->offset = { 0, 0 };
-		page->root->dim = { 200, 470 };
+		page->root->dim = { 200, 500 };
 
 		auto resizable = page->add_comp( "Resizable", "Resizable", [ &client = client ] ( PComp * comp ) {
 			auto data = comp->get_data< ResizableComp::ResizableData >( );
@@ -82,7 +82,7 @@ OptionsPage::OptionsPage( Client & client ) {
 
 		auto slider_sun = page->add_comp( "SliderSun", "Slider", [ &client = client ] ( PComp * comp ) { 
 			comp->anchor = { 0.0, 1.0f };
-			comp->offset = { 8, -36 - 6 - 44 };
+			comp->offset = { 12, -36 - 6 - ( 54 ) };
 
 			auto data = comp->get_data < SliderComp::SliderData >( );
 			data->data_label_title->text = "Sun Position";
@@ -106,7 +106,7 @@ OptionsPage::OptionsPage( Client & client ) {
 
 		auto slider_fov = page->add_comp( "SliderFov", "Slider", [ &client = client ] ( PComp * comp ) {
 			comp->anchor = { 0.0, 1.0f };
-			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) };
+			comp->offset = { 12, -36 - 6 - 2 * ( 54 + 5 ) };
 
 			auto data = comp->get_data < SliderComp::SliderData >( );
 			data->data_label_title->text = "Camera Fov";
@@ -131,7 +131,7 @@ OptionsPage::OptionsPage( Client & client ) {
 
 		auto checkbox_sun = page->add_comp( "CheckboxSun", "Checkbox", [ &client = client ] ( PComp * comp ) {
 			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - ( 25 + 5 ) };
+			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - ( 25 + 5 ) };
 
 			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
 
@@ -156,7 +156,7 @@ OptionsPage::OptionsPage( Client & client ) {
 
 		auto checkbox_flatshade = page->add_comp( "CheckboxFlatshade", "Checkbox", [ &client = client ] ( PComp * comp ) {
 			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 2 * ( 25 + 5 ) };
+			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 2 * ( 25 + 5 ) };
 
 			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
 
@@ -181,7 +181,7 @@ OptionsPage::OptionsPage( Client & client ) {
 
 		auto checkbox_wireframe = page->add_comp( "CheckboxWireframe", "Checkbox", [ &client = client ] ( PComp * comp ) {
 			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 3 * ( 25 + 5 ) };
+			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 3 * ( 25 + 5 ) };
 
 			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
 
@@ -206,7 +206,7 @@ OptionsPage::OptionsPage( Client & client ) {
 
 		auto checkbox_limiter = page->add_comp( "CheckboxLimiter", "Checkbox", [ &client = client ] ( PComp * comp ) {
 			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 4 * ( 25 + 5 ) };
+			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 4 * ( 25 + 5 ) };
 
 			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
 
@@ -231,7 +231,7 @@ OptionsPage::OptionsPage( Client & client ) {
 
 		auto checkbox_vsync = page->add_comp( "CheckboxVsync", "Checkbox", [ &client = client ] ( PComp * comp ) {
 			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 5 * ( 25 + 5 ) };
+			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 5 * ( 25 + 5 ) };
 
 			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
 
@@ -256,7 +256,7 @@ OptionsPage::OptionsPage( Client & client ) {
 
 		auto checkbox_render_solid = page->add_comp( "CheckboxRenderSolid", "Checkbox", [ &client = client ] ( PComp * comp ) {
 			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 6 * ( 25 + 5 ) };
+			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 6 * ( 25 + 5 ) };
 
 			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
 
@@ -281,7 +281,7 @@ OptionsPage::OptionsPage( Client & client ) {
 
 		auto checkbox_render_trans = page->add_comp( "CheckboxRenderTrans", "Checkbox", [ &client = client ] ( PComp * comp ) {
 			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 7 * ( 25 + 5 ) };
+			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 7 * ( 25 + 5 ) };
 
 			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
 
@@ -306,7 +306,7 @@ OptionsPage::OptionsPage( Client & client ) {
 
 		auto checkbox_shadow_solid = page->add_comp( "CheckboxShadowSolid", "Checkbox", [ &client = client ] ( PComp * comp ) {
 			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 8 * ( 25 + 5 ) };
+			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 8 * ( 25 + 5 ) };
 
 			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
 
@@ -331,7 +331,7 @@ OptionsPage::OptionsPage( Client & client ) {
 
 		auto checkbox_shadow_trans = page->add_comp( "CheckboxShadowTrans", "Checkbox", [ &client = client ] ( PComp * comp ) {
 			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 8, -36 - 6 - 2 * ( 44 + 5 ) - 9 * ( 25 + 5 ) };
+			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 9 * ( 25 + 5 ) };
 
 			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
 

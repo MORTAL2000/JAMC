@@ -1,23 +1,26 @@
-#include "SliderComp.h"
+#include "SliderVComp.h"
+
 #include "ResizableComp.h"
 #include "OverableComp.h"
 #include "ClickableComp.h"
 
-SliderComp::SliderComp( Client & client ) { 
-	name = "Slider";
+SliderVComp::SliderVComp( Client & client ) { 
+	name = "SliderV";
 
-	func_register = [ &client = client ] ( ) { 
-		client.resource_mgr.reg_pool< SliderData >( num_comp_default );
+	func_register = [ &client = client ] ( ) {
+		client.resource_mgr.reg_pool< SliderVData >( num_comp_default );
 
 		return 0;
 	};
 
-	func_alloc = [ &client = client ] ( PComp * comp ) { 
+	func_alloc = [ &client = client ] ( PComp * comp ) {
 		comp->anchor = { 0.5f, 0.5f };
-		comp->dim = { 128, 32 };
+		comp->dim = { 32, 128 };
 
-		auto data = comp->add_data< SliderData >( );
+		auto data = comp->add_data< SliderVData >( );
 		data->cnt_remesh = 0;
+
+		data->is_label_visible = true;
 
 		data->ratio = 0.0f;
 		data->value = 0.0f;
@@ -31,7 +34,7 @@ SliderComp::SliderComp( Client & client ) {
 
 		auto resizable = comp->add_comp( "Resizable", "Resizable", [ &client = client ] ( PComp * comp ) {
 			auto data = comp->get_data < ResizableComp::ResizableData >( );
-			data->func_resize = [ ] ( PComp * comp ) { 
+			data->func_resize = [ ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim;
 				comp->offset = -comp->dim / 2;
 
@@ -41,7 +44,7 @@ SliderComp::SliderComp( Client & client ) {
 			return 0;
 		} );
 
-		data->comp_border = resizable->add_comp( "Border", "BorderImage", [ &client = client, data ] ( PComp * comp ) { 
+		data->comp_border = resizable->add_comp( "Border", "BorderImage", [ &client = client, data ] ( PComp * comp ) {
 			data->data_border = comp->get_data< BorderImageComp::BorderImageData >( );
 			data->data_border->padding_border = 4;
 			data->data_border->set_texture( client, "Gui", "Default/SliderBG", 8 );
@@ -49,10 +52,14 @@ SliderComp::SliderComp( Client & client ) {
 			auto overable = comp->add_comp( "Overable", "Overable", [ &client = client, data ] ( PComp * comp ) {
 				auto data_over = comp->get_data< OverableComp::OverableData >( );
 
-				data_over->func_enter = [ &client = client, data ] ( PComp * comp ) { 
+				data_over->func_enter = [ &client = client, data ] ( PComp * comp ) {
 					data->data_border->color = { 0.5f, 0.5f, 0.5f, 1.0f };
-					data->comp_label_left->is_visible = true;
-					data->comp_label_right->is_visible = true;
+
+					if( data->is_label_visible ) {
+						data->comp_label_bottom->is_visible = true;
+						data->comp_label_top->is_visible = true;
+					}
+
 					comp->page->is_remesh = true;
 
 					return 0;
@@ -60,8 +67,12 @@ SliderComp::SliderComp( Client & client ) {
 
 				data_over->func_exit = [ &client = client, data ] ( PComp * comp ) {
 					data->data_border->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-					data->comp_label_left->is_visible = false;
-					data->comp_label_right->is_visible = false;
+
+					if( data->is_label_visible ) {
+						data->comp_label_bottom->is_visible = false;
+						data->comp_label_top->is_visible = false;
+					}
+
 					comp->page->is_remesh = true;
 
 					return 0;
@@ -74,7 +85,7 @@ SliderComp::SliderComp( Client & client ) {
 				auto data_click = comp->get_data< ClickableComp::ClickableData >( );
 
 				data_click->func_hold = [ &client = client, data ] ( PComp * comp ) {
-					int posl_mouse = client.input_mgr.get_mouse( ).x - ( comp->page->pos.x + data->comp_bar->pos.x );
+					int posl_mouse = client.input_mgr.get_mouse( ).y - ( comp->page->pos.y + data->comp_bar->pos.y );
 
 					if( posl_mouse < 0 ) {
 						posl_mouse = 0;
@@ -110,54 +121,54 @@ SliderComp::SliderComp( Client & client ) {
 
 		data->comp_label_title = comp->add_comp( "TitleLabel", "Label", [ &client = client, data ] ( PComp * comp ) {
 			comp->is_visible = true;
-			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 3.0f, 3.0f };
+			comp->anchor = { 0.5f, 1.0f };
+			comp->offset = { 0.0f, 3.0f };
 
 			data->data_label_title = comp->get_data< LabelComp::LabelData >( );
 			data->data_label_title->size_text = 12;
 			data->data_label_title->alignment_v = LabelComp::LabelData::AlignVertical::AV_Top;
-			data->data_label_title->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Right;
+			data->data_label_title->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Center;
 			data->data_label_title->text = "Title";
 
 			return 0;
 		} );
 
-		data->comp_label_left = comp->add_comp( "LeftLabel", "Label", [ &client = client, data ] ( PComp * comp ) {
+		data->comp_label_bottom = comp->add_comp( "BottomLabel", "Label", [ &client = client, data ] ( PComp * comp ) {
 			comp->is_visible = false;
-			comp->anchor = { 0.0f, 0.0f };
-			comp->offset = { 3.0f, -3.0f };
+			comp->anchor = { 1.0f, 0.0f };
+			comp->offset = { 3.0f, 1.0f };
 
 			data->data_label_left = comp->get_data< LabelComp::LabelData >( );
 			data->data_label_left->size_text = 10;
-			data->data_label_left->alignment_v = LabelComp::LabelData::AlignVertical::AV_Bottom;
-			data->data_label_left->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Center;
-			data->data_label_left->text = "Left";
+			data->data_label_left->alignment_v = LabelComp::LabelData::AlignVertical::AV_Top;
+			data->data_label_left->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Right;
+			data->data_label_left->text = "Bottom";
 
 			return 0;
 		} );
 
-		data->comp_label_right = comp->add_comp( "RightLabel", "Label", [ &client = client, data ] ( PComp * comp ) {
+		data->comp_label_top = comp->add_comp( "TopLabel", "Label", [ &client = client, data ] ( PComp * comp ) {
 			comp->is_visible = false;
-			comp->anchor = { 1.0f, 0.0f };
-			comp->offset = { -3.0f, -3.0f };
+			comp->anchor = { 1.0f, 1.0f };
+			comp->offset = { 3.0f, -1.0f };
 
 			data->data_label_right = comp->get_data< LabelComp::LabelData >( );
 			data->data_label_right->size_text = 10;
 			data->data_label_right->alignment_v = LabelComp::LabelData::AlignVertical::AV_Bottom;
-			data->data_label_right->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Center;
-			data->data_label_right->text = "Right";
+			data->data_label_right->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Right;
+			data->data_label_right->text = "Top";
 
 			return 0;
 		} );
 
 		data->comp_label_value = comp->add_comp( "ValueLabel", "Label", [ &client = client, data ] ( PComp * comp ) {
-			comp->anchor = { 0.5f, 0.0f };
-			comp->offset = { 0.0f, -3.0f };
+			comp->anchor = { 1.0f, 0.5f };
+			comp->offset = { 3.0f, 0.0f };
 
 			data->data_label_value = comp->get_data< LabelComp::LabelData >( );
 			data->data_label_value->size_text = 12;
-			data->data_label_value->alignment_v = LabelComp::LabelData::AlignVertical::AV_Bottom;
-			data->data_label_value->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Center;
+			data->data_label_value->alignment_v = LabelComp::LabelData::AlignVertical::AV_Center;
+			data->data_label_value->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Right;
 			data->data_label_value->text = "Value";
 
 			return 0;
@@ -172,20 +183,20 @@ SliderComp::SliderComp( Client & client ) {
 		} );
 
 		return 0;
-	};	
-	
+	};
+
 	func_update = [ &client = client ] ( PComp * comp ) {
-		auto data = comp->get_data< SliderData >( );
+		auto data = comp->get_data< SliderVData >( );
 
-		data->length_bar = comp->dim.x - data->data_border->padding_border * 2;
+		data->length_bar = comp->dim.y - data->data_border->padding_border * 2;
 
-		data->comp_bar->dim = { data->length_bar, data->width_bar };
+		data->comp_bar->dim = { data->width_bar, data->length_bar };
 		data->comp_bar->offset = -data->comp_bar->dim / 2;
 
 		data->comp_slider->anchor = { 0.5f, 0.5f };
-		data->comp_slider->dim = { data->width_bar, comp->dim.y };
+		data->comp_slider->dim = { comp->dim.x, data->width_bar };
 		data->comp_slider->offset = -data->comp_slider->dim / 2;
-		data->comp_slider->offset.x += ( data->ratio - 0.5f ) * data->length_bar;
+		data->comp_slider->offset.y += ( data->ratio - 0.5f ) * data->length_bar;
 
 		data->func_read( comp );
 
@@ -198,4 +209,4 @@ SliderComp::SliderComp( Client & client ) {
 }
 
 
-SliderComp::~SliderComp( ) { }
+SliderVComp::~SliderVComp( ) { }

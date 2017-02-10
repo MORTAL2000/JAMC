@@ -273,6 +273,7 @@ void ChunkMgr::render( ) {
 	if( is_wireframe ) {
 		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 		glDisable( GL_CULL_FACE );
+		glLineWidth( 3.0f );
 
 		GL_CHECK( render_skybox( ) );
 		GL_CHECK( render_exlude( ) );
@@ -283,6 +284,7 @@ void ChunkMgr::render( ) {
 		GL_CHECK( render_pass_trans( ) );
 		GL_CHECK( render_debug( ) );
 
+		glLineWidth( 1.0f );
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		glEnable( GL_CULL_FACE );
 	}

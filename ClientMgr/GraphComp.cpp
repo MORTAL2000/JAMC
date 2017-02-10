@@ -24,11 +24,11 @@ GraphComp::GraphComp( Client & client ) {
 		data->id_texture_line = client.texture_mgr.get_texture_id( "Materials" );
 		data->id_subtex_line = client.texture_mgr.get_texture_layer( "Materials", "Details/Solid" );
 
-		data->padding = { 8, 8 };
+		data->padding = { 4, 4 };
 
 		data->comp_label_title = comp->add_comp( "LabelTitle", "Label", [ &client = client, data ] ( PComp * comp ) {
 			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 12.0f + 24, -12.0f };
+			comp->offset = { 10.0f + 24, -10.0f };
 
 			data->data_label_title = comp->get_data< LabelComp::LabelData >( );
 			data->data_label_title->size_text = 16;

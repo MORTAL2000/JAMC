@@ -2,7 +2,6 @@
 #include "ResizableComp.h"
 #include "BorderImageComp.h"
 #include "ClickableComp.h"
-#include "GraphComp.h"
 #include "ImageComp.h"
 
 
@@ -17,7 +16,7 @@ GraphPage::GraphPage( Client & client ) {
 
 	func_alloc = [ &client = client ] ( Page * page ) {
 		page->is_visible = false;
-		page->set_dim( glm::vec2( 500, 150 ) );
+		page->set_dim( glm::vec2( 500, 50 ) );
 
 		auto data_page = page->add_data< GraphPageData >( );
 
@@ -68,8 +67,8 @@ GraphPage::GraphPage( Client & client ) {
 			return 0;
 		} );
 
-		auto graph = resizable->add_comp( "Graph", "Graph", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< GraphComp::GraphData >( );
+		data_page->comp_graph = resizable->add_comp( "Graph", "Graph", [ &client = client, data_page ] ( PComp * comp ) {
+			data_page->data_graph = comp->get_data< GraphComp::GraphData >( );
 
 			return 0;
 		} );
@@ -77,7 +76,7 @@ GraphPage::GraphPage( Client & client ) {
 		auto icon = page->add_comp( "ImageIcon", "Image", [ &client = client ] ( PComp * comp ) {
 			comp->dim = { 24, 24 };
 			comp->anchor = { 0.0f, 1.0f };
-			comp->offset = { 8, -8 - comp->dim.y };
+			comp->offset = { 6, -6 - comp->dim.y };
 
 			auto data = comp->get_data< ImageComp::ImageData >( );
 			data->id_subtex = client.texture_mgr.get_texture_layer( "Gui", "Default/Graph" );
@@ -98,11 +97,10 @@ GraphPage::GraphPage( Client & client ) {
 			return 0;
 		} );
 
-		for( auto & name_record : { RecordStrings::FRAME, RecordStrings::UPDATE, RecordStrings::TASK_MAIN,  RecordStrings::RENDER, RecordStrings::SLEEP } ) { 
-			data_page->data_menu->add_entry( client, name_record, [ &client = client, graph, name_record ] ( PComp * comp ) {
-				auto data = graph->get_data< GraphComp::GraphData >( );
-				data->data_label_title->text = name_record;
-				data->record = &client.time_mgr.get_record( name_record );
+		for( auto & name_record : { RecordStrings::FRAME, RecordStrings::UPDATE, RecordStrings::TASK_MAIN,  RecordStrings::RENDER, RecordStrings::RENDER_SWAP, RecordStrings::SLEEP } ) { 
+			data_page->data_menu->add_entry( client, name_record, [ &client = client, data_page, name_record ] ( PComp * comp ) {
+				data_page->data_graph->data_label_title->text = name_record;
+				data_page->data_graph->record = &client.time_mgr.get_record( name_record );
 
 				return 0;
 			} );

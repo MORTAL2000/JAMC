@@ -182,6 +182,7 @@
     <ClCompile Include="ResizableComp.cpp" />
     <ClCompile Include="ResizeComp.cpp" />
     <ClCompile Include="SliderComp.cpp" />
+    <ClCompile Include="SliderVComp.cpp" />
     <ClCompile Include="TextButtonComp.cpp" />
     <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="ChunkData.cpp" />
@@ -254,6 +255,7 @@
     <ClInclude Include="ResizableComp.h" />
     <ClInclude Include="ResizeComp.h" />
     <ClInclude Include="SliderComp.h" />
+    <ClInclude Include="SliderVComp.h" />
     <ClInclude Include="TextButtonComp.h" />
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="ChunkData.h" />

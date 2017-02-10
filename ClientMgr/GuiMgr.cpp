@@ -28,6 +28,7 @@
 #include "TextButtonComp.h"
 #include "CheckboxComp.h"
 #include "SliderComp.h"
+#include "SliderVComp.h"
 #include "MenuComp.h"
 #include "TextFieldComp.h"
 
@@ -75,6 +76,7 @@ void GuiMgr::load_components( ) {
 	add_component_loader( CheckboxComp( client ) );
 	add_component_loader( ResizeComp( client ) );
 	add_component_loader( SliderComp( client ) );
+	add_component_loader( SliderVComp( client ) );
 	add_component_loader( MenuComp( client ) );
 	add_component_loader( TextFieldComp( client ) );
 
@@ -90,8 +92,25 @@ void GuiMgr::load_pages( ) {
 
 	add_page( "Options", "Options", PageLoader::func_null );
 	add_page( "QuickBar", "QuickBar", PageLoader::func_null );
-	add_page( "TestPage", "Test", PageLoader::func_null );
+	//add_page( "TestPage", "Test", PageLoader::func_null );
 	add_page( "Console", "Console", PageLoader::func_null );
+
+	int cnt = 1;
+	for( auto str_record : { RecordStrings::SLEEP, RecordStrings::FRAME, 
+		RecordStrings::TASK_MAIN, RecordStrings::UPDATE, RecordStrings::RENDER, RecordStrings::RENDER_SWAP } ) { 
+		add_page( "Graph " + str_record, "Graph", [ & ] ( Page * page ) { 
+			page->is_visible = true;
+			page->root->anchor = { 1.0f, 1.0f };
+			page->root->offset = { -( page->root->dim.x + 2 ), -( page->root->dim.y + 2 ) * cnt };
+			cnt++;
+
+			auto data = page->get_data< GraphPage::GraphPageData >( );
+			data->data_graph->record = &client.time_mgr.get_record( str_record );
+			data->data_graph->data_label_title->text = str_record;
+
+			return 1;
+		} );
+	}
 }
 
 void GuiMgr::update( ) {
@@ -168,46 +187,6 @@ void GuiMgr::on_over( ) {
 		comp_over_last = comp_over;
 		comp_over_last->pc_loader->func_enter( comp_over_last );
 	}
-	/*
-	// If we were over a component
-	if( comp_over_last ) {
-		// If we move into a child
-		comp_over = nullptr;
-		over_page( comp_over_last->page );
-
-		if( comp_over ) {
-			if( comp_over == comp_over_last ) {
-				comp_over_last->pc_loader->func_over( comp_over_last );
-
-				return;
-			}
-
-			//printf( "Exiting comp: %s, Entering comp: %s\n", comp_over_last->name.c_str( ), comp_over->name.c_str( ) );
-			comp_over_last->pc_loader->func_exit( comp_over_last );
-			comp_over_last = comp_over;
-			comp_over_last->pc_loader->func_enter( comp_over_last );
-
-			return;
-		}
-
-		// Else we have no over - let a full traverse decide the next over.
-		//printf( "Exiting comp: %s\n", comp_over_last->name.c_str( ) );
-		comp_over_last->pc_loader->func_exit( comp_over_last );
-		comp_over_last = nullptr;
-
-		return;
-	}
-
-	comp_over = nullptr;
-	over_page_all( );
-
-	if( comp_over ) {
-		//printf( "Entering comp: %s\n", comp_over->name.c_str( ) );
-		comp_over_last = comp_over;
-		comp_over_last->pc_loader->func_enter( comp_over_last );
-		return;
-	}
-	*/
 }
 
 void  GuiMgr::over_page_all( ) {
@@ -225,7 +204,6 @@ void GuiMgr::over_page( Page * page ) {
 	}
 
 	over_page_children( page );
-	//over_page_self( page );
 }
 
 void GuiMgr::over_page_self( Page * page ) { 
@@ -286,7 +264,6 @@ void GuiMgr::on_click( ) {
 		down_page_all( );
 
 		if( comp_down ) {
-			//printf( "Down comp: %s\n", comp_down->name.c_str( ) );
 			comp_down->pc_loader->func_down( comp_down );
 
 			if( comp_down->parent && 
@@ -309,7 +286,6 @@ void GuiMgr::on_click( ) {
 
 	if( client.input_mgr.get_mouse_hold( 0 ) || client.input_mgr.get_mouse_hold( 1 ) ) { 
 		if( comp_down ) {
-			//printf( "Hold comp: %s\n", comp_down->name.c_str( ) );
 			comp_down->pc_loader->func_hold( comp_down );
 			
 			return;
@@ -320,7 +296,6 @@ void GuiMgr::on_click( ) {
 
 	if( client.input_mgr.is_mouse_up( 0 ) || client.input_mgr.is_mouse_up( 1 ) ) { 
 		if( comp_down ) {
-			//printf( "Up comp: %s\n", comp_down->name.c_str( ) );
 			comp_down->pc_loader->func_up( comp_down );
 
 			return;
@@ -352,7 +327,6 @@ void GuiMgr::down_page( Page * page ) {
 	}
 
 	down_page_children( page );
-	//down_page_self( page );
 }
 
 void GuiMgr::down_page_self( Page * page ) {
@@ -716,280 +690,15 @@ Page * GuiMgr::get_page_safe( std::string const & name ) {
 	return &map_pages[ name ].get( );
 }
 
-/*
-void GuiMgr::print_to_console( std::string const & str_print ) {
-	std::string str_console( "Console" );
-	auto & page = get_page( str_console );
-	auto & data_console = page.get_data< PCDConsole >( str_console );
-
-	std::string token;
-	int pos_s, pos_e;
-	pos_s = 0;
-	pos_e = 0;
-
-	std::unique_lock< std::mutex > lock( mtx_console );
-
-	while( pos_e != std::string::npos ) {
-		pos_e = ( int ) str_print.find( '\n', pos_s );
-		token = str_print.substr( pos_s, pos_e - pos_s );
-		pos_s = pos_e + 1;
-
-		if( data_console.size < PCDConsole::size_max ) {
-			data_console.list_strings[ ( data_console.index + data_console.size ) % PCDConsole::size_max ] = token;
-			data_console.size++;
-		}
-		else {
-			data_console.list_strings[ ( data_console.index + data_console.size ) % PCDConsole::size_max ] = token;
-			data_console.index++;
-			if( data_console.index >= PCDConsole::size_max ) data_console.index -= PCDConsole::size_max;
-		}
-	}
-
-	data_console.is_dirty = true;
-}
-
-void GuiMgr::print_to_static( std::string const & str_print ) {
-	std::string str_static( "Static" );
-	auto & page = get_page( str_static );
-	auto & data_static = page.get_data< PCDStatic >( str_static );
-
-	if( data_static.size < PCDStatic::size_max ) {
-		data_static.list_strings[ ( data_static.index + data_static.size ) % PCDStatic::size_max ] = str_print;
-		data_static.size++;
-	}
-	else {
-		data_static.list_strings[ ( data_static.index + data_static.size ) % PCDStatic::size_max ] = str_print;
-		data_static.index++;
-		if( data_static.index >= PCDStatic::size_max ) data_static.index -= PCDStatic::size_max;
-	}
-
-	data_static.is_dirty = true;
-}
-
-void GuiMgr::update_static( ) { 
-	std::string str_static( "Static" );
-	auto & comp = get_page( str_static ).get_comp( str_static );
-
-	PageCompFuncs::update_static( comp );
-}
-
-void GuiMgr::clear_static() {
-	std::string str_static( "Static" );
-	auto & data_static = get_page( str_static ).get_data< PCDStatic >( str_static );
-
-	data_static.index = 0;
-	data_static.size = 0;
-}*/
-
 void GuiMgr::toggle_input( ) {
-	/*
-	if( is_input ) {
-		auto & page = get_page( std::string( "Console" ) );
-		auto & comp_command = page.get_comp( std::string( "Command" ) );
-		auto & data_command = page.get_data< PCDCommand >( std::string( "Console" ) );
-		auto & data_text = page.get_data< PCDTextField >( std::string( "Command" ) );
+	//comp_selected = 
 
-		comp_command.color = { 0.0f, 0.0f, 0.0f, 0.2f };
-		is_input = false;
-
-		if( !data_command.str_command.size( ) ) { 
-			return;
-		}
-
-		client.gui_mgr.process_input( );
-
-		data_command.list_strings[ data_command.index ] = data_command.str_command;
-		data_command.str_command = "";
-
-		data_command.index += 1;
-		if( data_command.index >= PCDCommand::size_max ) data_command.index -= PCDCommand::size_max;
-	}
-	else { 
-		auto & page = get_page( std::string( "Console" ) );
-		auto & comp_command = page.get_comp( std::string( "Command" ) );
-		auto & data_command = page.get_data< PCDCommand >( std::string( "Console" ) );
-
-		comp_command.color = { 0.0f, 0.0f, 0.0f, 0.3f };
-
-		data_command.str_command = "";
-		data_command.index_history = data_command.index;
-
-		is_input = true;
-	}
-	*/
+	is_input = !is_input;
 }
 
 bool GuiMgr::get_is_input( ) {
 	return is_input;
 }
-
-/*
-bool GuiMgr::get_input_char( int const key, char & character ) {
-	LPWORD test_char = new WORD;
-	ToAscii( key, 0, nullptr, test_char, 0 );
-
-	std::cout << (char)test_char << std::endl;
-
-	if( !is_shift ) {
-		if( key >= 65 && key <= 90 ) {
-			character = key + 32;
-			return true;
-		}
-		else if( key >= 48 && key <= 57 ) {
-			character = key;
-			return true;
-		}
-		else {
-			switch( key ) {
-				case VK_SPACE:
-					character = ' ';
-					return true;
-
-				case VK_OEM_1:
-					character = ';';
-					return true;
-
-				case VK_OEM_2:
-					character = '/';
-					return true;
-
-				case VK_OEM_3:
-					character = '`';
-					return true;
-
-				case VK_OEM_4:
-					character = '[';
-					return true;
-
-				case VK_OEM_5:
-					character = '\\';
-					return true;
-
-				case VK_OEM_6:
-					character = ']';
-					return true;
-
-				case VK_OEM_7:
-					character = '\'';
-					return true;
-
-				case VK_OEM_MINUS:
-					character = '-';
-					return true;
-
-				case VK_OEM_PLUS:
-					character = '=';
-					return true;
-
-				case VK_OEM_COMMA:
-					character = ',';
-					return true;
-
-				case VK_OEM_PERIOD:
-					character = '.';
-					return true;
-			}
-		}
-	}
-	else {
-		if( key >= 65 && key <= 90 ) {
-			character = key;
-			return true;
-		}
-		else if( key >= 48 && key <= 57 ) {
-			switch( key ) {
-				case 48:
-					character = ')';
-					return true;
-
-				case 49:
-					character = '!';
-					return true;
-
-				case 50:
-					character = '@';
-					return true;
-
-				case 51:
-					character = '#';
-					return true;
-
-				case 52:
-					character = '$';
-					return true;
-
-				case 53:
-					character = '%';
-					return true;
-
-				case 54:
-					character = '^';
-					return true;
-
-				case 55:
-					character = '&';
-					return true;
-
-				case 56:
-					character = '*';
-					return true;
-
-				case 57:
-					character = '(';
-					return true;
-			}
-		}
-		else {
-			switch( key ) {
-				case VK_OEM_1:
-					character = ':';
-					return true;
-
-				case VK_OEM_2:
-					character = '?';
-					return true;
-
-				case VK_OEM_3:
-					character = '~';
-					return true;
-
-				case VK_OEM_4:
-					character = '{';
-					return true;
-
-				case VK_OEM_5:
-					character = '|';
-					return true;
-				case VK_OEM_6:
-					character = '}';
-					return true;
-
-				case VK_OEM_7:
-					character = '\"';
-					return true;
-
-				case VK_OEM_MINUS:
-					character = '_';
-					return true;
-
-				case VK_OEM_PLUS:
-					character = '+';
-					return true;
-
-				case VK_OEM_COMMA:
-					character = '<';
-					return true;
-
-				case VK_OEM_PERIOD:
-					character = '>';
-					return true;
-			}
-		}
-	}
-
-	return false;
-}
-*/
 
 void GuiMgr::handle_char( char const c ) {
 	if( !comp_selected ) { 
@@ -1007,8 +716,19 @@ void GuiMgr::handle_char( char const c ) {
 	}
 
 	auto data = parent->get_data< TextFieldComp::TextFieldData >( );
+
+	if( data->pos_hl_e > data->pos_hl_s ) {
+		data->text.erase(
+			data->text.begin( ) + data->pos_hl_s,
+			data->text.begin( ) + data->pos_hl_e );
+		data->pos_hl_e = data->pos_hl_s;
+		data->pos_curs = data->pos_hl_s;
+	}
+
 	data->text += c;
 	data->pos_curs += 1;
+
+	parent->page->is_remesh = true;
 }
 
 void GuiMgr::handle_vkey( int const key, bool const is_down ) {
@@ -1027,56 +747,57 @@ void GuiMgr::handle_vkey( int const key, bool const is_down ) {
 		return;
 	}
 
-	auto data = parent->get_data< TextFieldComp::TextFieldData >( );
+	auto data_text = parent->get_data< TextFieldComp::TextFieldData >( );
 
 	switch( key ) { 
 		case VK_BACK:
-			if( data->pos_hl_e > data->pos_hl_s ) { 
-				data->text.erase(
-					data->text.begin( ) + data->pos_hl_s,
-					data->text.begin( ) + data->pos_hl_e );
-				data->pos_hl_e = data->pos_hl_s;
-				data->pos_curs = data->pos_hl_s;
+			if( data_text->pos_hl_e > data_text->pos_hl_s ) {
+				data_text->text.erase(
+					data_text->text.begin( ) + data_text->pos_hl_s,
+					data_text->text.begin( ) + data_text->pos_hl_e );
+				data_text->pos_hl_e = data_text->pos_hl_s;
+				data_text->pos_curs = data_text->pos_hl_s;
 			}
 			else { 
-				if( data->text.empty( ) ) { 
+				if( data_text->text.empty( ) ) {
 					return;
 				}
 
-				if( data->pos_curs <= 0 ) { 
+				if( data_text->pos_curs <= 0 ) {
 					return;
 				}
 
-				data->text.erase( data->text.begin( ) + data->pos_curs - 1 );
-				data->pos_curs -= 1;
+				data_text->text.erase( data_text->text.begin( ) + data_text->pos_curs - 1 );
+				data_text->pos_curs -= 1;
 			}
+
+			parent->page->is_remesh = true;
 
 			return;
 
 		case VK_LEFT:
-			if( data->pos_curs > 0 ) { 
-				data->pos_curs -= 1;
-				data->pos_hl_e = data->pos_hl_s;
+			if( data_text->pos_curs > 0 ) {
+				data_text->pos_curs -= 1;
+				data_text->pos_hl_e = data_text->pos_hl_s;
+
+				parent->page->is_remesh = true;
 			}
 
 			return;
 
 		case VK_RIGHT:
-			data->pos_curs += 1;
-			data->pos_hl_e = data->pos_hl_s;
+			data_text->pos_curs += 1;
+			data_text->pos_hl_e = data_text->pos_hl_s;
+			parent->page->is_remesh = true;
 
 			return;
 
 		case VK_RETURN: {
 			process_input( );
 
-			auto page = parent->page;
-			if( page->loader->name == "Console" ) { 
-				auto data = page->get_data< ConsolePage::ConsoleData >( );
-				data->push_command( );
-			}
-
-			//comp_selected = nullptr;
+			data_text->pos_curs += 0;
+			data_text->pos_hl_s = 0;
+			data_text->pos_hl_e = 0;
 
 			return;
 		}
@@ -1085,7 +806,8 @@ void GuiMgr::handle_vkey( int const key, bool const is_down ) {
 
 void GuiMgr::process_input( ) { 
 	PComp * parent = get_named_parent( comp_selected, "TextField" );
-	if( !parent ) { 
+
+	if( !parent || parent->page->loader->name != "Console" ) { 
 		return;
 	}
 
@@ -1110,7 +832,7 @@ void GuiMgr::process_input( ) {
 			auto & pos = client.entity_mgr.entity_player->h_state.get( ).pos;
 			pos = glm::vec3( 0, WorldSize::Chunk::size_y / 2 + 5.0f, 0 );
 			out << "Command: Resetting position to " << Directional::print_vec( pos );
-			//print_to_console( out.str( ) );
+			print_to_console( out.str( ) );
 		}
 		else if( token == "printprio" ) {
 			int range = 0;
@@ -1183,7 +905,7 @@ void GuiMgr::process_input( ) {
 
 				out.str( "" );
 				out << "Command: Sphere at:" << Directional::print_vec( vec_pos ) << " radius:" << r << " type:" << client.block_mgr.get_block_string( id ) << ".";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 				client.thread_mgr.task_async( 10, [ &, vec_pos, r, id ] ( ) { 
 					client.chunk_mgr.set_sphere( vec_pos, r, id );
 				} );
@@ -1191,10 +913,10 @@ void GuiMgr::process_input( ) {
 			else { 
 				out.str( "" );
 				out << "Command: Incorrect sphere usage - <required> [optional]";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 				out.str( "" );
 				out << "Command Format is: '/cmd <sphere> <r:int> [p:int int int | id:int]'.";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 			}
 		}
 		else if( token == "rectangle" ) {
@@ -1249,7 +971,7 @@ void GuiMgr::process_input( ) {
 
 				out.str( "" );
 				out << "Command: Rectangle at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.block_mgr.get_block_string( id ) << ".";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 
 				client.thread_mgr.task_async( 10, [ &, vec_pos, vec_dim, id ] ( ) {
 					client.chunk_mgr.set_rect( vec_pos, vec_dim, id );
@@ -1258,10 +980,10 @@ void GuiMgr::process_input( ) {
 			else { 
 				out.str( "" );
 				out << "Command: Incorrect rectangle usage - <required> [optional]";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 				out.str( "" );
 				out << "Command Format is: '/cmd <rectangle> <d:int int int> [p:int int int | id:int]'.";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 			}
 		}
 		else if( token == "ellipsoid" ) {
@@ -1316,7 +1038,7 @@ void GuiMgr::process_input( ) {
 
 				out.str( "" );
 				out << "Command: Ellipsoid at:" << Directional::print_vec( vec_pos ) << " dim:" << Directional::print_vec( vec_dim ) << " type:" << client.block_mgr.get_block_string( id ) << ".";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 
 				client.thread_mgr.task_async( 10, [ &, vec_pos, vec_dim, id ] ( ) {
 					client.chunk_mgr.set_ellipsoid( vec_pos, vec_dim, id );
@@ -1325,10 +1047,10 @@ void GuiMgr::process_input( ) {
 			else {
 				out.str( "" );
 				out << "Command: Incorrect ellipsoid usage - <required> [optional]";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 				out.str( "" );
 				out << "Command Format is: '/cmd <ellipsoid> <d:int int int> [p:int int int | id:int]'.";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 			}
 		}
 		else if( token == "setsun" ) { 
@@ -1342,10 +1064,10 @@ void GuiMgr::process_input( ) {
 			else { 
 				out.str( "" );
 				out << "Command: Incorrect setsun usage - <required> [optional]";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 				out.str( "" );
 				out << "Command Format is: '/cmd <setsun> <d:int> [p:bool]'.";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 				return;
 			}
 
@@ -1365,7 +1087,7 @@ void GuiMgr::process_input( ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			out << "Setting fov to: \'" << fov << "\'";
-			//print_to_console( out.str( ) );
+			print_to_console( out.str( ) );
 
 			client.display_mgr.fov = fov;
 			client.display_mgr.set_proj( );
@@ -1382,7 +1104,7 @@ void GuiMgr::process_input( ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			out << "Setting bias_l to: \'" << bias << "\'";
-			//print_to_console( out.str( ) );
+			print_to_console( out.str( ) );
 
 			client.texture_mgr.bind_program( "Terrain" );
 			int idx_bias = glGetUniformLocation( client.texture_mgr.id_bound_program, "bias_l" );
@@ -1400,7 +1122,7 @@ void GuiMgr::process_input( ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			out << "Setting bias_b to: \'" << bias << "\'";
-			//print_to_console( out.str( ) );
+			print_to_console( out.str( ) );
 
 			client.texture_mgr.bind_program( "Terrain" );
 			int idx_bias = glGetUniformLocation( client.texture_mgr.id_bound_program, "bias_l" );
@@ -1420,7 +1142,7 @@ void GuiMgr::process_input( ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
 			out << "Setting bias_h to: \'" << bias << "\'";
-			//print_to_console( out.str( ) );
+			print_to_console( out.str( ) );
 
 			client.texture_mgr.bind_program( "Terrain" );
 			int idx_bias = glGetUniformLocation( client.texture_mgr.id_bound_program, "bias_h" );
@@ -1461,15 +1183,15 @@ void GuiMgr::process_input( ) {
 				out << "Command: Emitter added at " << Directional::print_vec( e.pos ) << 
 					" with color " << Directional::print_vec( e.color ) << 
 					" and radius " << e.radius << ".";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 			}
 			else {
 				out.str( "" );
 				out << "Command: Incorrect addemitter usage - <required> [optional] (range)";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 				out.str( "" );
 				out << "Command Format is: '/cmd <addemitter> <p:int, int, int> [c:int, int, int](0-255) [r:int]'.";
-				//print_to_console( out.str( ) );
+				print_to_console( out.str( ) );
 			}
 		}
 		else if( token == "clearemitters" ) {
@@ -1505,32 +1227,38 @@ void GuiMgr::process_input( ) {
 		else if( token == "toggleflatshade" ) {
 			client.chunk_mgr.toggle_flatshade( );
 		}
-		else if( token == "printglerror" ) { 
-			auto & out = client.display_mgr.out;
-			out.str( "" );
-			//out << checkGlErrors( );
-			//client.gui_mgr.print_to_console( out.str( ) );
-		}
 		else if( token == "printchunkmesh" ) {
 			client.chunk_mgr.print_center_chunk_mesh( );
 		}
 		else {
 			out.str( "" );
 			out << "Command: '" << token << "' is not a valid command.";
-			//print_to_console( out.str( ) );
+			print_to_console( out.str( ) );
 
 			out.str( "" );
 			out << "Command: Format is: '/cmd <command> <required arguements> [optional arguements]'.";
-			//print_to_console( out.str( ) );
+			print_to_console( out.str( ) );
 
 			out.str( "" );
 			out << "Command: Valid Commands: 'resetpos', 'sphere', 'rectangle', 'ellipsoid', 'setsun', 'printdirty', 'addemitter'";
-			//print_to_console( out.str( ) );
+			print_to_console( out.str( ) );
 		}
 	}
 	else {
-		//print_to_console( "Say: " + str_command );
+		print_to_console( "Say: " + str_command );
 	}
+
+	data->text.clear( );
+}
+
+void GuiMgr::print_to_console( std::string const & str_out ) { 
+	auto page = get_page( "Console" );
+
+	if( !page ) { 
+		return;
+	}
+
+	page->get_data< ConsolePage::ConsoleData >( )->push_text( str_out );
 }
 
 std::unordered_map< std::string, std::vector< int > > get_tokenized_ints( 
@@ -1548,44 +1276,46 @@ std::unordered_map< std::string, std::vector< int > > get_tokenized_ints(
 		}
 	}
 
-	if( list_pair.size( ) > 0 ) {
-		std::sort(
-			list_pair.begin( ),
-			list_pair.end( ),
-			[ ] ( std::pair< int, int > const & lho, std::pair< int, int > const & rho ) {
-			return lho.second < rho.second;
-		}
-		);
+	if( list_pair.empty( ) ) {
+		return map_token;
+	}
 
-		for( int i = 0; i < list_pair.size( ) - 1; i++ ) {
-			list_token.push_back(
-				str_in.substr(
-					list_pair[ i ].second + list_delim[ list_pair[ i ].first ].size( ),
-					list_pair[ i + 1 ].second - ( list_pair[ i ].second + list_delim[ list_pair[ i ].first ].size( ) )
-					)
-				);
-		}
+	std::sort(
+		list_pair.begin( ),
+		list_pair.end( ),
+		[ ] ( std::pair< int, int > const & lho, std::pair< int, int > const & rho ) {
+		return lho.second < rho.second;
+	}
+	);
 
+	for( int i = 0; i < list_pair.size( ) - 1; i++ ) {
 		list_token.push_back(
 			str_in.substr(
-				list_pair[ list_pair.size( ) - 1 ].second + list_delim[ list_pair[ list_pair.size( ) - 1 ].first ].size( ),
-				str_in.npos
+				list_pair[ i ].second + list_delim[ list_pair[ i ].first ].size( ),
+				list_pair[ i + 1 ].second - ( list_pair[ i ].second + list_delim[ list_pair[ i ].first ].size( ) )
 				)
 			);
+	}
 
-		std::string token_int;
-		int start, end;
-		for( int i = 0; i < list_token.size( ); i++ ) {
-			auto & list_int = map_token.insert( { list_delim[ list_pair[ i ].first ], { } } ).first->second;
-			start = end = 0;
-			while( end != list_token[ i ].npos ) {
-				end = ( int ) list_token[ i ].find( " ", start );
-				token_int = list_token[ i ].substr( start, end - start );
-				if( token_int.size( ) > 0 && isdigit( token_int[ 0 ] ) ) {
-					list_int.push_back( std::stoi( token_int ) );
-				}
-				start = end + 1;
+	list_token.push_back(
+		str_in.substr(
+			list_pair[ list_pair.size( ) - 1 ].second + list_delim[ list_pair[ list_pair.size( ) - 1 ].first ].size( ),
+			str_in.npos
+			)
+		);
+
+	std::string token_int;
+	int start, end;
+	for( int i = 0; i < list_token.size( ); i++ ) {
+		auto & list_int = map_token.insert( { list_delim[ list_pair[ i ].first ], { } } ).first->second;
+		start = end = 0;
+		while( end != list_token[ i ].npos ) {
+			end = ( int ) list_token[ i ].find( " ", start );
+			token_int = list_token[ i ].substr( start, end - start );
+			if( token_int.size( ) > 0 && isdigit( token_int[ 0 ] ) ) {
+				list_int.push_back( std::stoi( token_int ) );
 			}
+			start = end + 1;
 		}
 	}
 

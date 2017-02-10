@@ -20,7 +20,6 @@ Client::Client( ) :
 Client::~Client( ) { }
 
 void Client::thread_main_loop( ) {
-	MSG msg;
 	is_running = true;
 
 	time_mgr.set_time( TimeStrings::GAME, 0 );
@@ -29,91 +28,95 @@ void Client::thread_main_loop( ) {
 	time_mgr.begin_record( RecordStrings::FRAME );
 
 	while( is_running ) {
-		time_mgr.end_record( RecordStrings::FRAME );
+		main_loop( );
+	}
+}
 
-		time_mgr.begin_record( RecordStrings::UPDATE_PRE );
-		if( time_mgr.get_record_curr( RecordStrings::FRAME ) > TIME_FRAME_MILLI / 1000.0f ) {
-			if( time_mgr.get_record_curr( RecordStrings::FRAME ) > TIME_MILLISEC / 4.0f ) { 
-				time_mgr.add_time( TimeStrings::GAME_ACCUM, TIME_MILLISEC / 4.0f );
-			}
-			else { 
-				time_mgr.add_time( TimeStrings::GAME_ACCUM, time_mgr.get_record_curr( RecordStrings::FRAME ) );
-			}
+void Client::main_loop( ) { 
+	time_mgr.end_record( RecordStrings::FRAME );
 
-			//time_mgr.add_time( TimeStrings::RENDER_ACCUM, time_mgr.get_record_curr( RecordStrings::FRAME ) );
-
-			time_mgr.push_record( RecordStrings::FRAME );
-			time_mgr.begin_record( RecordStrings::FRAME );
+	time_mgr.begin_record( RecordStrings::UPDATE_PRE );
+	if( time_mgr.get_record_curr( RecordStrings::FRAME ) > TIME_FRAME_MILLI / 1000.0f ) {
+		if( time_mgr.get_record_curr( RecordStrings::FRAME ) > TIME_MILLISEC / 4.0f ) {
+			time_mgr.add_time( TimeStrings::GAME_ACCUM, TIME_MILLISEC / 4.0f );
+		}
+		else {
+			time_mgr.add_time( TimeStrings::GAME_ACCUM, time_mgr.get_record_curr( RecordStrings::FRAME ) );
 		}
 
-		while( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) {
-			TranslateMessage( &msg );
-			DispatchMessage( &msg );
+		//time_mgr.add_time( TimeStrings::RENDER_ACCUM, time_mgr.get_record_curr( RecordStrings::FRAME ) );
+
+		time_mgr.push_record( RecordStrings::FRAME );
+		time_mgr.begin_record( RecordStrings::FRAME );
+	}
+
+	while( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) {
+		TranslateMessage( &msg );
+		DispatchMessage( &msg );
+	}
+	time_mgr.end_record( RecordStrings::UPDATE_PRE );
+	time_mgr.push_record( RecordStrings::UPDATE_PRE );
+
+	time_mgr.begin_record( RecordStrings::UPDATE );
+
+	while( time_mgr.get_time( TimeStrings::GAME_ACCUM ) > TIME_FRAME_MILLI ) {
+		if( time_mgr.get_time( TimeStrings::GAME ) -
+			time_mgr.get_time( TimeStrings::SEC ) >
+			TIME_MILLISEC ) {
+			sec( );
+			time_mgr.add_time( TimeStrings::SEC, TIME_MILLISEC );
 		}
-		time_mgr.end_record( RecordStrings::UPDATE_PRE );
-		time_mgr.push_record( RecordStrings::UPDATE_PRE );
 
-		time_mgr.begin_record( RecordStrings::UPDATE );
+		update( );
+		update_cnt++;
 
-		while( time_mgr.get_time( TimeStrings::GAME_ACCUM ) > TIME_FRAME_MILLI ) {
-			if( time_mgr.get_time( TimeStrings::GAME ) -
-				time_mgr.get_time( TimeStrings::SEC ) >
-				TIME_MILLISEC ) {
-				sec( );
-				time_mgr.add_time( TimeStrings::SEC, TIME_MILLISEC );
-			}
+		time_mgr.add_time( TimeStrings::GAME_ACCUM, -TIME_FRAME_MILLI );
+		time_mgr.add_time( TimeStrings::GAME, TIME_FRAME_MILLI );
+	}
 
-			update( );
-			update_cnt++;
+	time_mgr.end_record( RecordStrings::UPDATE );
+	time_mgr.push_record( RecordStrings::UPDATE );
 
-			time_mgr.add_time( TimeStrings::GAME_ACCUM, -TIME_FRAME_MILLI );
-			time_mgr.add_time( TimeStrings::GAME, TIME_FRAME_MILLI );
-		}
+	time_mgr.begin_record( RecordStrings::RENDER );
 
-		time_mgr.end_record( RecordStrings::UPDATE );
-		time_mgr.push_record( RecordStrings::UPDATE );
+	render( );
+	render_cnt++;
 
-		time_mgr.begin_record( RecordStrings::RENDER );
+	time_mgr.end_record( RecordStrings::RENDER );
+	time_mgr.push_record( RecordStrings::RENDER );
 
-		render( );
-		render_cnt++;
+	float time_main = TIME_FRAME_MILLI -
+		time_mgr.get_record_curr( RecordStrings::UPDATE_PRE ) -
+		time_mgr.get_record_curr( RecordStrings::UPDATE ) -
+		time_mgr.get_record_curr( RecordStrings::RENDER ) -
+		0.25f;
+	if( time_main < 1.0f ) time_main = 1.0f;
+	//if( time_main < 0.5f ) time_main = 0.5f;
+	thread_mgr.loop_main( time_main );
 
-		time_mgr.end_record( RecordStrings::RENDER );
-		time_mgr.push_record( RecordStrings::RENDER );
+	client.time_mgr.begin_record( RecordStrings::RENDER_SWAP );
+	display_mgr.swap_buffers( );
+	client.time_mgr.push_record( RecordStrings::RENDER_SWAP );
+	client.time_mgr.end_record( RecordStrings::RENDER_SWAP );
 
-		float time_main = TIME_FRAME_MILLI -
+	if( !display_mgr.is_vsync && display_mgr.is_limiter ) {
+		float time_sleep = TIME_FRAME_MILLI -
 			time_mgr.get_record_curr( RecordStrings::UPDATE_PRE ) -
 			time_mgr.get_record_curr( RecordStrings::UPDATE ) -
+			time_mgr.get_record_curr( RecordStrings::TASK_MAIN ) -
 			time_mgr.get_record_curr( RecordStrings::RENDER ) -
-			0.25f;
-		if( time_main < 1.0f ) time_main = 1.0f;
-		//if( time_main < 0.5f ) time_main = 0.5f;
-		thread_mgr.loop_main( time_main );
+			time_mgr.get_record_curr( RecordStrings::RENDER_SWAP );
 
-		client.time_mgr.begin_record( RecordStrings::RENDER_SWAP );
-		display_mgr.swap_buffers( );
-		client.time_mgr.push_record( RecordStrings::RENDER_SWAP );
-		client.time_mgr.end_record( RecordStrings::RENDER_SWAP );
-		
-		if( !display_mgr.is_vsync && display_mgr.is_limiter ) {
-			float time_sleep = TIME_FRAME_MILLI -
-				time_mgr.get_record_curr( RecordStrings::UPDATE_PRE ) -
-				time_mgr.get_record_curr( RecordStrings::UPDATE ) -
-				time_mgr.get_record_curr( RecordStrings::TASK_MAIN ) -
-				time_mgr.get_record_curr( RecordStrings::RENDER ) -
-				time_mgr.get_record_curr( RecordStrings::RENDER_SWAP );
+		if( time_sleep > 0 ) {
+			time_mgr.begin_record( RecordStrings::SLEEP );
+			time_mgr.end_record( RecordStrings::SLEEP );
 
-			if( time_sleep > 0 ) {
-				time_mgr.begin_record( RecordStrings::SLEEP );
+			float time_curr_sleep;
+			while( ( time_curr_sleep = time_mgr.get_record_curr( RecordStrings::SLEEP ) ) < time_sleep ) {
 				time_mgr.end_record( RecordStrings::SLEEP );
-
-				float time_curr_sleep;
-				while( ( time_curr_sleep = time_mgr.get_record_curr( RecordStrings::SLEEP ) ) < time_sleep ) {
-					time_mgr.end_record( RecordStrings::SLEEP );
-				}
-
-				time_mgr.push_record( RecordStrings::SLEEP );
 			}
+
+			time_mgr.push_record( RecordStrings::SLEEP );
 		}
 	}
 }

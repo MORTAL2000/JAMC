@@ -11,16 +11,19 @@ ConsolePage::ConsolePage( Client & client ) {
 	name = "Console";
 
 	func_alloc = [ &client = client ] ( Page * page ) {
-		page->set_dim( { 400, 250 } );
+		page->set_dim( { 600, 250 } );
 		page->set_anchor( { 0, 0 } );
 
 		auto data_console = page->add_data< ConsoleData >( );
 		data_console->console = page;
 		data_console->padding = 4;
 		data_console->dy_input = 24;
+		data_console->padding_text = 0;
 		data_console->size_text = 16;
 		data_console->num_visible = 0;
-		data_console->id_labels = 0;
+		data_console->idx_visible = 0;
+		data_console->idx_labels = 0;
+		data_console->size_labels = 0;
 
 		auto resizable_root = page->add_comp( "ResizableRoot", "Resizable", [ &client = client ] ( PComp * comp ) {
 			auto data = comp->get_data< ResizableComp::ResizableData >( );
@@ -64,6 +67,9 @@ ConsolePage::ConsolePage( Client & client ) {
 				comp->offset = -comp->dim / 2;
 				comp->offset.y += ( ( data_console->dy_input + data_console->padding ) / 2 );
 
+				data_console->check_visibles( );
+				data_console->reposition_labels( );
+
 				return 0;
 			};
 
@@ -73,6 +79,52 @@ ConsolePage::ConsolePage( Client & client ) {
 		data_console->comp_border_text = resizable_text->add_comp( "BorderText", "BorderImage", [ &client = client ] ( PComp * comp ) {
 			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
 			data->padding_border = 4;
+
+			return 0;
+		} );
+
+		for( unsigned int i = 0; i < ConsoleData::num_text_max; ++i ) { 
+			data_console->list_labels.push_back( data_console->comp_border_text->add_comp( "Label" + std::to_string( i ), "Label", [ &client = client , data_console, i ] ( PComp * comp ) {
+				comp->is_visible = false;
+				/*comp->offset = {
+					data_console->padding,
+					data_console->padding + i * ( data_console->size_text + data_console->padding_text )
+				};*/
+				auto data = comp->get_data< LabelComp::LabelData >( );
+				data->text = comp->name;
+
+				return 0;
+			} ) );
+		}
+
+		auto resizable_scroll = data_console->comp_border_text->add_comp( "ResizableScrollBar", "Resizable", [ &client = client, data_console ] ( PComp * comp ) {
+			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			data->func_resize = [ &client = client, data_console ] ( PComp * comp ) {
+				comp->dim = { 24, comp->parent->dim.y };
+				comp->offset = { -comp->dim.x, -comp->dim.y / 2 };
+
+				return 0;
+			};
+
+			return 0;
+		} );
+
+		data_console->comp_slider = resizable_scroll->add_comp( "Slider", "SliderV", [ &client = client, data_console ] ( PComp * comp ) {
+			comp->anchor = { 1.0f, 0.5f };
+
+			data_console->data_slider = comp->get_data< SliderVComp::SliderVData >( );
+			data_console->data_slider->set_bounds( 0.0f, 1.0f );
+			data_console->data_slider->set_value( 0.0f );
+			data_console->data_slider->set_labels_visible( false );
+
+			data_console->data_slider->func_write = [ &client = client, data_console ] ( PComp * comp ) {
+				data_console->set_idx_visible( std::round(
+					data_console->data_slider->ratio *
+					std::max( 0, data_console->size_labels - data_console->num_visible ) 
+				) );
+
+				return 0;
+			};
 
 			return 0;
 		} );
@@ -102,6 +154,14 @@ ConsolePage::ConsolePage( Client & client ) {
 		//textfield_input->dim 
 
 		auto resizer = page->add_comp( "ResizerRoot", "Resize", PageComponentLoader::func_null );
+
+		/*
+		for( int i = 0; i < 64; ++i ) { 
+			data_console->push_text( "Text: " + std::to_string( i ) );
+		}
+		*/
+
+		data_console->set_idx_visible( 0 );
 
 		return 0;
 	};

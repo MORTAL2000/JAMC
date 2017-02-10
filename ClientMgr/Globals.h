@@ -102,6 +102,10 @@ static inline void clamp( int & x, int a, int b ) {
 	x < a ? x = a : ( x > b ? x = b : x );
 }
 
+static inline void clamp( float & x, float a, float b ) {
+	x < a ? x = a : ( x > b ? x = b : x );
+}
+
 // Opengl functions
 extern inline std::string getGLErrorString( int err );
 
