@@ -8,24 +8,27 @@
 #include "SliderVComp.h"
 
 class ConsolePage : public PageLoader {
+
 public:
 	struct ConsoleData {
-		static unsigned int const num_text_max = 128;
+		static unsigned int const num_history_max = 32;
+		static unsigned int const num_text_max = 256;
 
 		int padding;
-
-		int dy_input;
-
 		int padding_text;
 		int size_text;
-
-		int num_visible;
+		int dy_input;
 
 		int idx_visible;
+		int num_visible;
 
 		int idx_labels;
 		int size_labels;
 
+		int idx_history;
+		int idx_history_recall;
+
+		std::vector< std::string > list_history;
 		std::vector< PComp * > list_labels;
 
 		Page * console;
@@ -36,6 +39,26 @@ public:
 
 		PComp * comp_slider;
 		SliderVComp::SliderVData * data_slider;
+
+		void clear_text( ) { 
+			int idx;
+			for( int i = 0; i < num_visible; ++i ) { 
+				idx = idx_labels - idx_visible - i;
+				idx = ( ( idx % num_text_max ) + num_text_max ) % num_text_max;
+				list_labels[ idx ]->is_visible = false;
+			}
+
+			num_visible = 0;
+			idx_visible = 0;
+			idx_labels = 0;
+			size_labels = 0;
+
+			idx_history = 0;
+			idx_history_recall = 0;
+
+			data_slider->set_ratio( 0.0f );
+			data_slider->func_write( comp_slider );
+		}
 
 		void set_text_size( unsigned int const size ) {
 			size_text = size;

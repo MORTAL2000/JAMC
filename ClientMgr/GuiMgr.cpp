@@ -725,7 +725,11 @@ void GuiMgr::handle_char( char const c ) {
 		data->pos_curs = data->pos_hl_s;
 	}
 
-	data->text += c;
+	if( data->pos_curs > data->text.size( ) ) { 
+		data->pos_curs = data->text.size( );
+	}
+
+	data->text.insert( data->text.begin( ) + data->pos_curs, c );
 	data->pos_curs += 1;
 
 	parent->page->is_remesh = true;
@@ -785,6 +789,51 @@ void GuiMgr::handle_vkey( int const key, bool const is_down ) {
 
 			return;
 
+		case VK_UP: {
+			auto data_page = parent->page->get_data < ConsolePage::ConsoleData > ( );			
+			
+			if( data_page->idx_history_recall == 0 ) {
+				data_page->list_history[ data_page->idx_history ] = data_text->text;
+			}
+
+			data_page->idx_history_recall++;
+
+			int idx = data_page->idx_history - data_page->idx_history_recall;
+			idx = ( ( idx % ConsolePage::ConsoleData::num_history_max ) + 
+				ConsolePage::ConsoleData::num_history_max ) % 
+				ConsolePage::ConsoleData::num_history_max;
+
+			data_text->text = data_page->list_history[ idx ];
+
+			data_text->pos_curs = data_text->text.size( );
+			data_text->pos_hl_s = 0;
+			data_text->pos_hl_e = 0;
+
+			return;
+		}
+
+		case VK_DOWN: {
+			auto data_page = parent->page->get_data < ConsolePage::ConsoleData >( );
+			data_page->idx_history_recall--;
+
+			if( data_page->idx_history_recall < 0 ) {
+				data_page->idx_history_recall = 0;
+			}
+
+			int idx = data_page->idx_history - data_page->idx_history_recall;
+			idx = ( ( idx % ConsolePage::ConsoleData::num_history_max ) +
+				ConsolePage::ConsoleData::num_history_max ) %
+				ConsolePage::ConsoleData::num_history_max;
+
+			data_text->text = data_page->list_history[ idx ];
+
+			data_text->pos_curs = data_text->text.size( );
+			data_text->pos_hl_s = 0;
+			data_text->pos_hl_e = 0;
+
+			return;
+		}
+
 		case VK_RIGHT:
 			data_text->pos_curs += 1;
 			data_text->pos_hl_e = data_text->pos_hl_s;
@@ -814,12 +863,23 @@ void GuiMgr::process_input( ) {
 	auto data = parent->get_data< TextFieldComp::TextFieldData >( );
 
 	auto & str_command = data->text;
+	if( str_command.size( ) <= 0 ) return;
+
+	auto data_page = parent->page->get_data< ConsolePage::ConsoleData >( );
+
+	data_page->list_history[ data_page->idx_history ] = str_command;
+	data_page->idx_history_recall = 0;
+
+	data_page->idx_history++;
+	data_page->idx_history = ( 
+		( data_page->idx_history % ConsolePage::ConsoleData::num_history_max ) + 
+			ConsolePage::ConsoleData::num_history_max 
+		) % ConsolePage::ConsoleData::num_history_max;
+
 	auto & out = client.display_mgr.out;
 	int pos_start = 0;
 	int pos_end = 0;
 	std::string token = "";
-
-	if( str_command.size( ) <= 0 ) return;
 
 	pos_start = ( int ) str_command.find( "/cmd " );
 	pos_end = ( int ) str_command.find( " ", pos_start + 5 );
@@ -833,6 +893,10 @@ void GuiMgr::process_input( ) {
 			pos = glm::vec3( 0, WorldSize::Chunk::size_y / 2 + 5.0f, 0 );
 			out << "Command: Resetting position to " << Directional::print_vec( pos );
 			print_to_console( out.str( ) );
+		}
+		else if( token == "clear" ) {  
+			auto data = parent->page->get_data< ConsolePage::ConsoleData >( );
+			data->clear_text( );
 		}
 		else if( token == "printprio" ) {
 			int range = 0;
@@ -851,7 +915,7 @@ void GuiMgr::process_input( ) {
 				}
 			}
 		}
-		else if( token == "sphere" ) { 
+		else if( token == "s" || token == "sph" || token == "sphere" ) { 
 			int r = 0;
 			int id = block_selector.get_id_block( );
 			auto & pos_camera = client.display_mgr.camera.pos_camera;
@@ -915,11 +979,11 @@ void GuiMgr::process_input( ) {
 				out << "Command: Incorrect sphere usage - <required> [optional]";
 				print_to_console( out.str( ) );
 				out.str( "" );
-				out << "Command Format is: '/cmd <sphere> <r:int> [p:int int int | id:int]'.";
+				out << "Command Format is: '/cmd <s, sph, sphere> <r:int> [p:int int int | id:int]'.";
 				print_to_console( out.str( ) );
 			}
 		}
-		else if( token == "rectangle" ) {
+		else if( token == "r" || token == "rect" || token == "rectangle" ) {
 			int id = block_selector.get_id_block( );
 			auto & pos_camera = client.display_mgr.camera.pos_camera;
 			glm::ivec3 vec_pos( floor( pos_camera.x ), floor( pos_camera.y ), floor( pos_camera.z ) );
@@ -979,14 +1043,14 @@ void GuiMgr::process_input( ) {
 			}
 			else { 
 				out.str( "" );
-				out << "Command: Incorrect rectangle usage - <required> [optional]";
+				out << "Command: Incorrect rectanglular box usage - <required> [optional]";
 				print_to_console( out.str( ) );
 				out.str( "" );
-				out << "Command Format is: '/cmd <rectangle> <d:int int int> [p:int int int | id:int]'.";
+				out << "Command Format is: '/cmd <r, rect, rectangle> <d:int int int> [p:int int int | id:int]'.";
 				print_to_console( out.str( ) );
 			}
 		}
-		else if( token == "ellipsoid" ) {
+		else if( token == "e" || token == "ellip" || token == "ellipsoid" ) {
 			int id = block_selector.get_id_block( );
 			auto & pos_camera = client.display_mgr.camera.pos_camera;
 			glm::ivec3 vec_pos( floor( pos_camera.x ), floor( pos_camera.y ), floor( pos_camera.z ) );
@@ -1049,7 +1113,7 @@ void GuiMgr::process_input( ) {
 				out << "Command: Incorrect ellipsoid usage - <required> [optional]";
 				print_to_console( out.str( ) );
 				out.str( "" );
-				out << "Command Format is: '/cmd <ellipsoid> <d:int int int> [p:int int int | id:int]'.";
+				out << "Command Format is: '/cmd <e, ellip, ellipsoid> <d:int int int> [p:int int int | id:int]'.";
 				print_to_console( out.str( ) );
 			}
 		}
@@ -1306,14 +1370,26 @@ std::unordered_map< std::string, std::vector< int > > get_tokenized_ints(
 
 	std::string token_int;
 	int start, end;
+
 	for( int i = 0; i < list_token.size( ); i++ ) {
 		auto & list_int = map_token.insert( { list_delim[ list_pair[ i ].first ], { } } ).first->second;
 		start = end = 0;
+
 		while( end != list_token[ i ].npos ) {
 			end = ( int ) list_token[ i ].find( " ", start );
 			token_int = list_token[ i ].substr( start, end - start );
-			if( token_int.size( ) > 0 && isdigit( token_int[ 0 ] ) ) {
+
+			if( token_int.size( ) > 0 && 
+				isdigit( token_int[ 0 ] ) ) {
+
 				list_int.push_back( std::stoi( token_int ) );
+			}
+			else if( token_int.size( ) > 0 && 
+				token_int[ 0 ] == '-' && 
+				isdigit( token_int[ 1 ] ) ) {
+
+				token_int.erase( token_int.begin( ) );
+				list_int.push_back( -std::stoi( token_int ) );
 			}
 			start = end + 1;
 		}

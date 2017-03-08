@@ -16,14 +16,21 @@ ConsolePage::ConsolePage( Client & client ) {
 
 		auto data_console = page->add_data< ConsoleData >( );
 		data_console->console = page;
+
 		data_console->padding = 4;
-		data_console->dy_input = 24;
 		data_console->padding_text = 0;
 		data_console->size_text = 16;
-		data_console->num_visible = 0;
+		data_console->dy_input = 24;
+
 		data_console->idx_visible = 0;
+		data_console->num_visible = 0;
+
 		data_console->idx_labels = 0;
 		data_console->size_labels = 0;
+
+		data_console->idx_history = 0;
+		data_console->idx_history_recall = 0;
+		data_console->list_history.resize( ConsoleData::num_history_max );
 
 		auto resizable_root = page->add_comp( "ResizableRoot", "Resizable", [ &client = client ] ( PComp * comp ) {
 			auto data = comp->get_data< ResizableComp::ResizableData >( );
@@ -86,10 +93,6 @@ ConsolePage::ConsolePage( Client & client ) {
 		for( unsigned int i = 0; i < ConsoleData::num_text_max; ++i ) { 
 			data_console->list_labels.push_back( data_console->comp_border_text->add_comp( "Label" + std::to_string( i ), "Label", [ &client = client , data_console, i ] ( PComp * comp ) {
 				comp->is_visible = false;
-				/*comp->offset = {
-					data_console->padding,
-					data_console->padding + i * ( data_console->size_text + data_console->padding_text )
-				};*/
 				auto data = comp->get_data< LabelComp::LabelData >( );
 				data->text = comp->name;
 
@@ -135,7 +138,7 @@ ConsolePage::ConsolePage( Client & client ) {
 			data->func_resize = [ &client = client, data_console ] ( PComp * comp ) {
 				comp->dim.y = data_console->dy_input;
 				comp->dim.x = comp->parent->dim.x - data_console->padding * 2;
-
+				 
 				comp->offset.x = -comp->dim.x / 2;
 				comp->offset.y = -comp->parent->dim.y / 2 + data_console->padding;
 
@@ -148,18 +151,12 @@ ConsolePage::ConsolePage( Client & client ) {
 		
 		auto textfield_input = resizable_input->add_comp( "TextFieldInput", "TextField", [ &client = client, data_console ] ( PComp * comp ) {
 			data_console->data_input = comp->get_data< TextFieldComp::TextFieldData >( );
+			data_console->data_input->text = "";
 
 			return 0;
 		} );
-		//textfield_input->dim 
 
 		auto resizer = page->add_comp( "ResizerRoot", "Resize", PageComponentLoader::func_null );
-
-		/*
-		for( int i = 0; i < 64; ++i ) { 
-			data_console->push_text( "Text: " + std::to_string( i ) );
-		}
-		*/
 
 		data_console->set_idx_visible( 0 );
 
