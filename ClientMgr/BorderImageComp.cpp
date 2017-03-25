@@ -37,12 +37,12 @@ BorderImageComp::BorderImageComp( Client & client ) {
 		glm::vec3 norm = { 0.0f, 0.0f, 1.0f };
 
 		float p_x[ ] = { 
-			comp->pos.x, comp->pos.x + data->padding_border,
-			comp->pos.x + comp->dim.x - data->padding_border, comp->pos.x + comp->dim.x };
+			( float ) comp->pos.x, comp->pos.x + data->padding_border,
+			( float ) comp->pos.x + comp->dim.x - data->padding_border, comp->pos.x + comp->dim.x };
 
 		float p_y[ ] = { 
-			comp->pos.y, comp->pos.y + data->padding_border,
-			comp->pos.y + comp->dim.y - data->padding_border, comp->pos.y + comp->dim.y };
+			( float ) comp->pos.y, comp->pos.y + data->padding_border,
+			( float ) comp->pos.y + comp->dim.y - data->padding_border, comp->pos.y + comp->dim.y };
 
 		float p_uv[ ] = { 
 			data->dh_pix, data->dh_pix + data->d_uv,

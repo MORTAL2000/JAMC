@@ -58,7 +58,8 @@ private:
 
 public:
 	int freq_display;
-	float fov = 90;
+	float aspect = 0;
+	float fov = 72;
 
 	bool is_vsync;
 	bool is_limiter;

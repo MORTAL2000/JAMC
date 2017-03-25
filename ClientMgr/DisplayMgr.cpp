@@ -539,8 +539,7 @@ void DisplayMgr::set_proj( ) {
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity( );
 
-	float aspect = float( dim_window.x ) / float( dim_window.y );
-	//float fov_y = fov / aspect;
+	aspect = float( dim_window.x ) / float( dim_window.y );
 
 	gluPerspective( fov, aspect, 0.1f, 3000.0f );
 

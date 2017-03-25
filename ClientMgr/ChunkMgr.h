@@ -51,8 +51,7 @@ struct SectionIndex {
 };
 
 struct FileHeader { 
-	static int const num_regions = 
-		WorldSize::Region::size_x * WorldSize::Region::size_y * WorldSize::Region::size_z;
+	static int const num_regions = WorldSize::Region::size_x * WorldSize::Region::size_y * WorldSize::Region::size_z;
 	
 	SectionIndex array_index[ num_regions ];
 	int idx_last = 0;
@@ -96,8 +95,7 @@ private:
 
 	std::vector< SMChunkIncl::SMHandle > list_handles_inclusive;
 
-	static int const dist_sun = 
-		WorldSize::Chunk::size_x * WorldSize::World::size_x;
+	static int const dist_sun = WorldSize::Chunk::size_x * WorldSize::World::size_x;
 	bool is_sun_pause;
 	float pos_deg_light;
 
@@ -144,7 +142,9 @@ private:
 
 	GLuint idx_cascade = 0;
 
-	static GLuint constexpr num_cascades = 3;
+	// If you want to chnage the number of cascades you have to change the vert and frag shaders
+	// Change light mats in vert, the distance/index in frag
+	static GLuint constexpr num_cascades = 4;
 
 	glm::mat4 mat_model;
 	glm::mat3 mat_norm;
@@ -228,6 +228,10 @@ public:
 	void render( );
 	void end( );
 	void sec( );
+
+	void shutdown_all( );
+	void wait_on_shutdown( );
+	void delete_world( );
 
 	void next_skybox( );
 

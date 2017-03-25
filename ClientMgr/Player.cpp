@@ -15,10 +15,10 @@ Player::Player( ) :
 
 			auto & ec_state = entity.h_state.get( );
 			ec_state.is_gravity = true;
-			ec_state.dim = { 0.8f, 1.8f, 0.8f };
+			ec_state.dim = { 0.5f, 1.8f, 0.5f };
 
 			ec_state.pos = { 0.0f, WorldSize::Chunk::size_y / 2.0f + 5.0f, 0.0f };
-			ec_state.rot.y = 45;
+			ec_state.rot.y = 0;
 			entity.is_visible = false;
 
 			auto & ec_player = entity.get_data< ECPlayer >( ).get( );

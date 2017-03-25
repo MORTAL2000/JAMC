@@ -100,25 +100,14 @@ glm::vec3 Directional::get_left( glm::vec3 & rot ) {
 }
 
 bool Directional::is_point_in_cone( glm::ivec3 & point, glm::vec3 & cone_apex, glm::vec3 & cone_base, float aperture ) {
-	// This is for our convenience
-	float halfAperture = aperture / 2.0f;
-
-	// std::vector pointing to X point from apex
+	float half_aperture = aperture / 2.0f;
 	glm::vec3 apex_to_point = glm::vec3( point ) - cone_apex;
-
-	// std::vector pointing from apex to circle-center point.
 	glm::vec3 apex_to_base = cone_base - cone_apex;
 
 	bool is_infinite = glm::dot( apex_to_point, apex_to_base ) /
 		glm::length( apex_to_point ) / glm::length( apex_to_base ) >
-		glm::cos( glm::radians( halfAperture ) );
+		glm::cos( glm::radians( half_aperture ) );
 
-	/*if( !is_infinite ) return false;
-
-	bool is_under_cap = dot_prod( apex_to_point, axis_vect )
-	/ axis_vect.mag()
-	<
-	axis_vect.mag();*/
 	return is_infinite;
 }
 

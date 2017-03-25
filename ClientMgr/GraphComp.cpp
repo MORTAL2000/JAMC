@@ -104,7 +104,7 @@ GraphComp::GraphComp( Client & client ) {
 			} );
 		}
 
-		// Draw the x grid - 1/4 frame
+		// Draw the x grid - 0.25f
 		delta_grid_x = UPDATE_RATE / 4;
 		for( float i = 0.0f; i < num_history - delta_grid_x; i += delta_grid_x ) {
 			comp->page->vbo_mesh.push_data( std::vector< VBO::Vertex > {

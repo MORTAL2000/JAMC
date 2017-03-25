@@ -304,40 +304,32 @@ public:
 				return;
 			}
 
-			//glBindVertexArray( ptr_parent->id_vao );
-
 			glBindBuffer( GL_ARRAY_BUFFER, ptr_parent->id_vbo );
 
 			if( idx_block_s == idx_block_e ) {
-				glBufferSubData(
-					GL_ARRAY_BUFFER,
+				glBufferSubData( GL_ARRAY_BUFFER,
 					( list_vbo_blocks[ idx_block_s ].second->index + idx_data_s ) * sizeof( Vertex ),
 					( idx_data_e - idx_data_s ) * sizeof( Vertex ),
 					ptr_buffer->list_verts.data( ) + idx_data_s );
 			}
 			else {
-				glBufferSubData(
-					GL_ARRAY_BUFFER,
+				glBufferSubData( GL_ARRAY_BUFFER,
 					( list_vbo_blocks[ idx_block_s ].second->index + idx_data_s ) * sizeof( Vertex ),
 					( size_vbo_block - idx_data_s ) * sizeof( Vertex ),
 					ptr_buffer->list_verts.data( ) + idx_data_s );
 
 				for( GLuint i = idx_block_s + 1; i < idx_block_e; ++i ) {
-					glBufferSubData(
-						GL_ARRAY_BUFFER,
+					glBufferSubData( GL_ARRAY_BUFFER,
 						list_vbo_blocks[ i ].second->index * sizeof( Vertex ),
 						size_vbo_block * sizeof( Vertex ),
 						ptr_buffer->list_verts.data( ) + ( i * size_vbo_block ) );
 				}
 
-				glBufferSubData(
-					GL_ARRAY_BUFFER,
+				glBufferSubData( GL_ARRAY_BUFFER,
 					list_vbo_blocks[ idx_block_e ].second->index * sizeof( Vertex ),
 					idx_data_e * sizeof( Vertex ),
 					ptr_buffer->list_verts.data( ) + ( idx_block_e * size_vbo_block ) );
 			}
-
-			//glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
 			idx_block_s = 0;
 			idx_block_e = size_ibo / size_ibo_block;
@@ -348,35 +340,29 @@ public:
 			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ptr_parent->id_ibo );
 
 			if( idx_block_s == idx_block_e ) {
-				glBufferSubData(
-					GL_ELEMENT_ARRAY_BUFFER,
+				glBufferSubData( GL_ELEMENT_ARRAY_BUFFER,
 					( list_ibo_blocks[ idx_block_s ].second->index + idx_data_s ) * sizeof( GLuint ),
 					( idx_data_e - idx_data_s ) * sizeof( GLuint ),
 					ptr_buffer->list_inds.data( ) + idx_data_s );
 			}
 			else {
-				glBufferSubData(
-					GL_ELEMENT_ARRAY_BUFFER,
+				glBufferSubData( GL_ELEMENT_ARRAY_BUFFER,
 					( list_ibo_blocks[ idx_block_s ].second->index + idx_data_s ) * sizeof( GLuint ),
 					( size_ibo_block - idx_data_s ) * sizeof( GLuint ),
 					ptr_buffer->list_inds.data( ) + idx_data_s );
 
 				for( GLuint i = idx_block_s + 1; i < idx_block_e; ++i ) {
-					glBufferSubData(
-						GL_ELEMENT_ARRAY_BUFFER,
+					glBufferSubData( GL_ELEMENT_ARRAY_BUFFER,
 						list_ibo_blocks[ i ].second->index * sizeof( GLuint ),
 						size_ibo_block * sizeof( GLuint ),
 						ptr_buffer->list_inds.data( ) + ( i * size_ibo_block ) );
 				}
 
-				glBufferSubData(
-					GL_ELEMENT_ARRAY_BUFFER,
+				glBufferSubData( GL_ELEMENT_ARRAY_BUFFER,
 					list_ibo_blocks[ idx_block_e ].second->index * sizeof( GLuint ),
 					idx_data_e * sizeof( GLuint ),
 					ptr_buffer->list_inds.data( ) + ( idx_block_e * size_ibo_block ) );
 			}
-
-			//glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
 			std::lock_guard< std::mutex > lock( mtx_cmds );
 			list_cmds.clear( );
@@ -421,8 +407,6 @@ public:
 					}
 				}
 			}
-
-			//glBindVertexArray( 0 );
 		}
 
 		void release_buffer( ) { 
@@ -824,8 +808,7 @@ public:
 		for( GLuint i = 0; i < list_vertex_attributes.size( ); ++i ) { 
 			auto & attrib = list_vertex_attributes[ i ];
 
-			glVertexAttribIPointer( 
-				idx_attrib, attrib.num_data, attrib.type_data,
+			glVertexAttribIPointer( idx_attrib, attrib.num_data, attrib.type_data,
 				sizeof( Vertex ), BUFFER_OFFSET( ( unsigned long long ) offset_byte ) );
 			std::cout << "offset: " << offset_byte << std::endl;
 

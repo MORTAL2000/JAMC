@@ -137,6 +137,7 @@ void main() {
 	frag_out.vert_light[ 0 ] = mat_light[ 0 ] * frag_out.vert_model;
 	frag_out.vert_light[ 1 ] = mat_light[ 1 ] * frag_out.vert_model;
 	frag_out.vert_light[ 2 ] = mat_light[ 2 ] * frag_out.vert_model;
+	frag_out.vert_light[ 3 ] = mat_light[ 3 ] * frag_out.vert_model;
 
 	// Tex calc
 	frag_out.frag_uvs[ 0 ] = vec3( uvs_face[ id_vert ] * ( vec2( 1, 1 ) + scale_uvs[ orient ] * scale ), tex1 );

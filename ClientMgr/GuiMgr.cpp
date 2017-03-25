@@ -726,7 +726,7 @@ void GuiMgr::handle_char( char const c ) {
 	}
 
 	if( data->pos_curs > data->text.size( ) ) { 
-		data->pos_curs = data->text.size( );
+		data->pos_curs = ( int ) data->text.size( );
 	}
 
 	data->text.insert( data->text.begin( ) + data->pos_curs, c );
@@ -805,7 +805,7 @@ void GuiMgr::handle_vkey( int const key, bool const is_down ) {
 
 			data_text->text = data_page->list_history[ idx ];
 
-			data_text->pos_curs = data_text->text.size( );
+			data_text->pos_curs = ( int ) data_text->text.size( );
 			data_text->pos_hl_s = 0;
 			data_text->pos_hl_e = 0;
 
@@ -827,7 +827,7 @@ void GuiMgr::handle_vkey( int const key, bool const is_down ) {
 
 			data_text->text = data_page->list_history[ idx ];
 
-			data_text->pos_curs = data_text->text.size( );
+			data_text->pos_curs = ( int ) data_text->text.size( );
 			data_text->pos_hl_s = 0;
 			data_text->pos_hl_e = 0;
 
@@ -1293,6 +1293,14 @@ void GuiMgr::process_input( ) {
 		}
 		else if( token == "printchunkmesh" ) {
 			client.chunk_mgr.print_center_chunk_mesh( );
+		}
+		else if( token == "shutdownall" ) {
+			client.chunk_mgr.shutdown_all( );
+		}
+		else if( token == "deleteworld" ) {
+			client.chunk_mgr.shutdown_all( );
+			//while( client.chunk_mgr.
+			client.chunk_mgr.delete_world( );
 		}
 		else {
 			out.str( "" );

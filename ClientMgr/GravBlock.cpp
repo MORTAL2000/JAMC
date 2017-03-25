@@ -16,7 +16,7 @@ GravBlock::GravBlock( ) :
 				( rand( ) % 10000 - 5000 ) / 10.0f,
 				0,
 				( rand( ) % 10000 - 5000 ) / 10.0f );
-			ec_state.dim = { 0.75f, 0.75f, 0.75f };
+			ec_state.dim = { 1.0f, 1.0f, 1.0f };
 
 			auto & ec_block = entity.get_data< ECGravBlock >( ).get( );
 			ec_block.time_life = std::rand( ) % 5000 + 5000;
@@ -33,9 +33,9 @@ GravBlock::GravBlock( ) :
 			auto & ec_block = entity.get_data< ECGravBlock >( ).get( );
 			float frict = 0.5f;
 
-			client.entity_mgr.entity_stop( ec_state );
-
 			if( ec_state.is_coll ) {
+				client.entity_mgr.entity_stop( ec_state );
+
 				ec_state.rot = { 0, 0, 0 };
 				ec_state.rot_veloc = { 0, 0, 0 };
 

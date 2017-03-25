@@ -59,13 +59,16 @@ float shadow_calc( ) {
 	float delta_view = length( frag_out.vert_view.z );
 	uint idx_shadow = 0;
 
-	if( delta_view > 256.0f ) {
+	if( delta_view > 512.0 ) {
 		return 0.0;
 	}
-	else if( delta_view > 64.0f ) {
+	else if( delta_view > 256.0 ) {
+		idx_shadow = 3;
+	}
+	else if( delta_view > 64.0 ) {
 		idx_shadow = 2;
 	}
-	else if( delta_view > 16.0f ) {
+	else if( delta_view > 16.0 ) {
 		idx_shadow = 1;
 	}
 	else {
@@ -89,7 +92,7 @@ float shadow_calc( ) {
 	float depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy ).z;
 	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
 
-	if( uint( proj_coord.x * 4096 ) % 2 == uint( proj_coord.y * 4096 ) % 2 ) {
+	if( uint( proj_coord.x * 8192 ) % 2 == uint( proj_coord.y * 8192 ) % 2 ) {
 		depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 0 ] * size_texel ).z; 
 		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
 

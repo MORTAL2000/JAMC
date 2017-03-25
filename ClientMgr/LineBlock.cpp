@@ -25,15 +25,16 @@ LineBlock::LineBlock( ) :
 			auto & ec_state = entity.h_state.get( );
 
 			if( !ec_state.is_coll ) {
-				if( ec_state.id_block == -2 ) {
-					entity.is_shutdown = true;
-				}
+				return ErrorEntity::EE_Ok;
+			}
 
+			if( ec_state.id_block == -2 ) {
+				entity.is_shutdown = true;
 				return ErrorEntity::EE_Ok;
 			}
 
 			if( entity.id == client.block_mgr.get_block_loader( "Tnt" )->id ) {
-				client.thread_mgr.task_main( 6,[ &, pos = ec_state.pos ]( ) {
+				client.thread_mgr.task_main( 6, [ &, pos = ec_state.pos ]( ) {
 					client.chunk_mgr.explode_sphere( pos, 7 );
 				} );
 			}
