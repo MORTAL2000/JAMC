@@ -177,8 +177,6 @@ void Client::update( ) {
 	GL_CHECK( chunk_mgr.update( ) );
 	GL_CHECK( entity_mgr.update( ) );
 	GL_CHECK( thread_mgr.update( ) );
-
-	//gui_mgr.update_static( );
 }
 
 void Client::render( ) {

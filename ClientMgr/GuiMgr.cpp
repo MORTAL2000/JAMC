@@ -90,9 +90,10 @@ void GuiMgr::load_pages( ) {
 	add_page_loader( GraphPage( client ) );
 	add_page_loader( ConsolePage( client ) ); 
 
+	//add_page( "TestPage", "Test", PageLoader::func_null );
+
 	add_page( "Options", "Options", PageLoader::func_null );
 	add_page( "QuickBar", "QuickBar", PageLoader::func_null );
-	//add_page( "TestPage", "Test", PageLoader::func_null );
 	add_page( "Console", "Console", PageLoader::func_null );
 
 	int cnt = 1;
@@ -1293,6 +1294,9 @@ void GuiMgr::process_input( ) {
 		}
 		else if( token == "printchunkmesh" ) {
 			client.chunk_mgr.print_center_chunk_mesh( );
+		}
+		else if( token == "saveall" ) {
+			client.chunk_mgr.save_all( );
 		}
 		else if( token == "shutdownall" ) {
 			client.chunk_mgr.shutdown_all( );

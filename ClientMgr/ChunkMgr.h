@@ -229,6 +229,7 @@ public:
 	void end( );
 	void sec( );
 
+	void save_all( );
 	void shutdown_all( );
 	void wait_on_shutdown( );
 	void delete_world( );

@@ -52,6 +52,8 @@ void ChunkMgr::init( ) {
 	GL_CHECK( init_shadowmap( ) );
 	GL_CHECK( init_debug( ) );
 
+	delete_world( );
+
 	using namespace std::tr2::sys;
 	path path_world( "./World" );
 
@@ -533,6 +535,14 @@ void ChunkMgr::end( ) {
 
 void ChunkMgr::sec( ) {
 
+}
+
+void ChunkMgr::save_all( ) {
+	for( auto pair_chunk : map_chunks ) {
+		auto &chunk = pair_chunk.second.get( );
+
+		chunk_state( chunk, ChunkState::CS_Save, true );
+	}
 }
 
 void ChunkMgr::shutdown_all( ) { 
@@ -1281,7 +1291,7 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 				noise_cobble = 10 + raw_noise_2d( ( chunk.pos_gw.x + i ) * 0.01f, ( chunk.pos_gw.z + k ) * 0.01f ) * 5.0f;
 
 				auto biome = client.biome_mgr.get_biome( noise_biome );
-				
+
 				for( int j = 0; j < WorldSize::Chunk::size_y; j++ ) {
 					if( chunk.pos_gw.y + j < noise_height ) {
 						if( chunk.pos_gw.y + j < noise_height - noise_cobble ) {
@@ -1301,6 +1311,43 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 						}
 						else {
 							chunk.block_set.set_data( i, j, k, -1 );
+						}
+					}
+
+					static const int inner = 300, outer = 310, height = 40;
+
+					float a = glm::length( glm::vec2( chunk.pos_gw.x, chunk.pos_gw.z ) + glm::vec2( i, k ) );
+					int ai = a;
+
+					if( ai >= inner && ai <= outer ) {
+						if( chunk.pos_gw.y + j > chunk.ptr_noise->height[ i ][ k ] ) {
+							if( chunk.pos_gw.y + j < height ) {
+								chunk.block_set.set_data( i, j, k, block_cobble->id );
+								continue;
+							}
+
+							if( ai == inner || ai == outer ) {
+								if( chunk.pos_gw.y + j == height ) {
+									chunk.block_set.set_data( i, j, k, block_cobble->id );
+									continue;
+								}
+
+								if( chunk.pos_gw.y + j <= height + 2 ) {
+									int degree = glm::degrees( glm::asin( ( chunk.pos_gw.z + k ) / a ) );
+
+									if( degree % 2 == 0 ) {
+										chunk.block_set.set_data( i, j, k, block_cobble->id );
+									}
+								}
+							}
+						}
+						else if( chunk.pos_gw.y + j <= chunk.ptr_noise->height[ i ][ k ] ) {
+							if( chunk.pos_gw.y + j == height && ( a == inner || a == outer ) ) {
+								chunk.block_set.set_data( i, j, k, block_cobble->id );
+							}
+							else if( chunk.pos_gw.y + j >= height && chunk.pos_gw.y + j < height + 5 ) {
+								chunk.block_set.set_data( i, j, k, -1 );
+							}
 						}
 					}
 
@@ -1359,6 +1406,10 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 					if( chunk.ptr_noise->biome[ i ][ j ] == biome_base ||
 						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_hill ||
 						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_plateau ) {
+
+						if( chunk.block_set.get_data( i, chunk.ptr_noise->height[ i ][ j ] + 1, j ) != -1 ) { 
+							continue;
+						}
 
 						if( rand( ) % 1000 < perc_tree ) {
 							set_tree(
