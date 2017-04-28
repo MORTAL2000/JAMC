@@ -195,8 +195,11 @@ void ChunkMgr::render( ) {
 		GL_CHECK( render_build( ) );
 		GL_CHECK( render_pass_shadow( ) );
 		GL_CHECK( render_debug( ) );
+		//glPolygonMode( GL_FRONT_AND_BACK, GL_POINT );
+		glPointSize( 2.0f );
 		GL_CHECK( render_pass_solid( ) );
 		GL_CHECK( render_pass_trans( ) );
+		//glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	}
 }
 
@@ -493,10 +496,12 @@ void ChunkMgr::render_pass_trans( ) {
 	}
 
 	client.texture_mgr.update_uniform( "SMTerrain", "mat_light", mat_ortho_light );
+
 	if( is_flatshade )
 		client.texture_mgr.bind_program( "SMTerrainBasic" );
 	else
 		client.texture_mgr.bind_program( "SMTerrain" );
+
 	client.texture_mgr.bind_texture_array( 0, client.texture_mgr.get_texture_id( "Blocks" ) );
 
 	glDisable( GL_CULL_FACE );
@@ -534,7 +539,7 @@ void ChunkMgr::end( ) {
 }
 
 void ChunkMgr::sec( ) {
-
+	std::cout << "Num triangles: " << sm_terrain.num_primitives( ) << std::endl;
 }
 
 void ChunkMgr::save_all( ) {
@@ -1401,7 +1406,7 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 					chunk.ptr_noise->height[ i ][ j ] >= chunk.pos_gw.y &&
 					chunk.ptr_noise->height[ i ][ j ] < chunk.pos_gw.y + WorldSize::Chunk::size_y ) {
 
-					static int perc_tree = 5;
+					static int perc_tree = 50;
 
 					if( chunk.ptr_noise->biome[ i ][ j ] == biome_base ||
 						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_hill ||
@@ -1554,7 +1559,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			chunk.handle_solid_temp.ptr_buffer->list_verts.clear( );
 
 			chunk.handle_solid_temp.push_set( SMTerrain::SMTGSet(
-				SMTerrain::TypeGeometry::TG_Triangles,
+				SMTerrain::TypeGeometry::TG_Points,
 				client.texture_mgr.get_program_id( "SMTerrain" ),
 				client.texture_mgr.get_texture_id( "Blocks" )
 			) );
@@ -1840,7 +1845,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			buffer.list_sort.clear( );
 
 			chunk.handle_trans_temp.push_set( SMTerrain::SMTGSet(
-				SMTerrain::TypeGeometry::TG_Triangles,
+				SMTerrain::TypeGeometry::TG_Points,
 				client.texture_mgr.get_program_id( "SMTerrain" ),
 				client.texture_mgr.get_texture_id( "Blocks" )
 			) );
@@ -1920,6 +1925,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 				}
 			}
 
+			/*
 			std::sort(
 				buffer.list_sort.begin( ), buffer.list_sort.end( ),
 				[ ] ( std::pair< float, GLuint > const & lho, std::pair< float, GLuint > const & rho ) {
@@ -1936,8 +1942,9 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 					std::make_move_iterator( buffer.list_verts.begin( ) + buffer.list_sort[ i ].second * 6 + 6 )
 				);
 			}
+			*/
 
-			buffer.list_verts = std::move( buffer.list_temp );
+			//buffer.list_verts = std::move( buffer.list_temp );
 
 			chunk.handle_trans_temp.finalize_set( );
 
@@ -2819,44 +2826,33 @@ void ChunkMgr::print_center_chunk_mesh( ) {
 inline void put_face( SMTerrain::SMTHandle & handle, glm::ivec3 const & pos,
 	glm::vec4 const & color, FaceDirection dir, Face const & face ) {
 
-	GLuint idx_inds = ( GLuint ) handle.ptr_buffer->list_verts.size( );
-
-	VertTerrain vert {
+	handle.push_verts( { {
 		( GLuint ) ( pos.x ), ( GLuint ) ( pos.y ), ( GLuint ) ( pos.z ),
-		( GLuint ) ( color.r * 31 ), ( GLuint ) ( color.g * 31 ),
-		( GLuint ) ( color.b * 31 ), ( GLuint ) ( color.a * 31 ),
-		( GLuint ) face.id_subtex, ( GLuint ) 0,
-		( GLuint ) dir, ( GLuint ) 0
-	};
-
-	handle.push_verts( {
-		vert, vert, vert, vert, vert, vert
-	}  );
+		( GLuint ) ( color.r * 31 ), ( GLuint ) ( color.g * 31 ), ( GLuint ) ( color.b * 31 ), ( GLuint ) ( color.a * 31 ),
+		( GLuint ) face.id_subtex, 
+		( GLuint ) 0,
+		( GLuint ) dir, 
+		( GLuint ) 0
+	} } );
 }
 
 inline void put_face( SMTerrain::SMTHandle & handle, glm::ivec3 const & pos, glm::vec4 const & color, 
 	FaceDirection dir, Face const & face, glm::vec3 const & scale_verts, glm::vec2 const & scale_uvs ) {
 
-	GLuint idx_inds = ( GLuint ) handle.ptr_buffer->list_verts.size( );
-
 	GLuint scale = Directional::get_max( scale_verts );
 
-	VertTerrain vert{ 
+	handle.push_verts( { { 
 		( GLuint ) ( pos.x ), ( GLuint ) ( pos.y ), ( GLuint ) ( pos.z ),
-		( GLuint ) ( color.r * 31 ), ( GLuint ) ( color.g * 31 ), 
-		( GLuint ) ( color.b * 31 ), ( GLuint ) ( color.a * 31 ),
-		( GLuint ) face.id_subtex, ( GLuint ) 0,
-		( GLuint ) dir, ( GLuint ) scale - 1 
-	};
-
-	handle.push_verts( {
-		vert, vert, vert, vert, vert, vert
-	} );
+		( GLuint ) ( color.r * 31 ), ( GLuint ) ( color.g * 31 ), ( GLuint ) ( color.b * 31 ), ( GLuint ) ( color.a * 31 ),
+		( GLuint ) face.id_subtex, 
+		( GLuint ) 0,
+		( GLuint ) dir, 
+		( GLuint ) scale - 1 
+	} } );
 }
 
 inline void ChunkMgr::put_sort( std::vector< std::pair< float, GLuint > > & list_sort,
 	glm::vec3 & pos_gw, BlockLoader * block, FaceDirection face ) {
-
 
 	list_sort.push_back( {
 		glm::length2( pos_gw + block->faces[ face ].offset - client.display_mgr.camera.pos_camera ),

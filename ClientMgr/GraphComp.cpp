@@ -57,7 +57,7 @@ GraphComp::GraphComp( Client & client ) {
 		glm::vec4 color = { 1.0f, 0.0f, 0.0f, 1.0f };
 		glm::vec3 norm = { 0.0f, 0.0f, 1.0f };
 
-		int num_history = data->record->history.size( );
+		int num_history = ( int ) data->record->history.size( );
 
 		if( num_history <= 0 ) { 
 			return 0;

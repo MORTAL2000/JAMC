@@ -323,6 +323,7 @@
     <None Include="Shaders\SMShadowMapTrans.frag" />
     <None Include="Shaders\SMShadowMapTrans.vert" />
     <None Include="Shaders\SMTerrain.frag" />
+    <None Include="Shaders\SMTerrain.geom" />
     <None Include="Shaders\SMTerrain.vert" />
     <None Include="Shaders\SMTerrainBasic.frag" />
     <None Include="Shaders\SMTerrainBasic.vert" />

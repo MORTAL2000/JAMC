@@ -136,6 +136,15 @@
     <Filter Include="Source Files\Managers\GuiMgr\Components">
       <UniqueIdentifier>{54f3db7c-8a1c-4d8e-954c-0243dba28c8a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\Shared Mesh\Vertex">
+      <UniqueIdentifier>{4a3cf78a-dd7f-4ab9-ae3c-d516c3dbb04a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shared Mesh\Fragment">
+      <UniqueIdentifier>{38698179-8d2e-4790-89d8-2fa793dad2be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shared Mesh\Geometry">
+      <UniqueIdentifier>{73f605d4-312c-478f-88da-689f6a322a28}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -571,18 +580,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\SMBasic.frag">
-      <Filter>Resource Files\Shared Mesh</Filter>
-    </None>
-    <None Include="Shaders\SMBasic.vert">
-      <Filter>Resource Files\Shared Mesh</Filter>
-    </None>
-    <None Include="Shaders\SMTerrain.frag">
-      <Filter>Resource Files\Shared Mesh</Filter>
-    </None>
-    <None Include="Shaders\SMTerrain.vert">
-      <Filter>Resource Files\Shared Mesh</Filter>
-    </None>
     <None Include="Shaders\ShadowMap.vert">
       <Filter>Resource Files\Shadow Map</Filter>
     </None>
@@ -631,23 +628,38 @@
     <None Include="Shaders\BasicPersp.vert">
       <Filter>Resource Files\Mesh</Filter>
     </None>
-    <None Include="Shaders\SMTerrainInstance.frag">
-      <Filter>Resource Files\Shared Mesh</Filter>
-    </None>
-    <None Include="Shaders\SMTerrainInstance.vert">
-      <Filter>Resource Files\Shared Mesh</Filter>
+    <None Include="Shaders\SMBasic.frag">
+      <Filter>Resource Files\Shared Mesh\Fragment</Filter>
     </None>
     <None Include="Shaders\SMBasicProj.frag">
-      <Filter>Resource Files\Shared Mesh</Filter>
+      <Filter>Resource Files\Shared Mesh\Fragment</Filter>
     </None>
-    <None Include="Shaders\SMBasicProj.vert">
-      <Filter>Resource Files\Shared Mesh</Filter>
+    <None Include="Shaders\SMTerrain.frag">
+      <Filter>Resource Files\Shared Mesh\Fragment</Filter>
     </None>
     <None Include="Shaders\SMTerrainBasic.frag">
-      <Filter>Resource Files\Shared Mesh</Filter>
+      <Filter>Resource Files\Shared Mesh\Fragment</Filter>
+    </None>
+    <None Include="Shaders\SMTerrainInstance.frag">
+      <Filter>Resource Files\Shared Mesh\Fragment</Filter>
+    </None>
+    <None Include="Shaders\SMBasic.vert">
+      <Filter>Resource Files\Shared Mesh\Vertex</Filter>
+    </None>
+    <None Include="Shaders\SMBasicProj.vert">
+      <Filter>Resource Files\Shared Mesh\Vertex</Filter>
+    </None>
+    <None Include="Shaders\SMTerrain.vert">
+      <Filter>Resource Files\Shared Mesh\Vertex</Filter>
     </None>
     <None Include="Shaders\SMTerrainBasic.vert">
-      <Filter>Resource Files\Shared Mesh</Filter>
+      <Filter>Resource Files\Shared Mesh\Vertex</Filter>
+    </None>
+    <None Include="Shaders\SMTerrainInstance.vert">
+      <Filter>Resource Files\Shared Mesh\Vertex</Filter>
+    </None>
+    <None Include="Shaders\SMTerrain.geom">
+      <Filter>Resource Files\Shared Mesh\Geometry</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

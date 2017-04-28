@@ -658,7 +658,7 @@ public:
 		GLuint total = 0;
 
 		for( auto & cmd : list_commands ) {
-			total += cmd.count_vert / 3;
+			total += cmd.count_vert * 2;
 		}
 
 		return total;
@@ -669,7 +669,7 @@ public:
 		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 
 		glMultiDrawArraysIndirect(
-			GL_TRIANGLES,
+			GL_POINTS,
 			BUFFER_OFFSET( ( GLuint ) 0 ),
 			num_commands,
 			sizeof( SMTCommand ) );
@@ -682,7 +682,7 @@ public:
 		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 
 		glMultiDrawArraysIndirect(
-			GL_TRIANGLES,
+			GL_POINTS,
 			BUFFER_OFFSET( idx_start * sizeof( SMTCommand ) ),
 			length,
 			sizeof( SMTCommand ) );

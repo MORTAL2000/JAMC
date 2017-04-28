@@ -22,10 +22,17 @@ void TextureMgr::init( ) {
 	printf( "\nCreating shaders...\n\n" );
 
 	for( auto & shader : {
-		"BasicOrtho", "BasicPersp", "SMBasic", "SMBasicProj", "Terrain", "SMTerrain", "SMTerrainBasic", "SMTerrainInstance", 
-		"Selector", "Entity", "ShadowMap", "SMShadowMapSolid", "SMShadowMapTrans" } ) {
+		"BasicOrtho", "BasicPersp", "SMBasic", "SMBasicProj", 
+		"Terrain", "SMTerrainBasic", "SMTerrainInstance", "Selector", 
+		"Entity", "ShadowMap", "SMShadowMapSolid", "SMShadowMapTrans" } ) {
 
-		loader_add( shader );
+		loader_add( shader, false );
+	}
+
+	for( auto & shader : {
+		"SMTerrain" } ) {
+
+		loader_add( shader, true );
 	}
 
 	printf( "\nLoading Textures...\n" );
@@ -85,12 +92,17 @@ void TextureMgr::init( ) {
 	}
 }
 
-void TextureMgr::loader_add( std::string const & name ) { 
+void TextureMgr::loader_add( std::string const & name, bool is_geom ) { 
 	ShaderLoader loader;
 	loader.name = name;
 
 	printf( "Loading shader: %s\n", name.c_str( ) );
-	load_shader( path_shaders + name + ".vert", path_shaders + name + ".frag", loader.id_program );
+	if( is_geom ) {
+		load_shader( path_shaders + name + ".geom", path_shaders + name + ".vert", path_shaders + name + ".frag", loader.id_program );
+	}
+	else { 
+		load_shader( path_shaders + name + ".vert", path_shaders + name + ".frag", loader.id_program );
+	}
 
 	list_shaders.emplace_back( loader );
 	map_shaders.insert( { name, ( GLuint ) list_shaders.size( ) - 1 } );
@@ -376,6 +388,30 @@ void TextureMgr::read_file( std::string const & path_file, std::string & data ) 
 	fileStream.close( );
 }
 
+void TextureMgr::load_geom_shader( std::string const & path_file, GLuint & id_geom ) { 
+	std::string data_geom;
+	read_file( path_file, data_geom );
+
+	char const * ptr_data_frag = data_geom.c_str( );
+	GLint result = GL_FALSE;
+	int length;
+
+	// Compile geometry shader
+	id_geom = glCreateShader( GL_GEOMETRY_SHADER );
+	glShaderSource( id_geom, 1, &ptr_data_frag, NULL );
+	glCompileShader( id_geom );
+
+	// Check geometry shader
+	glGetShaderiv( id_geom, GL_COMPILE_STATUS, &result );
+	glGetShaderiv( id_geom, GL_INFO_LOG_LENGTH, &length );
+
+	if( length ) {
+		std::vector< char > error_frag( ( length > 1 ) ? length : 1 );
+		glGetShaderInfoLog( id_geom, length, NULL, &error_frag[ 0 ] );
+		std::cout << &error_frag[ 0 ] << std::endl;
+	}
+}
+
 void TextureMgr::load_vert_shader( std::string const & path_file, GLuint & id_vert ) {
 	std::string data_vert;
 	read_file( path_file, data_vert );
@@ -446,6 +482,35 @@ void TextureMgr::load_shader( std::string const & path_vert, std::string const &
 		printf( "Error loading shader: %s", error_prog.data( ) );
 	}
 
+	glDeleteShader( id_vert );
+	glDeleteShader( id_frag );
+}
+
+void TextureMgr::load_shader( std::string const & path_geom, std::string const & path_vert, std::string const & path_frag, GLuint & id_program ) { 
+	GLuint id_geom, id_vert, id_frag;
+	GLint result = GL_FALSE;
+	int length;
+
+	load_geom_shader( path_geom, id_geom );
+	load_vert_shader( path_vert, id_vert );
+	load_frag_shader( path_frag, id_frag );
+
+	id_program = glCreateProgram( );
+	glAttachShader( id_program, id_geom );
+	glAttachShader( id_program, id_vert );
+	glAttachShader( id_program, id_frag );
+	glLinkProgram( id_program );
+
+	glGetProgramiv( id_program, GL_LINK_STATUS, &result );
+	glGetProgramiv( id_program, GL_INFO_LOG_LENGTH, &length );
+
+	if( length ) {
+		std::vector< char > error_prog( ( length > 1 ) ? length : 1 );
+		glGetProgramInfoLog( id_program, length, NULL, &error_prog[ 0 ] );
+		printf( "Error loading shader: %s", error_prog.data( ) );
+	}
+
+	glDeleteShader( id_geom );
 	glDeleteShader( id_vert );
 	glDeleteShader( id_frag );
 }

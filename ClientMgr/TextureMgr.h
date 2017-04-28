@@ -61,10 +61,11 @@ private:
 	void load_fonts( );
 
 	void read_file( std::string const & path_file, std::string & data );
+	void load_geom_shader( std::string const & path_file, GLuint & id_geom );
 	void load_vert_shader( std::string const & path_file, GLuint & id_vert );
 	void load_frag_shader( std::string const & path_file, GLuint & id_frag );
-	void load_shader( std::string const & path_vert, 
-		std::string const & path_frag, GLuint & id_program );
+	void load_shader( std::string const & path_vert, std::string const & path_frag, GLuint & id_program );
+	void load_shader( std::string const & path_geom, std::string const & path_vert, std::string const & path_frag, GLuint & id_program );
 
 public:
 	TextureMgr( Client & client );
@@ -76,7 +77,7 @@ public:
 	void end( ) { }
 	void sec( ) { }
 
-	void loader_add( std::string const & name );
+	void loader_add( std::string const & name, bool is_geom );
 
 	ShaderLoader const * get_program( std::string const & name );
 	GLuint const get_program_id( std::string const & name );
