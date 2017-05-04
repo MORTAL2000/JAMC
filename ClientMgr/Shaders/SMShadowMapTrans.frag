@@ -2,13 +2,15 @@
 
 uniform sampler2DArray frag_sampler;
 
-in vec3 frag_uv;
-in vec4 frag_color;
+in G_DATA {
+	vec4 color;
+	vec3 uvs;
+} g_in;
 
 layout(location = 0) out float frag_depth;
 
 void main() {
-	vec4 color = texture( frag_sampler, frag_uv ) * frag_color;
+	vec4 color = texture( frag_sampler, g_in.uvs ) * g_in.color;
 
 	if( color.a < 0.8 ) {
 		discard;

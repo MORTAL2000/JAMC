@@ -217,6 +217,8 @@ private:
 	void chunk_save( Chunk & chunk );
 	void chunk_remove( Chunk & chunk );
 
+	void chunk_interact( Chunk & chunk );
+
 public:
 	ChunkMgr( Client & client );
 	~ChunkMgr( );
@@ -300,6 +302,7 @@ public:
 	}
 
 	void print_center_chunk_mesh( );
+	void flow_center_chunk( );
 
 	inline void put_sort(
 		std::vector< std::pair< float, GLuint > > & list_sort,

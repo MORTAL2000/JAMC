@@ -52,6 +52,7 @@ enum ChunkState {
 	CS_TMesh,
 	CS_SBuffer,
 	CS_TBuffer,
+	CS_Interact,
 	CS_Save,
 	CS_Remove,
 	CS_Size
@@ -97,6 +98,11 @@ public:
 	bool is_shutdown;
 	bool is_working;
 	bool is_wait;
+
+	bool is_flow;
+
+	static int const cld_interact = 100;
+	float last_interact;
 
 public:
 	Chunk( );

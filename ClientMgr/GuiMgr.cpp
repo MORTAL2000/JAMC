@@ -1306,6 +1306,9 @@ void GuiMgr::process_input( ) {
 			//while( client.chunk_mgr.
 			client.chunk_mgr.delete_world( );
 		}
+		else if( token == "chunkflow" ) { 
+			client.chunk_mgr.flow_center_chunk( );
+		}
 		else {
 			out.str( "" );
 			out << "Command: '" << token << "' is not a valid command.";

@@ -539,7 +539,28 @@ void ChunkMgr::end( ) {
 }
 
 void ChunkMgr::sec( ) {
-	std::cout << "Num triangles: " << sm_terrain.num_primitives( ) << std::endl;
+	int unsigned num_current = sm_terrain.num_primitives( );
+	float num_current_mill = num_current / 1000;
+	num_current_mill = ( int ) num_current_mill;
+	num_current_mill /= 1000;
+
+	int unsigned num_total = 0;
+	for( auto & chunk : map_chunks ) {
+		num_total += chunk.second.get( ).handle_solid.num_primitives( );
+		num_total += chunk.second.get( ).handle_trans.num_primitives( );
+	}
+	float num_total_mill = num_total / 1000;
+	num_total_mill = ( int ) num_total_mill;
+	num_total_mill /= 1000;
+
+	float size = num_total * sizeof( VertTerrain );
+	size /= 1024;
+	size /= 1024;
+	size *= 100;
+	size = ( int ) size;
+	size /= 100;
+
+	std::cout << "Num triangles: " << num_current_mill << "(MM)/" << num_total_mill << "(MM) size: " << size << "MB" << std::endl;
 }
 
 void ChunkMgr::save_all( ) {
@@ -932,6 +953,10 @@ void ChunkMgr::chunk_update( Chunk & chunk ) {
 		else if( chunk.states[ CS_Save ] ) {
 			chunk_save( chunk );
 		}
+		else if( chunk.states[ CS_Interact ] && client.time_mgr.get_time( TimeStrings::GAME ) - chunk.last_interact >= Chunk::cld_interact ) { 
+			chunk_interact( chunk );
+			chunk.last_interact = client.time_mgr.get_time( TimeStrings::GAME );
+		}
 	}
 	else if( !chunk.is_loaded ) {
 		if( chunk.states[ CS_Init ] ) {
@@ -1048,6 +1073,8 @@ void ChunkMgr::chunk_add( glm::ivec3 const & pos_lw ) {
 	}
 
 	chunk_state( *chunk, ChunkState::CS_Init, true );
+
+	chunk->last_interact = client.time_mgr.get_time( TimeStrings::GAME );
 
 	chunk->is_working = false;
 }
@@ -1406,7 +1433,7 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 					chunk.ptr_noise->height[ i ][ j ] >= chunk.pos_gw.y &&
 					chunk.ptr_noise->height[ i ][ j ] < chunk.pos_gw.y + WorldSize::Chunk::size_y ) {
 
-					static int perc_tree = 50;
+					static int perc_tree = 5;
 
 					if( chunk.ptr_noise->biome[ i ][ j ] == biome_base ||
 						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_hill ||
@@ -1925,7 +1952,6 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 				}
 			}
 
-			/*
 			std::sort(
 				buffer.list_sort.begin( ), buffer.list_sort.end( ),
 				[ ] ( std::pair< float, GLuint > const & lho, std::pair< float, GLuint > const & rho ) {
@@ -1937,14 +1963,14 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			buffer.list_temp.reserve( buffer.list_verts.size( ) );
 
 			for( GLuint i = 0; i < buffer.list_sort.size( ); ++i ) {
+				//buffer.list_temp.push_back( buffer.list_verts[ buffer.list_sort[ i ].second ] );
 				buffer.list_temp.insert( buffer.list_temp.end( ),
-					std::make_move_iterator( buffer.list_verts.begin( ) + buffer.list_sort[ i ].second * 6 ),
-					std::make_move_iterator( buffer.list_verts.begin( ) + buffer.list_sort[ i ].second * 6 + 6 )
+					std::make_move_iterator( buffer.list_verts.begin( ) + buffer.list_sort[ i ].second ),
+					std::make_move_iterator( buffer.list_verts.begin( ) + buffer.list_sort[ i ].second + 1 )
 				);
 			}
-			*/
 
-			//buffer.list_verts = std::move( buffer.list_temp );
+			buffer.list_verts = std::move( buffer.list_temp );
 
 			chunk.handle_trans_temp.finalize_set( );
 
@@ -2191,6 +2217,78 @@ void ChunkMgr::chunk_remove( Chunk & chunk ) {
 	} );
 }
 
+void ChunkMgr::chunk_interact( Chunk & chunk ) {
+	static int id_water = client.block_mgr.get_block_loader( "Water" )->id;
+	chunk.is_working = true;
+
+	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
+	int priority = 3;
+	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+
+	client.thread_mgr.task_main( priority, [ &, id_water=id_water ] ( ) {
+		if( chunk.is_flow ) {
+			bool did_flow = false;
+
+			glm::ivec3 pos;
+			glm::ivec3 pos_below;
+
+			for( int i = 0; i < WorldSize::Chunk::size_x; ++i ) {
+				for( int k = 0; k < WorldSize::Chunk::size_z; ++k ) {
+					pos = chunk.pos_gw + glm::ivec3 { i, 0, k };
+					pos_below = chunk.pos_gw + glm::ivec3 { i, -1, k };
+
+					if( client.chunk_mgr.get_block( pos ) == id_water &&
+						client.chunk_mgr.get_block( pos_below ) == -1 ) {
+
+
+						client.chunk_mgr.set_block( pos, -1 );
+						client.chunk_mgr.set_block( pos_below, id_water );
+						did_flow = true;
+					}
+				}
+			}
+
+			for( int j = 1; j < WorldSize::Chunk::size_y; ++j ) { 
+				for( int i = 0; i < WorldSize::Chunk::size_x; ++i ) {
+					for( int k = 0; k < WorldSize::Chunk::size_z; ++k ) {
+						/*
+						pos = chunk.pos_gw + glm::ivec3 { i, j, k };
+						pos_below = chunk.pos_gw + glm::ivec3 { i, j - 1, k };
+
+						if( client.chunk_mgr.get_block( pos ) == id_water &&
+							client.chunk_mgr.get_block( pos_below ) == -1 ) {
+
+
+							client.chunk_mgr.set_block( pos, -1 );
+							client.chunk_mgr.set_block( pos_below, id_water );
+							did_flow = true;
+						}*/
+
+						if( chunk.block_set.get_data( i, j, k ) == id_water &&
+							chunk.block_set.get_data( i, j - 1, k ) == -1 ) {
+						
+							chunk.block_set.set_data( i, j, k, -1 );
+							chunk.block_set.set_data( i, j - 1, k, id_water );
+							did_flow = true;
+						}
+					}
+				}
+			}
+
+			if( did_flow ) { 
+				chunk_state( chunk, CS_TMesh, true );
+				chunk_state( chunk, CS_Interact, true );
+			}
+			else { 
+				chunk_state( chunk, CS_Interact, false );
+				chunk.is_flow = false;
+			}
+		}
+
+		chunk.is_working = false;
+	} );
+}
+
 void ChunkMgr::toggle_chunk_debug( ) { 
 	is_chunk_debug = !is_chunk_debug;
 }
@@ -2253,6 +2351,8 @@ int ChunkMgr::get_block( glm::vec3 const & pos_gw ) {
 }
 
 void ChunkMgr::set_block( glm::ivec3 const & pos_gw, int const id ) {
+	static int id_water = client.block_mgr.get_block_loader( "Water" )->id;
+
 	glm::ivec3 pos_lw;
 	Directional::pos_gw_to_lw( pos_gw, pos_lw );
 	
@@ -2271,6 +2371,11 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, int const id ) {
 	}
 
 	chunk.block_set.set_data( pos_lc.x, pos_lc.y, pos_lc.z, id );
+
+	if( id == id_water ) { 
+		chunk.is_flow = true;
+		chunk_state( chunk, CS_Interact, true );
+	}
 
 	{
 		std::lock_guard< std::mutex > lock( chunk.mtx_adj );
@@ -2311,6 +2416,7 @@ void ChunkMgr::set_block( glm::vec3 const & pos_gw, int const id ) {
 }
 
 void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const id ) {
+	static int id_water = client.block_mgr.get_block_loader( "Water" )->id;
 	Directional::pos_gw_to_lw( pos_gw, state.pos_lw );
 
 	if( state.pos_lw == state.pos_lw_last && state.iter != map_chunks.end() ) {
@@ -2319,7 +2425,13 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 
 		if( chunk.is_loaded &&
 			chunk.block_set.get_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
+
 			chunk.block_set.set_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
+
+			if( id == id_water ) {
+				chunk.is_flow = true;
+				chunk_state( chunk, CS_Interact, true );
+			}
 
 			state.map_queue_dirty.insert( { chunk.hash_lw, chunk } );
 			std::lock_guard< std::mutex > lock( chunk.mtx_adj );
@@ -2367,7 +2479,13 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 
 			if( chunk.is_loaded &&
 				chunk.block_set.get_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
+
 				chunk.block_set.set_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
+
+				if( id == id_water ) {
+					chunk.is_flow = true;
+					chunk_state( chunk, CS_Interact, true );
+				}
 
 				state.map_queue_dirty.insert( { Directional::get_hash( state.pos_lw ), chunk } );
 				std::lock_guard< std::mutex > lock( chunk.mtx_adj );
@@ -2821,6 +2939,17 @@ void ChunkMgr::print_center_chunk_mesh( ) {
 		chunk.handle_solid.print_vbo( ) << "\n" << 
 		"commands: " << "\n" <<
 		chunk.handle_solid.print_commands( ) << "\n";
+}
+
+void ChunkMgr::flow_center_chunk( ) { 
+	auto iter_chunks = map_chunks.find( Directional::get_hash( pos_center_chunk_lw ) );
+	if( iter_chunks == map_chunks.end( ) ) {
+		return;
+	}
+
+	auto & chunk = iter_chunks->second.get( );
+	chunk.is_flow = true;
+	chunk_state( chunk, CS_Interact, true );
 }
 
 inline void put_face( SMTerrain::SMTHandle & handle, glm::ivec3 const & pos,

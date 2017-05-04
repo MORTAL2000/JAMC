@@ -23,14 +23,14 @@ void TextureMgr::init( ) {
 
 	for( auto & shader : {
 		"BasicOrtho", "BasicPersp", "SMBasic", "SMBasicProj", 
-		"Terrain", "SMTerrainBasic", "SMTerrainInstance", "Selector", 
-		"Entity", "ShadowMap", "SMShadowMapSolid", "SMShadowMapTrans" } ) {
+		"Terrain", "SMTerrainInstance", "Selector", "Entity", 
+		"ShadowMap" } ) {
 
 		loader_add( shader, false );
 	}
 
 	for( auto & shader : {
-		"SMTerrain" } ) {
+		"SMTerrain", "SMShadowMapSolid", "SMShadowMapTrans", "SMTerrainBasic" } ) {
 
 		loader_add( shader, true );
 	}

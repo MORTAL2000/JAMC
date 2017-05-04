@@ -121,7 +121,7 @@ void main() {
 	vec3 diff_emitter = pos_camera.xyz - g_in.vert_model.xyz;
 	float len_emitter = length( diff_emitter );
 
-	//if( len_emitter <= size_torch ) {
+	if( len_emitter <= size_torch ) {
 		vec3 norm_emitter = normalize( diff_emitter );
 		float grad_emitter = 
 			clamp( dot( g_in.norm, norm_emitter ), 0.0, 1.0 ) * 
@@ -129,7 +129,7 @@ void main() {
 		out_color += 
 			vec4( 1.0f, 0.5, 0.0, 0.0 ) * 
 			vec4( grad_emitter, grad_emitter, grad_emitter, 1.0 );
-	//}
+	}
 
 	out_color *= texture( frag_sampler, g_in.uvs ) * g_in.color;
 }

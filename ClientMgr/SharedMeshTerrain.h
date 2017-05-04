@@ -295,6 +295,16 @@ public:
 			}
 		}
 
+		int unsigned num_primitives( ) {
+			int unsigned cnt = 0;
+
+			for( GLuint i = 0; i < list_cmds.size( ); ++i ) {
+				cnt += list_cmds[ i ].second.count_vert * 2;
+			}
+
+			return cnt;
+		}
+
 		void clear( ) {
 			std::lock_guard< std::mutex > lock( mtx_cmds );
 

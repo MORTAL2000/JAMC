@@ -145,6 +145,15 @@
     <Filter Include="Resource Files\Shared Mesh\Geometry">
       <UniqueIdentifier>{73f605d4-312c-478f-88da-689f6a322a28}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\Shadow Map\Fragment">
+      <UniqueIdentifier>{ffddc84c-9233-4686-a749-4a6ef2139c04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shadow Map\Geometry">
+      <UniqueIdentifier>{bf45bb3a-de74-4fa7-9b02-69f6feaa34f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shadow Map\Vertex">
+      <UniqueIdentifier>{0ee457fa-2ee0-4003-8e98-bcc45de1475a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -580,12 +589,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\ShadowMap.vert">
-      <Filter>Resource Files\Shadow Map</Filter>
-    </None>
-    <None Include="Shaders\ShadowMap.frag">
-      <Filter>Resource Files\Shadow Map</Filter>
-    </None>
     <None Include="Shaders\Entity.frag">
       <Filter>Resource Files\Mesh</Filter>
     </None>
@@ -603,18 +606,6 @@
     </None>
     <None Include="Shaders\Terrain.vert">
       <Filter>Resource Files\Mesh</Filter>
-    </None>
-    <None Include="Shaders\SMShadowMapSolid.frag">
-      <Filter>Resource Files\Shadow Map</Filter>
-    </None>
-    <None Include="Shaders\SMShadowMapSolid.vert">
-      <Filter>Resource Files\Shadow Map</Filter>
-    </None>
-    <None Include="Shaders\SMShadowMapTrans.frag">
-      <Filter>Resource Files\Shadow Map</Filter>
-    </None>
-    <None Include="Shaders\SMShadowMapTrans.vert">
-      <Filter>Resource Files\Shadow Map</Filter>
     </None>
     <None Include="Shaders\BasicOrtho.frag">
       <Filter>Resource Files\Mesh</Filter>
@@ -660,6 +651,33 @@
     </None>
     <None Include="Shaders\SMTerrain.geom">
       <Filter>Resource Files\Shared Mesh\Geometry</Filter>
+    </None>
+    <None Include="Shaders\ShadowMap.frag">
+      <Filter>Resource Files\Shadow Map\Fragment</Filter>
+    </None>
+    <None Include="Shaders\SMShadowMapSolid.frag">
+      <Filter>Resource Files\Shadow Map\Fragment</Filter>
+    </None>
+    <None Include="Shaders\SMShadowMapTrans.frag">
+      <Filter>Resource Files\Shadow Map\Fragment</Filter>
+    </None>
+    <None Include="Shaders\SMShadowMapSolid.geom">
+      <Filter>Resource Files\Shadow Map\Geometry</Filter>
+    </None>
+    <None Include="Shaders\SMShadowMapTrans.vert">
+      <Filter>Resource Files\Shadow Map\Vertex</Filter>
+    </None>
+    <None Include="Shaders\ShadowMap.vert">
+      <Filter>Resource Files\Shadow Map\Vertex</Filter>
+    </None>
+    <None Include="Shaders\SMShadowMapSolid.vert">
+      <Filter>Resource Files\Shadow Map\Vertex</Filter>
+    </None>
+    <None Include="Shaders\SMShadowMapTrans.geom">
+      <Filter>Resource Files\Shadow Map\Geometry</Filter>
+    </None>
+    <None Include="Shaders\SMTerrainBasic.geom">
+      <Filter>Resource Files\Shadow Map\Geometry</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
