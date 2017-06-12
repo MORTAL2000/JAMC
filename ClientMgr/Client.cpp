@@ -32,6 +32,8 @@ void Client::thread_main_loop( ) {
 	}
 }
 
+static int cnt_sleep = 0;
+
 void Client::main_loop( ) { 
 	time_mgr.end_record( RecordStrings::FRAME );
 
@@ -100,6 +102,7 @@ void Client::main_loop( ) {
 	client.time_mgr.end_record( RecordStrings::RENDER_SWAP );
 
 	if( !display_mgr.is_vsync && display_mgr.is_limiter ) {
+		
 		float time_sleep = TIME_FRAME_MILLI -
 			time_mgr.get_record_curr( RecordStrings::UPDATE_PRE ) -
 			time_mgr.get_record_curr( RecordStrings::UPDATE ) -
@@ -118,6 +121,38 @@ void Client::main_loop( ) {
 
 			time_mgr.push_record( RecordStrings::SLEEP );
 		}
+		
+		/*
+		static float time_min_prec = 3.0f;
+
+		float time_sleep = TIME_FRAME_MILLI -
+			time_mgr.get_record_curr( RecordStrings::UPDATE_PRE ) -
+			time_mgr.get_record_curr( RecordStrings::UPDATE ) -
+			time_mgr.get_record_curr( RecordStrings::TASK_MAIN ) -
+			time_mgr.get_record_curr( RecordStrings::RENDER ) -
+			time_mgr.get_record_curr( RecordStrings::RENDER_SWAP );
+
+		if( time_sleep > 0 ) {
+			time_mgr.begin_record( RecordStrings::SLEEP );
+			time_mgr.end_record( RecordStrings::SLEEP );
+
+			float time_curr_sleep;
+
+			if( time_sleep > time_min_prec ) { 
+				while( ( time_curr_sleep = time_mgr.get_record_curr( RecordStrings::SLEEP ) ) < time_sleep - time_min_prec ) {
+					std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+					time_mgr.end_record( RecordStrings::SLEEP );
+					cnt_sleep += 1;
+				}
+			}
+
+			while( ( time_curr_sleep = time_mgr.get_record_curr( RecordStrings::SLEEP ) ) < time_sleep ) {
+				time_mgr.end_record( RecordStrings::SLEEP );
+			}
+
+			time_mgr.push_record( RecordStrings::SLEEP );
+		}
+		*/
 	}
 }
 
@@ -230,6 +265,9 @@ void Client::end( ) {
 }
 
 void Client::sec( ) {
+	std::cout << "Sleep cnt: " << cnt_sleep << std::endl;
+	cnt_sleep = 0;
+
 	resource_mgr.sec( );
 	time_mgr.sec( );
 	thread_mgr.sec( );

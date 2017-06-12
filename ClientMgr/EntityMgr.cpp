@@ -30,7 +30,7 @@ EntityMgr::EntityMgr( Client & client ) :
 
 EntityMgr::~EntityMgr( ) { }
 
-static int num_entity = 10000;
+static int num_entity = 2000;
 
 void EntityMgr::init( ) { 
 	printf( "\n*** EntityMgr ***\n" );
@@ -325,6 +325,7 @@ void EntityMgr::entity_add( std::string const & str_name, EFCustom ef_custom ) {
 	}
 
 	if( !client.resource_mgr.allocate( h_entity ) ) {
+		/*
 		client.thread_mgr.task_main( 5, [ & ] ( ) {
 			auto & out = client.display_mgr.out;
 			out.str( "" );
@@ -332,6 +333,7 @@ void EntityMgr::entity_add( std::string const & str_name, EFCustom ef_custom ) {
 			//client.gui_mgr.print_to_console( out.str( ) );
 			std::cout << out.str( ) << std::endl;
 		} );
+		*/
 		return;
 	}
 
