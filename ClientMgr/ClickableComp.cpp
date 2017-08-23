@@ -17,7 +17,7 @@ ClickableComp::ClickableComp( Client & client ) {
 			return 1;
 		}
 
-		auto data = comp->get_data< ClickableData >( );
+		auto data = comp->get< ClickableData >( );
 		data->func_down = func_null;
 		data->func_hold = func_null;
 		data->func_up = func_null;
@@ -36,15 +36,15 @@ ClickableComp::ClickableComp( Client & client ) {
 	};
 
 	func_down = [ ] ( PComp * comp ) {
-		return comp->get_data< ClickableData >( )->func_down( comp->parent ); 
+		return comp->get< ClickableData >( )->func_down( comp->parent ); 
 	};
 
 	func_hold = [ ] ( PComp * comp ) {
-		return comp->get_data< ClickableData >( )->func_hold( comp->parent );
+		return comp->get< ClickableData >( )->func_hold( comp->parent );
 	};
 
 	func_up = [ ] ( PComp * comp ) {
-		return comp->get_data< ClickableData >( )->func_up( comp->parent );
+		return comp->get< ClickableData >( )->func_up( comp->parent );
 	};
 }
 

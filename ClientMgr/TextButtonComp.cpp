@@ -27,7 +27,7 @@ TextButtonComp::TextButtonComp( Client & client ) {
 
 		// Clickable
 		data->comp_clickable = comp->add_comp( "Clickable", "Clickable", [ &client = client, data ] ( PComp * comp ) { 
-			data->data_clickable = comp->get_data < ClickableComp::ClickableData >( );
+			data->data_clickable = comp->get < ClickableComp::ClickableData >( );
 
 			data->data_clickable->func_down = [ &client = client, data ] ( PComp * comp ) { 
 				data->data_border->color = data->color_down;
@@ -60,7 +60,7 @@ TextButtonComp::TextButtonComp( Client & client ) {
 
 		// Overable
 		data->comp_overable = comp->add_comp( "Overable", "Overable", [ &client = client, data ] ( PComp * comp ) {
-			data->data_overable = comp->get_data < OverableComp::OverableData >( );
+			data->data_overable = comp->get < OverableComp::OverableData >( );
 
 			data->data_overable->func_enter = [ &client = client, data ] ( PComp * comp ) {
 				if( !( data->data_border->color == data->color_down ) ) {
@@ -86,7 +86,7 @@ TextButtonComp::TextButtonComp( Client & client ) {
 		// Button Border
 		data->comp_border = comp->add_comp( "Border", "BorderImage", [ &client = client, data ] ( PComp * comp ) {
 
-			data->data_border = comp->get_data< BorderImageComp::BorderImageData >( );
+			data->data_border = comp->get< BorderImageComp::BorderImageData >( );
 
 			data->data_border->set_texture( client, "Gui", "Default/ButtonBG", 8 );
 			data->data_border->padding_border = 4;
@@ -98,7 +98,7 @@ TextButtonComp::TextButtonComp( Client & client ) {
 		data->comp_label = comp->add_comp( "Label", "Label", [ data ] ( PComp * comp ) {
 			comp->anchor = { 0.5f, 0.5f };
 
-			data->data_label = comp->get_data< LabelComp::LabelData >( );
+			data->data_label = comp->get< LabelComp::LabelData >( );
 
 			data->data_label->size_text = 12;
 			data->data_label->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Center;
@@ -111,7 +111,7 @@ TextButtonComp::TextButtonComp( Client & client ) {
 	};
 
 	func_update = [ ] ( PComp * comp ) { 
-		auto data = comp->get_data< TextButtonData >( );
+		auto data = comp->get< TextButtonData >( );
 
 		data->comp_border->dim = comp->dim;
 		data->comp_border->offset = -data->comp_border->dim / 2;

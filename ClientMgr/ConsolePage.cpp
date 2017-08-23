@@ -33,7 +33,7 @@ ConsolePage::ConsolePage( Client & client ) {
 		data_console->list_history.resize( ConsoleData::num_history_max );
 
 		auto resizable_root = page->add_comp( "ResizableRoot", "Resizable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim;
@@ -46,14 +46,14 @@ ConsolePage::ConsolePage( Client & client ) {
 		} );
 
 		auto border_root = resizable_root->add_comp( "BorderBG", "BorderImage", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
+			auto data = comp->get< BorderImageComp::BorderImageData >( );
 			data->padding_border = 4;
 
 			return 0;
 		} );
 
 		auto clickable_root = border_root->add_comp( "ClickableRoot", "Clickable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ClickableComp::ClickableData >( );
+			auto data = comp->get< ClickableComp::ClickableData >( );
 			data->func_hold = [ &client = client ] ( PComp * comp ) {
 				comp->page->root->offset += client.input_mgr.get_mouse_delta( );
 
@@ -64,7 +64,7 @@ ConsolePage::ConsolePage( Client & client ) {
 		} );
 
 		auto resizable_text = page->add_comp( "ResizableText", "Resizable", [ &client = client, data_console ] ( PComp * comp ) {
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client, data_console ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim;
@@ -84,7 +84,7 @@ ConsolePage::ConsolePage( Client & client ) {
 		} );
 		
 		data_console->comp_border_text = resizable_text->add_comp( "BorderText", "BorderImage", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
+			auto data = comp->get< BorderImageComp::BorderImageData >( );
 			data->padding_border = 4;
 
 			return 0;
@@ -93,7 +93,7 @@ ConsolePage::ConsolePage( Client & client ) {
 		for( unsigned int i = 0; i < ConsoleData::num_text_max; ++i ) { 
 			data_console->list_labels.push_back( data_console->comp_border_text->add_comp( "Label" + std::to_string( i ), "Label", [ &client = client , data_console, i ] ( PComp * comp ) {
 				comp->is_visible = false;
-				auto data = comp->get_data< LabelComp::LabelData >( );
+				auto data = comp->get< LabelComp::LabelData >( );
 				data->text = comp->name;
 
 				return 0;
@@ -101,7 +101,7 @@ ConsolePage::ConsolePage( Client & client ) {
 		}
 
 		auto resizable_scroll = data_console->comp_border_text->add_comp( "ResizableScrollBar", "Resizable", [ &client = client, data_console ] ( PComp * comp ) {
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 			data->func_resize = [ &client = client, data_console ] ( PComp * comp ) {
 				comp->dim = { 24, comp->parent->dim.y };
 				comp->offset = { -comp->dim.x, -comp->dim.y / 2 };
@@ -115,7 +115,7 @@ ConsolePage::ConsolePage( Client & client ) {
 		data_console->comp_slider = resizable_scroll->add_comp( "Slider", "SliderV", [ &client = client, data_console ] ( PComp * comp ) {
 			comp->anchor = { 1.0f, 0.5f };
 
-			data_console->data_slider = comp->get_data< SliderVComp::SliderVData >( );
+			data_console->data_slider = comp->get< SliderVComp::SliderVData >( );
 			data_console->data_slider->set_bounds( 0.0f, 1.0f );
 			data_console->data_slider->set_value( 0.0f );
 			data_console->data_slider->set_labels_visible( false );
@@ -133,7 +133,7 @@ ConsolePage::ConsolePage( Client & client ) {
 		} );
 
 		auto resizable_input = page->add_comp( "ResizableInput", "Resizable", [ &client = client, data_console ] ( PComp * comp ) {
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client, data_console ] ( PComp * comp ) {
 				comp->dim.y = data_console->dy_input;
@@ -150,7 +150,7 @@ ConsolePage::ConsolePage( Client & client ) {
 
 		
 		auto textfield_input = resizable_input->add_comp( "TextFieldInput", "TextField", [ &client = client, data_console ] ( PComp * comp ) {
-			data_console->data_input = comp->get_data< TextFieldComp::TextFieldData >( );
+			data_console->data_input = comp->get< TextFieldComp::TextFieldData >( );
 			data_console->data_input->text = "";
 
 			return 0;

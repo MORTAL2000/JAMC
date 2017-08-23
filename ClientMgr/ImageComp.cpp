@@ -25,7 +25,7 @@ ImageComp::ImageComp( Client & client ) {
 	};
 
 	func_mesh = [ &client = client ] ( PComp * comp ) {
-		auto data = comp->get_data< ImageData >( );
+		auto data = comp->get< ImageData >( );
 		auto & color = data->color;
 		glm::vec3 norm = { 0.0f, 0.0f, 1.0f };
 

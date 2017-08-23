@@ -2,148 +2,139 @@
 
 #include <vector>
 #include <iostream>
+#include <mutex>
 
-#include "glm\glm.hpp"
+struct RLEPair {
+	short id;
+	short cnt;
+};
 
-class BlockSet {
-private:
-	struct RLEPair {
-		short id;
-		short cnt;
-	};
+struct RLERun {
+	std::vector< RLEPair > run;
 
-private:
-	glm::ivec3 vec_size;
-	std::vector< RLEPair > list_rle;
-	int unsigned idx_rle;
-	int unsigned idx_max;
-	std::vector< short > list_data;
+	int unsigned count( );
+	int unsigned count_id( short id );
 
-public:
-	BlockSet( );
-	~BlockSet( );
+	short get( short index );
+	void set( short index, short id );
 
-private:
-
-public:
-	void resize( int unsigned x, int unsigned y, int unsigned z );
-
-	inline short get_rle( int unsigned x, int unsigned y, int unsigned z ) {
-		short unsigned idx_target =
-			x * vec_size.y * vec_size.z +
-			y * vec_size.z +
-			z;
-
-		if( idx_target >= idx_rle ) return -2;
-
-		int unsigned i = 0;
-		int unsigned idx = 0;
-
-		for( i = 0; i < list_rle.size( ); ++i ) {
-			idx += list_rle[ i ].cnt;
-		}
-	}
-
-	// Case 1: Larger than allocated index.
-	// Case 2: Larger than the current index.
-	// Case 3: Exactly at the current index.
-	// Case 4: Splitting some indexed run length.
-	inline void set_rle( int unsigned x, int unsigned y, int unsigned z, short data ) {
-		int unsigned idx_target =
-			x * vec_size.y * vec_size.z +
-			y * vec_size.z + z;
-
-		// If target index is larger than allocated index.
-		if( idx_target > idx_max ) return;
-
-		// If target index is at current index.
-		if( idx_rle == idx_target ) {
-			//std::cout << "Add at curr idx" << std::endl;
-			// If the data is the same as the last run length.
-			if( !list_rle.empty( ) && data == list_rle.back( ).id ) {
-				list_rle.back( ).cnt += 1;
-			}
-			// Else the data is a different run data.
-			else {
-				list_rle.push_back( { data, 1 } );
-			}
-
-			idx_rle += 1;
-
-			return;
-		}
-		// If target index is after the current index.
-		else if( idx_target > idx_rle ) {
-			//std::cout << "Add after curr idx" << std::endl;
-
-			idx_target = idx_target - idx_rle;
-			list_rle.push_back( { -1, ( short ) idx_target } );
-			list_rle.push_back( { data, 1 } );
-
-			idx_rle = idx_target + 1;
-
-			return;
-		}
-
-
-		// If the target index is within an existing run length
-		int unsigned i = 0;
-		int unsigned idx = 0;
-		int unsigned idx_last = 0;
-		//std::cout << "Add in run" << std::endl;
-
-		while( idx <= idx_target ) {
-			idx += list_rle[ i ].cnt;
-			i++;
-		}
-
-		i--;
-		idx_last = idx - list_rle[ i ].cnt;
-
-		if( idx_target == idx_last ) {
-			//std::cout << "start of run" << std::endl;
-			list_rle.insert( list_rle.begin( ) + i, { data, 1 } );
-
-			list_rle[ i + 1 ].cnt--;
-			if( !list_rle[ i + 1 ].cnt ) {
-				list_rle.erase( list_rle.begin( ) + i + 1 );
-			}
-		}
-		else if( idx_target == idx - 1 ) {
-			//std::cout << "end of run" << std::endl;
-			list_rle[ i ].cnt--;
-			list_rle.insert( list_rle.begin( ) + i + 1, { data, 1 } );
-		}
-		else {
-			//std::cout << "middle of run" << std::endl;
-			list_rle[ i ].cnt = idx_target - idx_last;
-			list_rle.insert( list_rle.begin( ) + i + 1, { data, 1 } );
-			list_rle.insert( list_rle.begin( ) + i + 2, { list_rle[ i ].id, ( short ) ( idx - idx_target ) } );
-		}
-	}
-
-	inline void set_data( int unsigned x, int unsigned y, int unsigned z, short data ) {
-		list_data[ x * vec_size.y * vec_size.z + y * vec_size.z + z ] = data;
-	}
-
-	inline short get_data( int unsigned x, int unsigned y, int unsigned z ) {
-		return list_data[ x * vec_size.y * vec_size.z + y * vec_size.z + z ];
-	}
-
-	inline void set_data( glm::ivec3 pos, short data ) {
-		list_data[ pos.x * vec_size.y * vec_size.z + pos.y * vec_size.z + pos.z ] = data;
-	}
-
-	inline short get_data( glm::ivec3 pos ) {
-		return list_data[ pos.x * vec_size.y * vec_size.z + pos.y * vec_size.z + pos.z ];
-	}
-
-	void encode( );
-	void decode( );
-
-	void clear_data( );
-	void clear_rle( );
+	void clear( );
+	void clear_fill( short size, short id );
 
 	void print( );
 };
 
+template< int unsigned t_x, int unsigned t_y, int unsigned t_z >
+struct BlockRegion { 
+	typedef std::array< std::array< std::array< short, t_y >, t_z >, t_x > BlockData;
+	BlockData blocks;
+
+	BlockRegion( ) :
+		blocks( ) { 
+		for( int unsigned i = 0; i < t_x; ++i ) {
+			for( int unsigned j = 0; j < t_y; ++j ) {
+				for( int unsigned k = 0; k < t_z; ++k ) {
+					blocks[ i ][ k ][ j ] = -2;
+				}
+			}
+		}
+	}
+
+	short get( int unsigned x, int unsigned y, int unsigned z ) { 
+		return blocks[ x ][ z ][ y ];
+	}
+
+	void set( int unsigned x, int unsigned y, int unsigned z, short id ) { 
+		blocks[ x ][ z ][ y ] = id;
+	}
+};
+
+template< int unsigned t_x, int unsigned t_z >
+struct BlockSet {
+	std::array< std::array< RLERun, t_z >, t_x > mat_runs;
+	std::array< std::mutex, t_x > mat_mutex;
+
+	void clear( ) { 
+		for( int unsigned i = 0; i < t_x; ++i ) {
+			std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
+			for( int unsigned j = 0; j < t_z; ++j ) {
+				mat_runs[ i ][ j ].clear( );
+			}
+		}
+	};
+	
+	void clear_fill( int unsigned size, short id ) { 
+		for( int unsigned i = 0; i < t_x; ++i ) {
+			std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
+			for( int unsigned j = 0; j < t_z; ++j ) {
+				mat_runs[ i ][ j ].clear_fill( size, id );
+			}
+		}
+	};
+
+	void set( int unsigned x, int unsigned y, int unsigned z, short id ) { 
+		std::lock_guard< std::mutex > lock( mat_mutex[ x ] );
+		mat_runs[ x ][ z ].set( y, id );
+	};
+
+	short get( int unsigned x, int unsigned y, int unsigned z ) { 
+		std::lock_guard< std::mutex > lock( mat_mutex[ x ] );
+		return mat_runs[ x ][ z ].get( y );
+	};
+
+	template< int unsigned t_y >
+	void set_data( BlockRegion< t_x, t_y, t_z > & region ) {
+		for( int unsigned i = 0; i < t_x; ++i ) {
+			std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
+
+			for( int unsigned j = 0; j < t_z; ++j ) {
+				mat_runs[ i ][ j ].run.clear( );
+
+				short id = -2;
+				int unsigned cnt = 0;
+				for( int unsigned k = 0; k < t_y; ++k ) {
+					if( region.get( i, k, j ) == id ) {
+						++cnt;
+					}
+					else {
+						if( cnt != 0 ) {
+							mat_runs[ i ][ j ].run.push_back( { id, ( short ) cnt } );
+						}
+						id = region.get( i, k, j );
+						cnt = 1;
+					}
+				}
+
+				if( cnt != 0 ) {
+					mat_runs[ i ][ j ].run.push_back( { id, ( short ) cnt } );
+				}
+			}
+		}
+	};
+
+	template< int unsigned t_y >
+	void get_data( BlockRegion< t_x, t_y, t_z > & region ) {
+		for( int unsigned i = 0; i < t_x; ++i ) {
+			std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
+
+			for( int unsigned j = 0; j < t_z; ++j ) {
+
+				int unsigned k = 0;
+				for( auto & pair : mat_runs[ i ][ j ].run ) {
+					if( k + pair.cnt >= t_y ) {
+						for( int unsigned l = k; l < t_y; ++l ) {
+							region.set( i, l, j, pair.id );
+						}
+						break;
+					}
+
+					for( int unsigned l = k; l < k + pair.cnt; ++l ) {
+						region.set( i, l, j, pair.id );
+					}
+
+					k += pair.cnt;
+				}
+			}
+		}
+	};
+};

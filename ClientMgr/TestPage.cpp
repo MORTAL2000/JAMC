@@ -22,7 +22,7 @@ TestPage::TestPage( Client & client ) {
 		page->root->dim = { 500, 500 };
 
 		auto comp_resize = page->add_comp( "RootResizable", "Resizable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim;
@@ -40,7 +40,7 @@ TestPage::TestPage( Client & client ) {
 		} );
 
 		auto clickable = comp_border->add_comp( "ClickableBorder", "Clickable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ClickableComp::ClickableData >( );
+			auto data = comp->get< ClickableComp::ClickableData >( );
 			data->func_hold = [ &client = client ] ( PComp * comp ) {
 				comp->page->root->offset += client.input_mgr.get_mouse_delta( );
 
@@ -53,8 +53,8 @@ TestPage::TestPage( Client & client ) {
 		comp_border->add_comp( "TestButton", "TextButton", [ ] ( PComp * comp ) {
 			comp->anchor = { 0.5f, 0.5f };
 
-			auto button_data = comp->get_data< TextButtonComp::TextButtonData >( );
-			auto label_data = button_data->comp_label->get_data< LabelComp::LabelData >( );
+			auto button_data = comp->get< TextButtonComp::TextButtonData >( );
+			auto label_data = button_data->comp_label->get< LabelComp::LabelData >( );
 
 			label_data->text = "TestButton";
 
@@ -64,7 +64,7 @@ TestPage::TestPage( Client & client ) {
 		} );
 
 		comp_border->add_comp( "TitleLabel", "Label", [ ] ( PComp * comp ) {
-			auto data = comp->get_data< LabelComp::LabelData >( );
+			auto data = comp->get< LabelComp::LabelData >( );
 
 			data->alignment_v = LabelComp::LabelData::AlignVertical::AV_Bottom;
 
@@ -94,7 +94,7 @@ TestPage::TestPage( Client & client ) {
 		comp_border->add_comp( "TestSlider", "Slider", [ &client = client ] ( PComp * comp ) {
 			comp->offset += glm::ivec2{ 0, 100 };
 
-			auto data = comp->get_data< SliderComp::SliderData >( );
+			auto data = comp->get< SliderComp::SliderData >( );
 			data->set_bounds( 0.0f, 359.0f );
 			data->set_value( 180 );
 
@@ -116,7 +116,7 @@ TestPage::TestPage( Client & client ) {
 		comp_border->add_comp( "TestSliderV", "SliderV", [ &client = client ] ( PComp * comp ) {
 			comp->offset += glm::ivec2 { 0, -200 };
 
-			auto data = comp->get_data< SliderVComp::SliderVData >( );
+			auto data = comp->get< SliderVComp::SliderVData >( );
 			data->set_bounds( 0.0f, 359.0f );
 			data->set_value( 180 );
 
@@ -140,7 +140,7 @@ TestPage::TestPage( Client & client ) {
 		comp_border->add_comp( "TestTextField", "TextField", [ &client = client ] ( PComp * comp ) {
 			comp->dim = { 400, 33 };
 			comp->offset = { -200, 0 };
-			auto data = comp->get_data< TextFieldComp::TextFieldData >( );
+			auto data = comp->get< TextFieldComp::TextFieldData >( );
 			data->data_label->text = "Hello World";
 
 			return 0;
@@ -150,7 +150,7 @@ TestPage::TestPage( Client & client ) {
 			comp->anchor = { 0.0f, 0.0f };
 			comp->offset = { 16 + 300, 16 };
 
-			auto data = comp->get_data< TextButtonComp::TextButtonData >( );
+			auto data = comp->get< TextButtonComp::TextButtonData >( );
 
 			data->data_label->text = "Close";
 

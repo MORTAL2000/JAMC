@@ -28,7 +28,7 @@ TextFieldComp::TextFieldComp( Client & client ) {
 		data->pos_hl_e = 0;
 
 		auto resizable = comp->add_comp( "Resizable", "Resizable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 			data->func_resize = [ &client = client ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim;
 				comp->offset = -comp->dim / 2;
@@ -40,7 +40,7 @@ TextFieldComp::TextFieldComp( Client & client ) {
 		} );
 
 		auto border = resizable->add_comp( "Border", "BorderImage", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
+			auto data = comp->get< BorderImageComp::BorderImageData >( );
 			data->padding_border = 4;
 
 			return 0;
@@ -50,7 +50,7 @@ TextFieldComp::TextFieldComp( Client & client ) {
 			comp->anchor = { 0.0f, 0.5f };
 			comp->offset = { data->padding, 0 };
 
-			data->data_label = comp->get_data< LabelComp::LabelData >( );
+			data->data_label = comp->get< LabelComp::LabelData >( );
 			data->data_label->size_text = 16;
 			data->data_label->alignment_h = LabelComp::LabelData::AH_Right;
 			data->data_label->alignment_v = LabelComp::LabelData::AV_Center;
@@ -63,7 +63,7 @@ TextFieldComp::TextFieldComp( Client & client ) {
 			comp->dim = { data->data_label->size_text * 2 / 3, data->data_label->size_text + 6 };
 			comp->offset = { data->padding, -comp->dim.y / 2 };
 
-			auto data_highlight = comp->get_data< ImageComp::ImageData >( );
+			auto data_highlight = comp->get< ImageComp::ImageData >( );
 			data_highlight->set_texture( client, "Materials", "Details/Cursor" );
 			data_highlight->color = { 0.0f, 0.0f, 0.6f, 0.3f };
 
@@ -75,14 +75,14 @@ TextFieldComp::TextFieldComp( Client & client ) {
 			comp->dim = { data->data_label->size_text + 6 , data->data_label->size_text + 6 };
 			comp->offset = { data->padding + -comp->dim.x / 2, -comp->dim.y / 2 };
 
-			auto data_cursor = comp->get_data< ImageComp::ImageData >( );
+			auto data_cursor = comp->get< ImageComp::ImageData >( );
 			data_cursor->set_texture( client, "Gui", "Default/Cursor" );
 
 			return 0;
 		} );
 
 		auto clickable = border->add_comp( "ClickableBorder", "Clickable", [ &client = client, data ] ( PComp * comp ) {
-			auto data_clickable = comp->get_data< ClickableComp::ClickableData >( );
+			auto data_clickable = comp->get< ClickableComp::ClickableData >( );
 
 			data_clickable->func_down = [ &client = client, data ] ( PComp * comp ) {
 				data->pos_curs = client.input_mgr.get_mouse( ).x - comp->page->pos.x - comp->pos.x - data->padding;
@@ -128,7 +128,7 @@ TextFieldComp::TextFieldComp( Client & client ) {
 	};
 
 	func_update = [ &client = client ] ( PComp * comp ) {
-		auto data = comp->get_data< TextFieldData >( );
+		auto data = comp->get< TextFieldData >( );
 		data->num_d = ( comp->dim.x - data->padding * 2 ) / ( data->data_label->size_text * 2 / 3 );
 
 		data->data_label->text.clear( );

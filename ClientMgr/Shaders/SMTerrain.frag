@@ -32,10 +32,14 @@ uniform uint num_cascades;
 uniform float bias_l;
 uniform float bias_h;
 
-const vec2 pcf_lookup[ 4 ] = {
+const vec2 pcf_lookup[ 8 ] = {
+	vec2( 1, 0 ),
+	vec2( -1, 0 ),
+	vec2( 0, 1 ),
+	vec2( 0, -1 ),
+	vec2( 1, 1 ),
 	vec2( -1, -1 ),
 	vec2( 1, -1 ),
-	vec2( 1, 1 ),
 	vec2( -1, 1 )
 };
 
@@ -89,20 +93,11 @@ float shadow_calc( ) {
 	float depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy ).z;
 	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
 
-	if( uint( proj_coord.x * 8192 ) % 2 == uint( proj_coord.y * 8192 ) % 2 ) {
-		depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 0 ] * size_texel ).z; 
-		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
+	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ ( gl_SampleID + 0 ) % 8 ] * size_texel ).z; 
+	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
 
-		depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 2 ] * size_texel ).z; 
-		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
-	}
-	else {
-		depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 1 ] * size_texel ).z; 
-		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
-
-		depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ 3 ] * size_texel ).z; 
-		shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
-	}
+	depth_pcf = texture( frag_shadow[ idx_shadow ], proj_coord.xy + pcf_lookup[ ( gl_SampleID + 1 ) % 8 ] * size_texel ).z; 
+	shadow += depth_curr - bias > depth_pcf ? 1.0 : 0.0;
 
 	return shadow / 3.0f;
 }

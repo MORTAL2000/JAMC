@@ -67,8 +67,8 @@ public:
 	int hash_lw;
 	int hash_lw_2d;
 
-	std::vector< std::pair< PosBlock, short > > list_block_manip;
-	BlockSet block_set;
+	//std::vector< std::pair< PosBlock, short > > list_block_manip;
+	BlockSet< WorldSize::Chunk::size_x, WorldSize::Chunk::size_z > block_set;
 
 	std::recursive_mutex mtx_state;
 	int cnt_states;
@@ -84,9 +84,9 @@ public:
 	SMTerrain::SMTHandle handle_trans;
 	SMTerrain::SMTHandle handle_trans_temp;
 
-	std::vector< std::tuple< float, GLuint, glm::vec3 > > list_incl_solid;
-	std::vector< std::tuple< float, GLuint, glm::vec3 > > list_incl_trans;
-
+	//std::vector< std::tuple< float, GLuint, glm::vec3 > > list_incl_solid;
+	//std::vector< std::tuple< float, GLuint, glm::vec3 > > list_incl_trans;
+	
 	ChunkFile * ptr_file;
 	ChunkNoise * ptr_noise;
 

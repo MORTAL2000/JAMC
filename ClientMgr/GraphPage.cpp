@@ -21,7 +21,7 @@ GraphPage::GraphPage( Client & client ) {
 		auto data_page = page->add_data< GraphPageData >( );
 
 		auto clickable = page->add_comp( "Clickable", "Clickable", [ &client = client, data_page ] ( PComp * comp ) {
-			auto data = comp->get_data< ClickableComp::ClickableData >( );
+			auto data = comp->get< ClickableComp::ClickableData >( );
 
 			data->func_hold = [ &client = client ] ( PComp * comp ) {
 				comp->offset += client.input_mgr.get_mouse_delta( );
@@ -48,7 +48,7 @@ GraphPage::GraphPage( Client & client ) {
 		} );
 
 		auto resizable = page->add_comp( "Resizable", "Resizable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim;
@@ -61,14 +61,14 @@ GraphPage::GraphPage( Client & client ) {
 		} );
 
 		resizable->add_comp( "Border", "BorderImage", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
+			auto data = comp->get< BorderImageComp::BorderImageData >( );
 			data->padding_border = 4;
 
 			return 0;
 		} );
 
 		data_page->comp_graph = resizable->add_comp( "Graph", "Graph", [ &client = client, data_page ] ( PComp * comp ) {
-			data_page->data_graph = comp->get_data< GraphComp::GraphData >( );
+			data_page->data_graph = comp->get< GraphComp::GraphData >( );
 
 			return 0;
 		} );
@@ -78,14 +78,14 @@ GraphPage::GraphPage( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 6, -6 - comp->dim.y };
 
-			auto data = comp->get_data< ImageComp::ImageData >( );
+			auto data = comp->get< ImageComp::ImageData >( );
 			data->id_subtex = client.texture_mgr.get_texture_layer( "Gui", "Default/Graph" );
 
 			return 0;
 		} );
 
 		data_page->comp_menu = page->add_comp( "Menu", "Menu", PageComponentLoader::func_null );
-		data_page->data_menu = data_page->comp_menu->get_data< MenuComp::MenuData >( );
+		data_page->data_menu = data_page->comp_menu->get< MenuComp::MenuData >( );
 
 		data_page->comp_menu->is_visible = false;
 		data_page->comp_menu->anchor = { 0.5f, 0.5f };

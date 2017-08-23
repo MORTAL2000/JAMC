@@ -16,7 +16,7 @@ WormBlock::WormBlock( )	:
 			auto & ec_state = entity.h_state.get( );
 			ec_state.is_gravity = false;
 
-			auto & ec_worm = entity.get_data< ECWorm >( ).get( );
+			auto & ec_worm = entity.get< ECWorm >( ).get( );
 			ec_worm.num_visited = 0;
 			ec_worm.cnt_step = 0;
 
@@ -44,7 +44,7 @@ WormBlock::WormBlock( )	:
 		},
 		[ ] ( Client & client, Entity & entity ) {
 			auto & ec_state = entity.h_state.get( );
-			auto & ec_worm = entity.get_data< ECWorm >( ).get( );
+			auto & ec_worm = entity.get< ECWorm >( ).get( );
 			int time_now = client.time_mgr.get_time( TimeStrings::GAME );
 
 			ec_worm.cnt_step++;

@@ -33,7 +33,7 @@ SliderVComp::SliderVComp( Client & client ) {
 		data->func_write = func_null;
 
 		auto resizable = comp->add_comp( "Resizable", "Resizable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data < ResizableComp::ResizableData >( );
+			auto data = comp->get < ResizableComp::ResizableData >( );
 			data->func_resize = [ ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim;
 				comp->offset = -comp->dim / 2;
@@ -45,12 +45,12 @@ SliderVComp::SliderVComp( Client & client ) {
 		} );
 
 		data->comp_border = resizable->add_comp( "Border", "BorderImage", [ &client = client, data ] ( PComp * comp ) {
-			data->data_border = comp->get_data< BorderImageComp::BorderImageData >( );
+			data->data_border = comp->get< BorderImageComp::BorderImageData >( );
 			data->data_border->padding_border = 4;
 			data->data_border->set_texture( client, "Gui", "Default/SliderBG", 8 );
 
 			auto overable = comp->add_comp( "Overable", "Overable", [ &client = client, data ] ( PComp * comp ) {
-				auto data_over = comp->get_data< OverableComp::OverableData >( );
+				auto data_over = comp->get< OverableComp::OverableData >( );
 
 				data_over->func_enter = [ &client = client, data ] ( PComp * comp ) {
 					data->data_border->color = { 0.5f, 0.5f, 0.5f, 1.0f };
@@ -82,7 +82,7 @@ SliderVComp::SliderVComp( Client & client ) {
 			} );
 
 			auto clickable = comp->add_comp( "Clickable", "Clickable", [ &client = client, data ] ( PComp * comp ) {
-				auto data_click = comp->get_data< ClickableComp::ClickableData >( );
+				auto data_click = comp->get< ClickableComp::ClickableData >( );
 
 				data_click->func_hold = [ &client = client, data ] ( PComp * comp ) {
 					int posl_mouse = client.input_mgr.get_mouse( ).y - ( comp->page->pos.y + data->comp_bar->pos.y );
@@ -112,7 +112,7 @@ SliderVComp::SliderVComp( Client & client ) {
 		} );
 
 		data->comp_bar = comp->add_comp( "Bar", "BorderImage", [ &client = client, data ] ( PComp * comp ) {
-			data->data_bar = comp->get_data< BorderImageComp::BorderImageData >( );
+			data->data_bar = comp->get< BorderImageComp::BorderImageData >( );
 			data->data_bar->padding_border = 4;
 			data->data_bar->set_texture( client, "Gui", "Default/SliderBG", 8 );
 
@@ -124,7 +124,7 @@ SliderVComp::SliderVComp( Client & client ) {
 			comp->anchor = { 0.5f, 1.0f };
 			comp->offset = { 0.0f, 3.0f };
 
-			data->data_label_title = comp->get_data< LabelComp::LabelData >( );
+			data->data_label_title = comp->get< LabelComp::LabelData >( );
 			data->data_label_title->size_text = 12;
 			data->data_label_title->alignment_v = LabelComp::LabelData::AlignVertical::AV_Top;
 			data->data_label_title->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Center;
@@ -138,7 +138,7 @@ SliderVComp::SliderVComp( Client & client ) {
 			comp->anchor = { 1.0f, 0.0f };
 			comp->offset = { 3.0f, 1.0f };
 
-			data->data_label_left = comp->get_data< LabelComp::LabelData >( );
+			data->data_label_left = comp->get< LabelComp::LabelData >( );
 			data->data_label_left->size_text = 10;
 			data->data_label_left->alignment_v = LabelComp::LabelData::AlignVertical::AV_Top;
 			data->data_label_left->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Right;
@@ -152,7 +152,7 @@ SliderVComp::SliderVComp( Client & client ) {
 			comp->anchor = { 1.0f, 1.0f };
 			comp->offset = { 3.0f, -1.0f };
 
-			data->data_label_right = comp->get_data< LabelComp::LabelData >( );
+			data->data_label_right = comp->get< LabelComp::LabelData >( );
 			data->data_label_right->size_text = 10;
 			data->data_label_right->alignment_v = LabelComp::LabelData::AlignVertical::AV_Bottom;
 			data->data_label_right->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Right;
@@ -165,7 +165,7 @@ SliderVComp::SliderVComp( Client & client ) {
 			comp->anchor = { 1.0f, 0.5f };
 			comp->offset = { 3.0f, 0.0f };
 
-			data->data_label_value = comp->get_data< LabelComp::LabelData >( );
+			data->data_label_value = comp->get< LabelComp::LabelData >( );
 			data->data_label_value->size_text = 12;
 			data->data_label_value->alignment_v = LabelComp::LabelData::AlignVertical::AV_Center;
 			data->data_label_value->alignment_h = LabelComp::LabelData::AlignHorizontal::AH_Right;
@@ -175,7 +175,7 @@ SliderVComp::SliderVComp( Client & client ) {
 		} );
 
 		data->comp_slider = comp->add_comp( "Slider", "BorderImage", [ &client = client, data ] ( PComp * comp ) {
-			data->data_slider = comp->get_data< BorderImageComp::BorderImageData >( );
+			data->data_slider = comp->get< BorderImageComp::BorderImageData >( );
 			data->data_slider->padding_border = 4;
 			data->data_slider->set_texture( client, "Gui", "Default/SliderBG", 8 );
 
@@ -186,7 +186,7 @@ SliderVComp::SliderVComp( Client & client ) {
 	};
 
 	func_update = [ &client = client ] ( PComp * comp ) {
-		auto data = comp->get_data< SliderVData >( );
+		auto data = comp->get< SliderVData >( );
 
 		data->length_bar = comp->dim.y - data->data_border->padding_border * 2;
 

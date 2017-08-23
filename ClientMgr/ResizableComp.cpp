@@ -26,7 +26,7 @@ ResizableComp::ResizableComp( Client & client ) {
 
 	func_update = [ &client = client ] ( PComp * comp ) {
 		comp->dim = comp->parent->dim;
-		auto data = comp->get_data< ResizableData >( );
+		auto data = comp->get< ResizableData >( );
 		auto iter_children = comp->list_comps.begin( );
 
 		while( iter_children != comp->list_comps.end( ) ) { 

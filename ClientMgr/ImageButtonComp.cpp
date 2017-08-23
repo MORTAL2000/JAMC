@@ -20,14 +20,14 @@ ImageButtonComp::ImageButtonComp( Client & client ) {
 		data->color_down = { 1.0f, 0.5f, 0.5f, 1.0f };
 
 		data->comp_border = comp->add_comp( "Border", "BorderImage", [ &client = client, data ] ( PComp * comp ) {
-			data->data_border = comp->get_data< BorderImageComp::BorderImageData >( );
+			data->data_border = comp->get< BorderImageComp::BorderImageData >( );
 			data->data_border->padding_border = 4;
 			
 			return 0;
 		} );
 
 		auto clickable = data->comp_border->add_comp( "Clickable", "Clickable", [ &client = client, data ] ( PComp * comp ) {
-			auto data_clickable = comp->get_data< ClickableComp::ClickableData >( );
+			auto data_clickable = comp->get< ClickableComp::ClickableData >( );
 
 			data_clickable->func_down = [ &client = client, data ] ( PComp * comp ) {
 				data->data_border->color = data->color_down;
@@ -55,7 +55,7 @@ ImageButtonComp::ImageButtonComp( Client & client ) {
 		} );
 
 		auto overable = data->comp_border->add_comp( "Overable", "Overable", [ &client = client, data ] ( PComp * comp ) {
-			auto data_overable = comp->get_data< OverableComp::OverableData >( );
+			auto data_overable = comp->get< OverableComp::OverableData >( );
 
 			data_overable->func_enter = [ &client = client, data ] ( PComp * comp ) {
 				if( !( data->data_border->color == data->color_down ) ) {
@@ -79,7 +79,7 @@ ImageButtonComp::ImageButtonComp( Client & client ) {
 		} );
 
 		data->comp_image = comp->add_comp( "Image", "Image", [ &client = client, data ] ( PComp * comp ) {
-			data->data_image = comp->get_data< ImageComp::ImageData >( );
+			data->data_image = comp->get< ImageComp::ImageData >( );
 
 			return 0;
 		} );
@@ -88,7 +88,7 @@ ImageButtonComp::ImageButtonComp( Client & client ) {
 	};
 
 	func_update = [ &client = client ] ( PComp * comp ) {
-		auto data = comp->get_data< ImageButtonComp::ImageButtonData >( );
+		auto data = comp->get< ImageButtonComp::ImageButtonData >( );
 
 		data->comp_border->dim = comp->dim;
 		data->comp_border->offset = -comp->dim / 2;

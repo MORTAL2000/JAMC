@@ -26,7 +26,7 @@ ContainerComp::ContainerComp( Client & client ) {
 	};
 
 	func_update = [ &client = client ] ( PComp * comp ) {
-		auto data = comp->get_data< ContainerData >( );
+		auto data = comp->get< ContainerData >( );
 		data->func_resize( comp );
 		data->func_reposition( comp );
 

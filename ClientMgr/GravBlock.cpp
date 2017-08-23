@@ -18,7 +18,7 @@ GravBlock::GravBlock( ) :
 				( rand( ) % 10000 - 5000 ) / 10.0f );
 			ec_state.dim = { 1.0f, 1.0f, 1.0f };
 
-			auto & ec_block = entity.get_data< ECGravBlock >( ).get( );
+			auto & ec_block = entity.get< ECGravBlock >( ).get( );
 			ec_block.time_life = std::rand( ) % 5000 + 5000;
 
 			return ErrorEntity::EE_Ok;
@@ -30,7 +30,7 @@ GravBlock::GravBlock( ) :
 		},
 		[ ] ( Client & client, Entity & entity ) {
 			auto & ec_state = entity.h_state.get( );
-			auto & ec_block = entity.get_data< ECGravBlock >( ).get( );
+			auto & ec_block = entity.get< ECGravBlock >( ).get( );
 			float frict = 0.5f;
 
 			if( ec_state.is_coll ) {

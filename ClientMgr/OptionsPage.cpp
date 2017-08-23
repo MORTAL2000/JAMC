@@ -19,7 +19,7 @@ OptionsPage::OptionsPage( Client & client ) {
 		page->root->dim = { 200, 500 };
 
 		auto resizable = page->add_comp( "Resizable", "Resizable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ parent = comp->parent ] ( PComp * comp ) {
 				comp->dim = parent->dim;
@@ -32,7 +32,7 @@ OptionsPage::OptionsPage( Client & client ) {
 		} );
 		
 		auto clickable = page->add_comp( "Clickable", "Clickable", [ &client = client ] ( PComp * comp ) { 
-			auto data = comp->get_data< ClickableComp::ClickableData >( );
+			auto data = comp->get< ClickableComp::ClickableData >( );
 			data->func_hold = [ &client = client ] ( PComp * comp ) { 
 				comp->offset += client.input_mgr.get_mouse_delta( );
 
@@ -43,7 +43,7 @@ OptionsPage::OptionsPage( Client & client ) {
 		} );
 
 		auto border = resizable->add_comp( "Border", "BorderImage", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
+			auto data = comp->get< BorderImageComp::BorderImageData >( );
 			data->set_texture( client, "Gui", "Default/PageBG", 8 );
 			data->padding_border = 4;
 
@@ -55,7 +55,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 6, -6 - comp->dim.y };
 			
-			auto data = comp->get_data< ImageComp::ImageData >( );
+			auto data = comp->get< ImageComp::ImageData >( );
 			data->id_subtex = client.texture_mgr.get_texture_layer( "Gui", "Default/Cog" );
 
 			return 0;
@@ -65,7 +65,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 1.0f, 0.5f };
 			comp->offset = { 6, 0 };
 
-			auto data = comp->get_data< LabelComp::LabelData >( );
+			auto data = comp->get< LabelComp::LabelData >( );
 			data->text = "Options";
 			data->size_text = 20;
 
@@ -84,7 +84,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0, 1.0f };
 			comp->offset = { 12, -36 - 6 - ( 54 ) };
 
-			auto data = comp->get_data < SliderComp::SliderData >( );
+			auto data = comp->get < SliderComp::SliderData >( );
 			data->data_label_title->text = "Sun Position";
 			data->set_bounds( 0, 359 );
 			data->set_value( client.chunk_mgr.get_sun_deg( ) );
@@ -108,7 +108,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0, 1.0f };
 			comp->offset = { 12, -36 - 6 - 2 * ( 54 + 5 ) };
 
-			auto data = comp->get_data < SliderComp::SliderData >( );
+			auto data = comp->get < SliderComp::SliderData >( );
 			data->data_label_title->text = "Camera Fov";
 			data->set_bounds( 40, 160 );
 			data->set_value( client.display_mgr.fov );
@@ -133,7 +133,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - ( 25 + 5 ) };
 
-			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+			auto data = comp->get< CheckboxComp::CheckboxData >( );
 
 			data->data_label->text = "Sun Paused";
 
@@ -158,7 +158,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 2 * ( 25 + 5 ) };
 
-			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+			auto data = comp->get< CheckboxComp::CheckboxData >( );
 
 			data->data_label->text = "Flatshade";
 
@@ -183,7 +183,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 3 * ( 25 + 5 ) };
 
-			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+			auto data = comp->get< CheckboxComp::CheckboxData >( );
 
 			data->data_label->text = "Wireframe";
 
@@ -208,7 +208,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 4 * ( 25 + 5 ) };
 
-			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+			auto data = comp->get< CheckboxComp::CheckboxData >( );
 
 			data->data_label->text = "FPS Limiter";
 
@@ -233,7 +233,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 5 * ( 25 + 5 ) };
 
-			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+			auto data = comp->get< CheckboxComp::CheckboxData >( );
 
 			data->data_label->text = "Vsync";
 
@@ -258,7 +258,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 6 * ( 25 + 5 ) };
 
-			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+			auto data = comp->get< CheckboxComp::CheckboxData >( );
 
 			data->data_label->text = "Render Solid";
 
@@ -283,7 +283,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 7 * ( 25 + 5 ) };
 
-			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+			auto data = comp->get< CheckboxComp::CheckboxData >( );
 
 			data->data_label->text = "Render Transparent";
 
@@ -308,7 +308,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 8 * ( 25 + 5 ) };
 
-			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+			auto data = comp->get< CheckboxComp::CheckboxData >( );
 
 			data->data_label->text = "Shadow Solids";
 
@@ -333,7 +333,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 8, -36 - 6 - 2 * ( 54 + 5 ) - ( 10 ) - 9 * ( 25 + 5 ) };
 
-			auto data = comp->get_data< CheckboxComp::CheckboxData >( );
+			auto data = comp->get< CheckboxComp::CheckboxData >( );
 
 			data->data_label->text = "Shadow Transparents";
 
@@ -358,7 +358,7 @@ OptionsPage::OptionsPage( Client & client ) {
 			comp->anchor = { 0.0f, 0.0f };
 			comp->offset = { 16, 16 };
 
-			auto data = comp->get_data< TextButtonComp::TextButtonData >( );
+			auto data = comp->get< TextButtonComp::TextButtonData >( );
 
 			data->data_label->text = "Close";
 

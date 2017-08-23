@@ -503,7 +503,7 @@ public:
 		GLuint idx_buffer;
 		GLuint type_data;
 		GLuint num_data;
-		GLuint offset_data;
+		GLuint offset;
 	};
 
 	typedef SharedMeshAttribute SMAttribute;
@@ -723,13 +723,13 @@ public:
 		list_instance_buffers.push_back( { GLuint( ), type_buffer, stride } );
 	}
 
-	void attach_vertex_attribute( GLenum type_data, GLuint num_data, GLuint offset_data ) {
-		list_vertex_attributes.push_back( { 0, type_data, num_data, offset_data } );
+	void attach_vertex_attribute( GLenum type_data, GLuint num_data, GLuint offset ) {
+		list_vertex_attributes.push_back( { 0, type_data, num_data, offset } );
 	}
 
-	void attach_instance_attribute( GLenum type_data, GLuint num_data, GLuint offset_data ) { 
+	void attach_instance_attribute( GLenum type_data, GLuint num_data, GLuint offset ) { 
 		if( !list_isntance_buffers.empty( ) ) {
-			list_instance_attributes.push_back( { list_instance_buffers.size( ) - 1, type_data, num_data, offset_data } );
+			list_instance_attributes.push_back( { list_instance_buffers.size( ) - 1, type_data, num_data, offset } );
 		}
 	}
 
@@ -813,7 +813,7 @@ public:
 			std::cout << "offset: " << offset_byte << std::endl;
 
 			idx_attrib += 1;
-			offset_byte += attrib.num_data * attrib.offset_data;
+			offset_byte += attrib.num_data * attrib.offset;
 		}
 
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, id_ibo );

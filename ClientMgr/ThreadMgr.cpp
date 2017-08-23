@@ -109,6 +109,43 @@ void ThreadMgr::update( ) {
 	for( int i = 0; i < funcs_main.size( ); i++ ) {
 		total += ( int ) funcs_main[ i ].size( );
 	}
+	
+	static int unsigned cnt = 0;
+
+	/*
+	if( cnt++ % 4 == 0 ) {
+		//std::ostringstream out;
+		out.str( "" );
+		int cnt = 0;
+
+		for( auto & queue : funcs_main ) {
+			cnt += queue.size( );
+		}
+		out << "Main: C: " << cnt_main_total << " Q:" << cnt;
+		client.gui_mgr.print_to_console( out.str( ) );
+
+		for( auto & queue : funcs_io ) {
+			cnt += queue.size( );
+		}
+		out.str( "" );
+		out << "IO: C: " << cnt_io_total << " Q:" << cnt;
+		client.gui_mgr.print_to_console( out.str( ) );
+
+		for( auto & queue : funcs_sync ) {
+			cnt += queue.size( );
+		}
+		out.str( "" );
+		out << "Sync: C: " << cnt_sync_total << " Q:" << cnt;
+		client.gui_mgr.print_to_console( out.str( ) );
+
+		for( auto & queue : funcs_async ) {
+			cnt += queue.size( );
+		}
+		out.str( "" );
+		out << "Async: C: " << cnt_async_total << " Q:" << cnt;
+		client.gui_mgr.print_to_console( out.str( ) );
+	}
+	*/
 
 	/*
 	out.str( "" );
@@ -194,6 +231,8 @@ void ThreadMgr::end() {
 }
 
 void ThreadMgr::sec() {
+
+
 	/*task_main( 5, [ & ] ( ) {
 		client.gui_mgr.print_to_console( std::string( "test_main_low_prio" ) );
 	} );

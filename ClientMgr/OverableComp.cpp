@@ -16,7 +16,7 @@ OverableComp::OverableComp( Client & client ) {
 			return 1;
 		}
 
-		auto data = comp->get_data< OverableData >( );
+		auto data = comp->get< OverableData >( );
 		data->func_enter = func_null;
 		data->func_over = func_null;
 		data->func_exit = func_null;
@@ -35,15 +35,15 @@ OverableComp::OverableComp( Client & client ) {
 	};
 
 	func_enter = [ ] ( PComp * comp ) {
-		return comp->get_data< OverableData >( )->func_enter( comp );
+		return comp->get< OverableData >( )->func_enter( comp );
 	};
 
 	func_over = [ ] ( PComp * comp ) {
-		return comp->get_data< OverableData >( )->func_over( comp );
+		return comp->get< OverableData >( )->func_over( comp );
 	};
 
 	func_exit = [ ] ( PComp * comp ) {
-		return comp->get_data< OverableData >( )->func_exit( comp );
+		return comp->get< OverableData >( )->func_exit( comp );
 	};
 }
 

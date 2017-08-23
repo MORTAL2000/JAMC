@@ -83,6 +83,7 @@ class ChunkMgr :
 	public Manager {
 
 private:
+	glm::ivec3 dim_world_current;
 	GLuint num_triangles;
 	GLuint num_cmds;
 
@@ -300,6 +301,7 @@ public:
 	}
 
 	void print_center_chunk_mesh( );
+	void print_rle( );
 
 	inline void put_sort(
 		std::vector< std::pair< float, GLuint > > & list_sort,

@@ -32,7 +32,7 @@ LabelComp::LabelComp( Client & client ) {
 			std::vector< GLuint > { 0, 1, 2, 2, 3, 0 }
 		) );
 
-		auto data = comp->get_data< LabelData >( );
+		auto data = comp->get< LabelData >( );
 
 		glm::ivec2 dim_text( data->size_text * 2 / 3, data->size_text );
 		glm::ivec2 pos_char;

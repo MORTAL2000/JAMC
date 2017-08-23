@@ -64,7 +64,7 @@ public:
 			size_text = size;
 
 			for( auto label : list_labels ) { 
-				label->get_data< LabelComp::LabelData >( )->size_text = size_text;
+				label->get< LabelComp::LabelData >( )->size_text = size_text;
 			}
 		}
 
@@ -123,7 +123,7 @@ public:
 			idx_labels = idx_labels % num_text_max;
 
 			std::swap(
-				list_labels[ idx_labels ]->get_data< LabelComp::LabelData >( )->text,
+				list_labels[ idx_labels ]->get< LabelComp::LabelData >( )->text,
 				data_input->text );
 			data_input->text.clear( );
 
@@ -150,7 +150,7 @@ public:
 			idx_labels++;
 			idx_labels = idx_labels % num_text_max;
 
-			list_labels[ idx_labels ]->get_data< LabelComp::LabelData >( )->text = string;
+			list_labels[ idx_labels ]->get< LabelComp::LabelData >( )->text = string;
 
 			list_labels[ idx_labels - idx_visible ]->is_visible = true;
 

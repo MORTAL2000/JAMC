@@ -30,7 +30,7 @@ GraphComp::GraphComp( Client & client ) {
 			comp->anchor = { 0.0f, 1.0f };
 			comp->offset = { 10.0f + 24, -10.0f };
 
-			data->data_label_title = comp->get_data< LabelComp::LabelData >( );
+			data->data_label_title = comp->get< LabelComp::LabelData >( );
 			data->data_label_title->size_text = 16;
 			data->data_label_title->text = RecordStrings::RENDER;
 			data->data_label_title->alignment_h = LabelComp::LabelData::AH_Right;
@@ -43,7 +43,7 @@ GraphComp::GraphComp( Client & client ) {
 	};
 
 	func_update = [ &client = client ] ( PComp * comp ) {
-		auto data = comp->get_data< GraphData >( );
+		auto data = comp->get< GraphData >( );
 		++data->updates;
 
 		//if( data->updates % 4 == 0 )
@@ -53,7 +53,7 @@ GraphComp::GraphComp( Client & client ) {
 	};
 
 	func_mesh = [ &client = client ] ( PComp * comp ) {
-		auto data = comp->get_data< GraphData >( );
+		auto data = comp->get< GraphData >( );
 		glm::vec4 color = { 1.0f, 0.0f, 0.0f, 1.0f };
 		glm::vec3 norm = { 0.0f, 0.0f, 1.0f };
 

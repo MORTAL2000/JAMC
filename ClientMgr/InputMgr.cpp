@@ -267,7 +267,7 @@ void InputMgr::process_input( ) {
 					auto & ec_state = entity.h_state.get( );
 					ec_state.pos = glm::floor( pos_gw );
 
-					auto & ec_tnt = entity.get_data< ECTnt >( ).get( );
+					auto & ec_tnt = entity.get< ECTnt >( ).get( );
 					ec_tnt.time_life = 5000;
 
 					return ErrorEntity::EE_Ok;

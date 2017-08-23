@@ -81,12 +81,12 @@ public:
 
 public:
 	template< class T >
-	int get_data_size( ) { 
+	int get_size( ) { 
 		return map_data[ typeid( T ) ].size( );
 	}
 
 	/*template< class T >
-	void set_data( int const index_data, Handle< T > & data ) { 
+	void set( int const index_data, Handle< T > & data ) { 
 		auto & vect_data = map_data[ typeid( T ) ];
 		( ( Handle< T > * ) vect_data[ index_data ] )->release( );
 		vect_data[ index_data ] = &data;
@@ -107,7 +107,7 @@ public:
 	}
 
 	template< class T > 
-	Handle< T > & get_data( int const index_data = 0 ) { 
+	Handle< T > & get( int const index_data = 0 ) { 
 		return *( ( Handle< T > * ) map_data[ typeid( T ) ][ index_data ] );
 	}
 

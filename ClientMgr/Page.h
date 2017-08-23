@@ -53,8 +53,8 @@ public:
 	PComp * get_comp_safe( std::string const & name );
 
 	template< class T >
-	int get_data_size( ) {
-		return root->get_data_size( );
+	int get_size( ) {
+		return root->get_size( );
 	}
 
 	template< class T >
@@ -63,8 +63,8 @@ public:
 	}
 
 	template< class T >
-	T * get_data( int const index_data = 0 ) {
-		return root->get_data< T >( index_data );
+	T * get( int const index_data = 0 ) {
+		return root->get< T >( index_data );
 	}
 
 	template< class T >

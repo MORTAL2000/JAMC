@@ -21,7 +21,7 @@ Player::Player( ) :
 			ec_state.rot.y = 0;
 			entity.is_visible = false;
 
-			auto & ec_player = entity.get_data< ECPlayer >( ).get( );
+			auto & ec_player = entity.get< ECPlayer >( ).get( );
 			ec_player.veloc_vmax = 9.81f * 4.0f;
 			ec_player.veloc_hmax = 32.0f;
 
@@ -44,7 +44,7 @@ Player::Player( ) :
 		},
 		[ ] ( Client & client, Entity & entity ) {
 			auto & ec_state = entity.h_state.get( );
-			auto & ec_player = entity.get_data< ECPlayer >( ).get( );
+			auto & ec_player = entity.get< ECPlayer >( ).get( );
 			float mouse_sensitivity = 0.1f;
 			int time_now = client.time_mgr.get_time( TimeStrings::GAME );
 

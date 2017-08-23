@@ -13,7 +13,7 @@ Tnt::Tnt( ) :
 			auto & ec_state = entity.h_state.get( );
 			ec_state.is_gravity = true;
 
-			auto & ec_tnt = entity.get_data< ECTnt >( ).get( );
+			auto & ec_tnt = entity.get< ECTnt >( ).get( );
 			ec_tnt.time_last = client.time_mgr.get_time( TimeStrings::GAME );
 			ec_tnt.time_life = rand( ) % 250 + 250;
 			ec_tnt.time_update = 64;
@@ -28,7 +28,7 @@ Tnt::Tnt( ) :
 		},
 		[ ] ( Client & client, Entity & entity ) {
 			auto & ec_state = entity.h_state.get( );
-			auto & ec_tnt = entity.get_data< ECTnt >( ).get( );
+			auto & ec_tnt = entity.get< ECTnt >( ).get( );
 			int time_now = client.time_mgr.get_time( TimeStrings::GAME );
 
 			if( time_now - ec_tnt.time_last >= ec_tnt.time_update ) {

@@ -21,7 +21,7 @@ ResizeComp::ResizeComp( Client & client ) {
 		data_resize->color_enter = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		auto resizable = comp->add_comp( "Resizable", "Resizable", [ &client = client ] ( PComp * comp ) { 
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client ] ( PComp * comp ) { 
 				comp->dim = comp->parent->dim;
@@ -34,7 +34,7 @@ ResizeComp::ResizeComp( Client & client ) {
 		} );
 
 		auto comp_image = resizable->add_comp( "Image", "Image", [ &client = client, data_resize ] ( PComp * comp ) {
-			auto data = comp->get_data< ImageComp::ImageData >( );
+			auto data = comp->get< ImageComp::ImageData >( );
 			data->color = data_resize->color_exit;
 			data->id_texture = client.texture_mgr.get_texture_id( "Gui" );
 			data->id_subtex = client.texture_mgr.get_texture_layer( "Gui", "Default/Resize" );
@@ -43,7 +43,7 @@ ResizeComp::ResizeComp( Client & client ) {
 		} );
 
 		data_resize->comp_image = comp_image;
-		data_resize->data_image = comp_image->get_data< ImageComp::ImageData >( );
+		data_resize->data_image = comp_image->get< ImageComp::ImageData >( );
 
 		return 0;
 	};
@@ -73,7 +73,7 @@ ResizeComp::ResizeComp( Client & client ) {
 	};
 
 	func_enter = [ ] ( PComp * comp ) { 
-		auto data = comp->get_data< ResizeData >( );
+		auto data = comp->get< ResizeData >( );
 		data->data_image->color = data->color_enter;
 
 		comp->page->is_remesh = true;
@@ -82,7 +82,7 @@ ResizeComp::ResizeComp( Client & client ) {
 	};
 
 	func_exit = [ ] ( PComp * comp ) {
-		auto data = comp->get_data< ResizeData >( );
+		auto data = comp->get< ResizeData >( );
 		data->data_image->color = data->color_exit;
 
 		comp->page->is_remesh = true;

@@ -105,7 +105,7 @@ void GuiMgr::load_pages( ) {
 			page->root->offset = { -( page->root->dim.x + 2 ), -( page->root->dim.y + 2 ) * cnt };
 			cnt++;
 
-			auto data = page->get_data< GraphPage::GraphPageData >( );
+			auto data = page->get< GraphPage::GraphPageData >( );
 			data->data_graph->record = &client.time_mgr.get_record( str_record );
 			data->data_graph->data_label_title->text = str_record;
 
@@ -427,7 +427,7 @@ PComp * GuiMgr::get_named_parent( PComp * comp, std::string const & name ) {
 
 void GuiMgr::mesh_page( Page * page ) {
 	if( page->is_visible && page->is_remesh ) {
-		//client.thread_mgr.task_main( 10, [ this, page ] ( ) {
+		client.thread_mgr.task_main( 10, [ this, page ] ( ) {
 			page->vbo_mesh.clear( );
 
 			page->loader->func_mesh( page );
@@ -435,7 +435,7 @@ void GuiMgr::mesh_page( Page * page ) {
 			mesh_comp( page->root );
 
 			page->vbo_mesh.buffer( );
-		//} );
+		} );
 
 		page->is_remesh = false;
 	}
@@ -716,7 +716,7 @@ void GuiMgr::handle_char( char const c ) {
 		return;
 	}
 
-	auto data = parent->get_data< TextFieldComp::TextFieldData >( );
+	auto data = parent->get< TextFieldComp::TextFieldData >( );
 
 	if( data->pos_hl_e > data->pos_hl_s ) {
 		data->text.erase(
@@ -752,7 +752,7 @@ void GuiMgr::handle_vkey( int const key, bool const is_down ) {
 		return;
 	}
 
-	auto data_text = parent->get_data< TextFieldComp::TextFieldData >( );
+	auto data_text = parent->get< TextFieldComp::TextFieldData >( );
 
 	switch( key ) { 
 		case VK_BACK:
@@ -791,7 +791,7 @@ void GuiMgr::handle_vkey( int const key, bool const is_down ) {
 			return;
 
 		case VK_UP: {
-			auto data_page = parent->page->get_data < ConsolePage::ConsoleData > ( );			
+			auto data_page = parent->page->get < ConsolePage::ConsoleData > ( );			
 			
 			if( data_page->idx_history_recall == 0 ) {
 				data_page->list_history[ data_page->idx_history ] = data_text->text;
@@ -814,7 +814,7 @@ void GuiMgr::handle_vkey( int const key, bool const is_down ) {
 		}
 
 		case VK_DOWN: {
-			auto data_page = parent->page->get_data < ConsolePage::ConsoleData >( );
+			auto data_page = parent->page->get < ConsolePage::ConsoleData >( );
 			data_page->idx_history_recall--;
 
 			if( data_page->idx_history_recall < 0 ) {
@@ -861,12 +861,12 @@ void GuiMgr::process_input( ) {
 		return;
 	}
 
-	auto data = parent->get_data< TextFieldComp::TextFieldData >( );
+	auto data = parent->get< TextFieldComp::TextFieldData >( );
 
 	auto & str_command = data->text;
 	if( str_command.size( ) <= 0 ) return;
 
-	auto data_page = parent->page->get_data< ConsolePage::ConsoleData >( );
+	auto data_page = parent->page->get< ConsolePage::ConsoleData >( );
 
 	data_page->list_history[ data_page->idx_history ] = str_command;
 	data_page->idx_history_recall = 0;
@@ -896,7 +896,7 @@ void GuiMgr::process_input( ) {
 			print_to_console( out.str( ) );
 		}
 		else if( token == "clear" ) {  
-			auto data = parent->page->get_data< ConsolePage::ConsoleData >( );
+			auto data = parent->page->get< ConsolePage::ConsoleData >( );
 			data->clear_text( );
 		}
 		else if( token == "printprio" ) {
@@ -1306,6 +1306,9 @@ void GuiMgr::process_input( ) {
 			//while( client.chunk_mgr.
 			client.chunk_mgr.delete_world( );
 		}
+		else if( token == "printrle" ) {
+			client.chunk_mgr.print_rle( );
+		}
 		else {
 			out.str( "" );
 			out << "Command: '" << token << "' is not a valid command.";
@@ -1334,7 +1337,7 @@ void GuiMgr::print_to_console( std::string const & str_out ) {
 		return;
 	}
 
-	page->get_data< ConsolePage::ConsoleData >( )->push_text( str_out );
+	page->get< ConsolePage::ConsoleData >( )->push_text( str_out );
 }
 
 std::unordered_map< std::string, std::vector< int > > get_tokenized_ints( 

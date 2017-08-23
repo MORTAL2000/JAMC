@@ -47,7 +47,7 @@ public:
 	PComp * get_comp_safe( std::string const & name );
 
 	template< class T >
-	int get_data_size( ) {
+	int get_size( ) {
 		return map_data[ typeid( T ) ].size( );
 	}
 
@@ -66,7 +66,7 @@ public:
 	}
 
 	template< class T >
-	T * get_data( int const index_data = 0 ) {
+	T * get( int const index_data = 0 ) {
 		return &( ( Handle< T > * ) map_data[ typeid( T ) ][ index_data ] )->get( );
 	}
 

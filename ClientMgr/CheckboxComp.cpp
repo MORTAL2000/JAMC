@@ -30,7 +30,7 @@ CheckboxComp::CheckboxComp( Client & client ) {
 		data->func_unchecked = func_null;
 
 		auto resizable = comp->add_comp( "Resizable", "Resizable", [ &client = client ] ( PComp * comp ) { 
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim;
@@ -43,7 +43,7 @@ CheckboxComp::CheckboxComp( Client & client ) {
 		} );
 
 		data->comp_border = resizable->add_comp( "Border", "BorderImage", [ &client = client, data ] ( PComp * comp ) {
-			data->data_border = comp->get_data< BorderImageComp::BorderImageData >( );
+			data->data_border = comp->get< BorderImageComp::BorderImageData >( );
 
 			data->data_border->set_texture( client, "Gui", "Default/CheckboxBG", 8 );
 			data->data_border->padding_border = 4;
@@ -52,7 +52,7 @@ CheckboxComp::CheckboxComp( Client & client ) {
 		} );
 
 		auto clickable = data->comp_border->add_comp( "Clickable", "Clickable", [ &client = client, data ] ( PComp * comp ) {
-			auto data_clickable = comp->get_data< ClickableComp::ClickableData >( );
+			auto data_clickable = comp->get< ClickableComp::ClickableData >( );
 			
 			data_clickable->func_down = [ &client = client, data ] ( PComp * comp ) {
 				data->data_border->color = data->color_down;
@@ -89,7 +89,7 @@ CheckboxComp::CheckboxComp( Client & client ) {
 		} );
 
 		auto overable = comp->add_comp( "Overable", "Overable", [ &client = client, data ] ( PComp * comp ) {
-			auto data_overable = comp->get_data< OverableComp::OverableData >( );
+			auto data_overable = comp->get< OverableComp::OverableData >( );
 
 			data_overable->func_enter = [ &client = client, data ] ( PComp * comp ) { 
 				data->data_border->color = data->color_over;
@@ -112,7 +112,7 @@ CheckboxComp::CheckboxComp( Client & client ) {
 		} );
 
 		auto resizable_half = comp->add_comp( "ResizableHalf", "Resizable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim / 2;
@@ -125,7 +125,7 @@ CheckboxComp::CheckboxComp( Client & client ) {
 		} );
 
 		data->comp_image = resizable_half->add_comp( "Image", "Image", [ &client = client, data ] ( PComp * comp ) {
-			data->data_image = comp->get_data< ImageComp::ImageData >( );
+			data->data_image = comp->get< ImageComp::ImageData >( );
 
 			data->data_image->id_texture = data->id_texture;
 			data->data_image->id_subtex = data->id_subtex_unchecked;
@@ -137,7 +137,7 @@ CheckboxComp::CheckboxComp( Client & client ) {
 			comp->anchor = { 1.0f, 0.5f };
 			comp->offset = { 5.0f, 0.0f };
 
-			data->data_label = comp->get_data< LabelComp::LabelData >( );
+			data->data_label = comp->get< LabelComp::LabelData >( );
 			data->data_label->text = "Checkbox";
 			data->data_label->alignment_v = LabelComp::LabelData::AlignVertical::AV_Center;
 

@@ -19,7 +19,7 @@ SpawnBlock::SpawnBlock( ) :
 			ec_state.rot = client.display_mgr.camera.rot_camera;
 			ec_state.is_gravity = false;
 
-			auto & ec_spawn = entity.get_data< ECSpawnBlock >( ).get( );
+			auto & ec_spawn = entity.get< ECSpawnBlock >( ).get( );
 			ec_spawn.time_life = 3000;
 			ec_spawn.time_last = client.time_mgr.get_time( TimeStrings::GAME );
 			ec_spawn.time_update = 100;
@@ -34,7 +34,7 @@ SpawnBlock::SpawnBlock( ) :
 		},
 		[ ] ( Client & client, Entity & entity ) {
 			auto & ec_state = entity.h_state.get( );
-			auto & ec_spawn = entity.get_data< ECSpawnBlock >( ).get( );
+			auto & ec_spawn = entity.get< ECSpawnBlock >( ).get( );
 
 			if( client.time_mgr.get_time( TimeStrings::GAME ) - ec_spawn.time_last > ec_spawn.time_update ) {
 				client.thread_mgr.task_main( 10,[ &, pos = ec_state.pos, num_spawn = ec_spawn.num_spawn ]( ) {

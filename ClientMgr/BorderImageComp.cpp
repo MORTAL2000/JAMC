@@ -32,7 +32,7 @@ BorderImageComp::BorderImageComp( Client & client ) {
 	};
 
 	func_mesh = [ &client = client ] ( PComp * comp ) {
-		auto data = comp->get_data< BorderImageData >( );
+		auto data = comp->get< BorderImageData >( );
 		auto & color = data->color;
 		glm::vec3 norm = { 0.0f, 0.0f, 1.0f };
 

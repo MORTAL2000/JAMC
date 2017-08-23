@@ -12,12 +12,13 @@
 #include <sstream>
 #include <fstream>
 #include <limits>
+#include <sstream>
 
 #include "simplexnoise.h"
 
 ChunkMgr::ChunkMgr( Client & client ) :
 	Manager( client ),
-	SHADOW_WIDTH( 8192 ), SHADOW_HEIGHT( 8192 ),
+	SHADOW_WIDTH( 2048 ), SHADOW_HEIGHT( 2048 ),
 	dim_shadow { 200.0f, 200.0f },
 	pos_shadow { 0.0f, 0.0f } { }
 
@@ -52,7 +53,9 @@ void ChunkMgr::init( ) {
 	GL_CHECK( init_shadowmap( ) );
 	GL_CHECK( init_debug( ) );
 
-	delete_world( );
+	//delete_world( );
+
+	dim_world_current = WorldSize::World::vec_size;
 
 	using namespace std::tr2::sys;
 	path path_world( "./World" );
@@ -78,6 +81,9 @@ int time_last_remesh = 0;
 int cooldown_remesh = 200;
 glm::ivec3 vect_refresh = { 1, 1, 1 };
 
+int num_chunks_refresh = 16;
+int index = 0;
+
 void ChunkMgr::update( ) {
 	client.time_mgr.begin_record( RecordStrings::UPDATE_MAP );
 
@@ -87,13 +93,43 @@ void ChunkMgr::update( ) {
 
 	int const time_now = client.time_mgr.get_time( TimeStrings::GAME );
 
+	/*
+	for( int i = 0; i < num_chunks_refresh; ++i ) {
+		glm::ivec3 dim_world = WorldSize::World::vec_size * 2 + glm::ivec3{ 1, 1, 1 };
+
+		if( index >= dim_world.x * dim_world.y * dim_world.z ) {
+			index = 0;
+		}
+
+		glm::ivec3 chunk_pos =
+			pos_center_chunk_lw -
+			WorldSize::World::vec_size +
+			glm::ivec3{
+				index / ( ( dim_world.y ) * dim_world.z ),
+				( index / dim_world.z ) % dim_world.y,
+				index % dim_world.z
+			};
+
+		auto iter = map_chunks.find( Directional::get_hash( chunk_pos ) );
+
+		if( iter != map_chunks.end( ) ) {
+			chunk_state( iter->second.get( ), ChunkState::CS_TMesh, true );
+			//std::ostringstream out;
+			//out << "Refreshing chunk: " << chunk_pos.x << " " << chunk_pos.y << " " << chunk_pos.z;
+			//client.gui_mgr.print_to_console( out.str( ) );
+		}
+
+		++index;
+	}
+	*/
+
 	if( time_now - time_last_map > cooldown_map ) {
 		client.thread_mgr.task_async( 10, [ & ] ( ) {
-			chunk_add( pos_center_chunk_lw );
-
 			std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
 
-			for( auto & pair_handle : map_chunks ) { 
+			chunk_add( pos_center_chunk_lw );
+
+			for( auto & pair_handle : map_chunks ) {
 				auto & chunk = pair_handle.second.get( );
 
 				if( chunk.cnt_adj != 6
@@ -131,7 +167,7 @@ void ChunkMgr::update( ) {
 
 			glm::ivec3 pos_chunk;
 			auto iter_chunks = map_chunks.end( );
-			for( int i = pos_center_chunk_lw.x - vect_refresh.x; i <= pos_center_chunk_lw.x + vect_refresh.x; i++ ) { 
+			for( int i = pos_center_chunk_lw.x - vect_refresh.x; i <= pos_center_chunk_lw.x + vect_refresh.x; i++ ) {
 				for( int j = pos_center_chunk_lw.y - vect_refresh.y; j <= pos_center_chunk_lw.y + vect_refresh.y; j++ ) {
 					for( int k = pos_center_chunk_lw.z - vect_refresh.z; k <= pos_center_chunk_lw.z + vect_refresh.z; k++ ) {
 						pos_chunk = glm::ivec3( i, j, k );
@@ -150,18 +186,20 @@ void ChunkMgr::update( ) {
 		time_last_remesh = time_now;
 	}
 
-	std::lock_guard< std::recursive_mutex > lock_dirty( mtx_dirty );
+	{
+		std::lock_guard< std::recursive_mutex > lock_dirty( mtx_dirty );
 
-	auto iter = map_dirty.begin( );
-	while( iter != map_dirty.end() ){
-		auto & chunk = iter->second;
+		auto iter = map_dirty.begin( );
+		while( iter != map_dirty.end( ) ) {
+			auto & chunk = iter->second;
 
-		if( chunk.cnt_states ) { 
-			chunk_update( chunk );
-			iter++;
-		}
-		else { 
-			iter = map_dirty.erase( iter );
+			if( chunk.cnt_states ) {
+				chunk_update( chunk );
+				iter++;
+			}
+			else {
+				iter = map_dirty.erase( iter );
+			}
 		}
 	}
 
@@ -561,7 +599,37 @@ void ChunkMgr::sec( ) {
 		size = ( int ) size;
 		size /= 100;
 
-		std::cout << "Num triangles: " << num_current_mill << "(MM)/" << num_total_mill << "(MM) size: " << size << "MB" << std::endl;
+		
+		std::ostringstream out;
+		out << "Num triangles: " << num_current_mill << "(MM)/" << num_total_mill << "(MM) size: " << size << "MB" << std::endl;
+
+		client.gui_mgr.print_to_console( out.str( ) );
+
+		out.str( "" );
+		out << "Render List: " << list_render.size( );
+		client.gui_mgr.print_to_console( out.str( ) );
+
+		out.str( "" );
+		out << "Chunks: " << map_chunks.size( );
+		client.gui_mgr.print_to_console( out.str( ) );
+
+		out.str( "" );
+		out << "Dirty: " << map_dirty.size( );
+		client.gui_mgr.print_to_console( out.str( ) );
+
+		out.str( "" );
+		int cnt = 0;
+		auto iter = map_chunks.begin( );
+		while( iter != map_chunks.end( ) ) {
+			cnt += sizeof( iter->second.get( ).block_set );
+
+			++iter;
+		}
+
+		out << "Block Set total: " << cnt / 1024.0f / 1024.0f << "MB";
+		out << " | Block Set avrg: " << cnt / 1024.0f / 1024.0f / map_chunks.size( ) << "MB";
+		client.gui_mgr.print_to_console( out.str( ) );
+		
 	} );
 }
 
@@ -931,39 +999,67 @@ void ChunkMgr::chunk_update( Chunk & chunk ) {
 
 	if( !chunk.cnt_states ||
 		chunk.is_working ) {
+		//client.gui_mgr.print_to_console( "working" );
 		return;
 	}
 
 	if( chunk.is_shutdown ) {
 		if( chunk.is_loaded && chunk.states[ CS_Save ] ) {
+			//std::ostringstream out;
+			//out << "Chunk Save";
+			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_save( chunk );
 		}
 		else if( chunk.states[ CS_Remove ] ) {
+			//std::ostringstream out;
+			//out << "Chunk Remove";
+			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_remove( chunk );
 		}
 	}
 	else if( chunk.is_loaded ) {
 		if( chunk.states[ CS_Gen ] ) {
+			//std::ostringstream out;
+			//out << "Chunk Generate";
+			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_gen( chunk );
 		}
 		else if( chunk.states[ CS_SBuffer ] || chunk.states[ CS_TBuffer ] ) {
+			//std::ostringstream out;
+			//out << "Chunk Buffer";
+			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_buffer( chunk );
 		}
 		else if( chunk.states[ CS_SMesh ] || chunk.states[ CS_TMesh ] ) {
+			//std::ostringstream out;
+			//out << "Chunk Mesh";
+			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_mesh( chunk );
 		}
 		else if( chunk.states[ CS_Save ] ) {
+			//std::ostringstream out;
+			//out << "Chunk Save";
+			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_save( chunk );
 		}
 	}
 	else if( !chunk.is_loaded ) {
 		if( chunk.states[ CS_Init ] ) {
+			//std::ostringstream out;
+			//out << "Chunk Init";
+			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_init( chunk );
 		}
 		else if( chunk.states[ CS_Read ] ) {
+			//std::ostringstream out;
+			//out << "Chunk Read";
+			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_read( chunk );
 		}
 		else if( chunk.states[ CS_Load ] ) {
+			//std::ostringstream out;
+			//out << "Chunk Load";
+			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_load( chunk );
 		}
 	}
@@ -993,6 +1089,8 @@ void ChunkMgr::chunk_add( glm::ivec3 const & pos_lw ) {
 	if( !chunk ) {
 		return;
 	}
+
+	//client.gui_mgr.print_to_console( "Adding chunk" );
 
 	chunk->pos_lw = pos_lw;
 	chunk->hash_lw = hash;
@@ -1082,26 +1180,26 @@ void ChunkMgr::chunk_shutdown( Chunk & chunk ) {
 }
 
 void ChunkMgr::chunk_set_manip( Chunk & chunk, short unsigned x, short unsigned y, short unsigned z, short id ) {
-	chunk_state( chunk, ChunkState::CS_Manip, true );
+	//chunk_state( chunk, ChunkState::CS_Manip, true );
 
-	chunk.list_block_manip.push_back( { { x, y, z }, id } );
+	//chunk.list_block_manip.push_back( { { x, y, z }, id } );
 }
 
 void ChunkMgr::chunk_manip( Chunk & chunk ) { 
-	chunk_state( chunk, ChunkState::CS_Manip, false );
-	PosBlock * pos;
+	//chunk_state( chunk, ChunkState::CS_Manip, false );
+	//PosBlock * pos;
 
-	for( int unsigned i = 0; i < chunk.list_block_manip.size( ); ++i ) { 
-		pos = &chunk.list_block_manip[ i ].first;
-		chunk.block_set.set_data( pos->x, pos->y, pos->z, chunk.list_block_manip[ i ].second );
-	}
+	//for( int unsigned i = 0; i < chunk.list_block_manip.size( ); ++i ) { 
+	//	pos = &chunk.list_block_manip[ i ].first;
+	//	chunk.block_set.set( pos->x, pos->y, pos->z, chunk.list_block_manip[ i ].second );
+	//}
 
-	chunk.list_block_manip.resize( WorldSize::Chunk::size_x * WorldSize::Chunk::size_z );
-	chunk.list_block_manip.shrink_to_fit( );
-	chunk.list_block_manip.clear( );
+	//chunk.list_block_manip.resize( WorldSize::Chunk::size_x * WorldSize::Chunk::size_z );
+	//chunk.list_block_manip.shrink_to_fit( );
+	//chunk.list_block_manip.clear( );
 
-	chunk_state( chunk, ChunkState::CS_SMesh, true );
-	chunk_state( chunk, ChunkState::CS_TMesh, true );
+	//chunk_state( chunk, ChunkState::CS_SMesh, true );
+	//chunk_state( chunk, ChunkState::CS_TMesh, true );
 }
 
 void ChunkMgr::chunk_init( Chunk & chunk ) {
@@ -1114,7 +1212,7 @@ void ChunkMgr::chunk_init( Chunk & chunk ) {
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Init, false );
 
-		chunk.block_set.resize( WorldSize::Chunk::size_x, WorldSize::Chunk::size_y, WorldSize::Chunk::size_z );
+		chunk.block_set.clear_fill( WorldSize::Chunk::size_y, -1 );
 
 		std::lock_guard< std::mutex > lock( mtx_noise );
 		auto iter_noise = map_noise.find( chunk.hash_lw_2d );
@@ -1262,7 +1360,7 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 								id = buffer_section[ index_buffer + 1 ];
 							}
 
-							chunk.block_set.set_data( k, i, j, id );
+							chunk.block_set.set( k, i, j, id );
 							num_block--;
 						}
 					}
@@ -1299,7 +1397,7 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
 	int priority = 0;
-	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) - 1 );
 
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Load, false );
@@ -1312,6 +1410,8 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 
 		float noise_cobble;
 
+		BlockRegion< WorldSize::Chunk::size_x, WorldSize::Chunk::size_y, WorldSize::Chunk::size_z > block_region;
+
 		for( int i = 0; i < WorldSize::Chunk::size_x; i++ ) {
 			for( int k = 0; k < WorldSize::Chunk::size_z; k++ ) {
 				noise_height = chunk.ptr_noise->height[ i ][ k ];
@@ -1323,64 +1423,26 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 				for( int j = 0; j < WorldSize::Chunk::size_y; j++ ) {
 					if( chunk.pos_gw.y + j < noise_height ) {
 						if( chunk.pos_gw.y + j < noise_height - noise_cobble ) {
-							chunk.block_set.set_data( i, j, k, block_cobble->id );
+							block_region.set( i, j, k, block_cobble->id );
 						}
 						else {
-							chunk.block_set.set_data( i, j, k, biome->id_block_depth );
+							block_region.set( i, j, k, biome->id_block_depth );
 						}
 					}
 					else if( chunk.pos_gw.y + j == noise_height ) {
-						chunk.block_set.set_data( i, j, k, biome->id_block_surface );
+						block_region.set( i, j, k, biome->id_block_surface );
 					}
 					else {
 						if( chunk.pos_gw.y + j <= WorldSize::World::level_sea &&
 							noise_biome != client.biome_mgr.get_biome_id( "Cobblestone Chasm" ) ) {
-							chunk.block_set.set_data( i, j, k, block_water->id );
+							block_region.set( i, j, k, block_water->id );
 						}
 						else {
-							chunk.block_set.set_data( i, j, k, -1 );
+							block_region.set( i, j, k, -1 );
 						}
 					}
-					/*
-					static const int inner = 300, outer = 310, height = 40;
 
-					float a = glm::length( glm::vec2( chunk.pos_gw.x, chunk.pos_gw.z ) + glm::vec2( i, k ) );
-					int ai = a;
-
-					if( ai >= inner && ai <= outer ) {
-						if( chunk.pos_gw.y + j > chunk.ptr_noise->height[ i ][ k ] ) {
-							if( chunk.pos_gw.y + j < height ) {
-								chunk.block_set.set_data( i, j, k, block_cobble->id );
-								continue;
-							}
-
-							if( ai == inner || ai == outer ) {
-								if( chunk.pos_gw.y + j == height ) {
-									chunk.block_set.set_data( i, j, k, block_cobble->id );
-									continue;
-								}
-
-								if( chunk.pos_gw.y + j <= height + 2 ) {
-									int degree = glm::degrees( glm::asin( ( chunk.pos_gw.z + k ) / a ) );
-
-									if( degree % 2 == 0 ) {
-										chunk.block_set.set_data( i, j, k, block_cobble->id );
-									}
-								}
-							}
-						}
-						else if( chunk.pos_gw.y + j <= chunk.ptr_noise->height[ i ][ k ] ) {
-							if( chunk.pos_gw.y + j == height && ( a == inner || a == outer ) ) {
-								chunk.block_set.set_data( i, j, k, block_cobble->id );
-							}
-							else if( chunk.pos_gw.y + j >= height && chunk.pos_gw.y + j < height + 5 ) {
-								chunk.block_set.set_data( i, j, k, -1 );
-							}
-						}
-					}
-					*/
-
-					if( chunk.block_set.get_data( i, j, k ) != -1 ) {
+					if( block_region.get( i, j, k ) != -1 ) {
 						chunk.cnt_solid += 1;
 					}
 					else { 
@@ -1390,10 +1452,10 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 			}
 		}
 
-		chunk.is_loaded = true;
+		chunk.block_set.set_data( block_region );
 
-		if( chunk.cnt_solid != 0 )
-			chunk_state( chunk, ChunkState::CS_Gen, true );
+		chunk.is_loaded = true;
+		chunk_state( chunk, ChunkState::CS_Gen, true );
 
 		chunk.is_working = false;
 	} );
@@ -1436,7 +1498,7 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_hill ||
 						chunk.ptr_noise->biome[ i ][ j ] == biome_grass_plateau ) {
 
-						if( chunk.block_set.get_data( i, chunk.ptr_noise->height[ i ][ j ] + 1, j ) != -1 ) { 
+						if( chunk.block_set.get( i, chunk.ptr_noise->height[ i ][ j ] + 1, j ) != -1 ) { 
 							continue;
 						}
 
@@ -1572,12 +1634,19 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 		BlockLoader * block_curr = nullptr;
 		BlockLoader * block_adj = nullptr;
 
-		Chunk * chunk_adj;
+		//Chunk * chunk_adj;
+
+		BlockRegion<
+			WorldSize::Chunk::size_x,
+			WorldSize::Chunk::size_y,
+			WorldSize::Chunk::size_z > block_region;
+
+		chunk.block_set.get_data( block_region );
 
 		if( chunk.states[ ChunkState::CS_SMesh ] && chunk.handle_solid_temp.ptr_buffer ) {
 			chunk_state( chunk, ChunkState::CS_SMesh, false );
 			
-			chunk.list_incl_solid.clear( );
+			//chunk.list_incl_solid.clear( );
 
 			chunk.handle_solid_temp.clear( );
 			chunk.handle_solid_temp.ptr_buffer->list_verts.clear( );
@@ -1598,7 +1667,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			for( pos_curr.x = 0; pos_curr.x < WorldSize::Chunk::size_x; pos_curr.x++ ) {
 				for( pos_curr.y = 0; pos_curr.y < WorldSize::Chunk::size_y; pos_curr.y++ ) {
 					for( pos_curr.z = 0; pos_curr.z < WorldSize::Chunk::size_z; pos_curr.z++ ) {
-						id_curr = chunk.block_set.get_data( pos_curr.x, pos_curr.y, pos_curr.z );
+						id_curr = block_region.get( pos_curr.x, pos_curr.y, pos_curr.z );
 
 						if( id_curr == -1 || id_curr == -2 ) {
 							// Is air, skip
@@ -1621,7 +1690,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 
 						// Add the included faces
 						if( block_curr->include_lookup.size( ) ) { 
-							chunk.list_incl_solid.push_back( { 0, id_curr, pos_curr + chunk.pos_gw } );
+							//chunk.list_incl_solid.push_back( { 0, id_curr, pos_curr + chunk.pos_gw } );
 						}
 						
 						// Start List z
@@ -1629,23 +1698,25 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							dir_face = iter_face;
 
 							pos_adj = pos_curr + Directional::get_vec_dir_i( dir_face );
-							chunk_adj = &chunk;
+							//chunk_adj = &chunk;
 
 							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
 								pos_adj -= Directional::get_vec_dir_i( dir_face )  * WorldSize::Chunk::vec_size;
 
 								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
-								chunk_adj = chunk.ptr_adj[ dir_face ];
 
-								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
+								if( chunk.ptr_adj[ dir_face ] == nullptr || !chunk.ptr_adj[ dir_face ]->is_loaded ) {
 									// Chunk Aint loaded
 									list_id_last[ dir_face ].first = -1;
 
 									continue;
 								}
-							}
 
-							id_adj = chunk_adj->block_set.get_data( pos_adj.x, pos_adj.y, pos_adj.z );
+								id_adj = chunk.ptr_adj[ dir_face ]->block_set.get( pos_adj.x, pos_adj.y, pos_adj.z );
+							}
+							else {
+								id_adj = block_region.get( pos_adj.x, pos_adj.y, pos_adj.z );
+							}
 
 							if( id_adj == -1 ) {
 								if( id_curr == list_id_last[ dir_face ].first ) {
@@ -1711,7 +1782,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 						list_x_solid: // Start list x
 
 						pos_curr_x = { pos_curr.z, pos_curr.y, pos_curr.x };
-						id_curr = chunk.block_set.get_data( pos_curr_x.x, pos_curr_x.y, pos_curr_x.z );
+						id_curr = block_region.get( pos_curr_x.x, pos_curr_x.y, pos_curr_x.z );
 
 						if( id_curr == -1 || id_curr == -2 ) {
 							// Is air, skip
@@ -1736,24 +1807,27 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							dir_face = iter_face;
 
 							pos_adj = pos_curr_x + Directional::get_vec_dir_i( dir_face );
-							chunk_adj = &chunk;
+							//chunk_adj = &chunk;
 
 							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
 								pos_adj -= Directional::get_vec_dir_i( dir_face )  * WorldSize::Chunk::vec_size;
 
 								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
-								chunk_adj = chunk.ptr_adj[ dir_face ];
 
-								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
+								if( chunk.ptr_adj[ dir_face ] == nullptr || !chunk.ptr_adj[ dir_face ]->is_loaded ) {
 									// Chunk Aint loaded
 									list_id_last[ dir_face ].first = -1;
 
 									continue;
 								}
+
+								id_adj = chunk.ptr_adj[ dir_face ]->block_set.get( pos_adj.x, pos_adj.y, pos_adj.z );
+							}
+							else {
+								id_adj = block_region.get( pos_adj.x, pos_adj.y, pos_adj.z );
 							}
 
-							id_adj = chunk_adj->block_set.get_data( pos_adj.x, pos_adj.y, pos_adj.z );
-
+							
 							if( id_adj == -1 ) {
 								if( id_curr == list_id_last[ dir_face ].first ) {
 									// We have the same face in a row...
@@ -1858,7 +1932,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 		if( chunk.states[ ChunkState::CS_TMesh ] && chunk.handle_trans_temp.ptr_buffer ) {
 			chunk_state( chunk, ChunkState::CS_TMesh, false );
 
-			chunk.list_incl_trans.clear( );
+			//chunk.list_incl_trans.clear( );
 
 			chunk.handle_trans_temp.clear( );
 
@@ -1877,7 +1951,8 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 			for( pos_curr.x = 0; pos_curr.x < WorldSize::Chunk::size_x; pos_curr.x++ ) {
 				for( pos_curr.y = 0; pos_curr.y < WorldSize::Chunk::size_y; pos_curr.y++ ) {
 					for( pos_curr.z = 0; pos_curr.z < WorldSize::Chunk::size_z; pos_curr.z++ ) {
-						id_curr = chunk.block_set.get_data( pos_curr.x, pos_curr.y, pos_curr.z );
+						//id_curr = chunk.block_set.get( pos_curr.x, pos_curr.y, pos_curr.z );
+						id_curr = block_region.get( pos_curr.x, pos_curr.y, pos_curr.z );
 
 						if( id_curr == -1 ) {
 							continue;
@@ -1891,7 +1966,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 
 						// Add the included faces
 						if( block_curr->include_lookup.size( ) ) {
-							chunk.list_incl_trans.push_back( { 0, id_curr, pos_curr + chunk.pos_gw } );
+							//chunk.list_incl_trans.push_back( { 0, id_curr, pos_curr + chunk.pos_gw } );
 						}
 
 						// Add the excluded faces
@@ -1899,20 +1974,23 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							dir_face = ( FaceDirection ) i;
 
 							pos_adj = pos_curr + Directional::get_vec_dir_i( dir_face );
-							chunk_adj = &chunk;
+							//chunk_adj = &chunk;
 
 							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
 								pos_adj -= Directional::get_vec_dir_i( dir_face )  * WorldSize::Chunk::vec_size;
 
 								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
-								chunk_adj = chunk.ptr_adj[ dir_face ];
 
-								if( chunk_adj == nullptr || !chunk_adj->is_loaded ) {
+								if( chunk.ptr_adj[ dir_face ] == nullptr || !chunk.ptr_adj[ dir_face ]->is_loaded ) {
 									continue;
 								}
+
+								id_adj = chunk.ptr_adj[ dir_face ]->block_set.get( pos_adj.x, pos_adj.y, pos_adj.z );
+							}
+							else {
+								id_adj = block_region.get( pos_adj.x, pos_adj.y, pos_adj.z );
 							}
 
-							id_adj = chunk_adj->block_set.get_data( pos_adj.x, pos_adj.y, pos_adj.z );
 
 							if( !block_curr->occlude_lookup[ dir_face ].size( ) ) { 
 								continue;
@@ -2037,15 +2115,16 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 	using namespace std::tr2::sys;
 	chunk.is_working = true;
 
-	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
-	int priority = 2;
-	priority = priority + ( float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	//int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
+	//int priority = 2;
+	//priority = priority + ( float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
-	client.thread_mgr.task_io( priority, [ & ] ( ) {
+	client.thread_mgr.task_io( client.thread_mgr.get_max_prio( ), [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Save, false );
 
 		glm::ivec3 pos_lr;
 		Directional::pos_lw_to_lr( chunk.pos_lw, pos_lr );
+		BlockRegion< WorldSize::Chunk::size_x, WorldSize::Chunk::size_y, WorldSize::Chunk::size_z > block_region;
 
 		{
 			std::lock_guard< std::mutex > lock( mtx_file );
@@ -2058,7 +2137,9 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 			int num_block, id;
 			int index_buffer;
 
-			id = chunk.block_set.get_data( 0, 0, 0 );
+			chunk.block_set.get_data( block_region );
+
+			id = block_region.get( 0, 0, 0 );
 			num_block = 0;
 			index_buffer = 0;
 			index_section = 0;
@@ -2066,7 +2147,7 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 			for( int i = 0; i < WorldSize::Chunk::size_y; i++ ) {
 				for( int j = 0; j < WorldSize::Chunk::size_z; j++ ) {
 					for( int k = 0; k < WorldSize::Chunk::size_x; k++ ) {
-						if( id == chunk.block_set.get_data( k, i, j ) ) {
+						if( id == block_region.get( k, i, j ) ) {
 							num_block++;
 						}
 						else {
@@ -2075,7 +2156,7 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 							index_buffer += 2;
 
 							num_block = 1;
-							id = chunk.block_set.get_data( k, i, j );
+							id = block_region.get( k, i, j );
 
 							if( index_buffer >= size_buffer ) {
 								index_start = chunk.ptr_file->file_header.array_index[ index_region ].index_section[ index_section ];
@@ -2128,11 +2209,11 @@ void ChunkMgr::chunk_save( Chunk & chunk ) {
 void ChunkMgr::chunk_remove( Chunk & chunk ) { 
 	chunk.is_working = true;
 
-	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
-	int priority = 2;
-	priority = priority + ( float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
+	//int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
+	//int priority = 2;
+	//priority = priority + ( float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
-	client.thread_mgr.task_async( priority, [ & ] ( ) {
+	client.thread_mgr.task_async( client.thread_mgr.get_max_prio( ), [ & ] ( ) {
 		chunk_state( chunk, ChunkState::CS_Remove, false );
 
 		{
@@ -2177,6 +2258,8 @@ void ChunkMgr::chunk_remove( Chunk & chunk ) {
 		sm_terrain.release_handle( chunk.handle_trans_temp );
 
 		chunk_state_clear( chunk );
+
+		chunk.block_set.clear( );
 
 		{
 			Chunk * ptr_adj_chunk = nullptr;
@@ -2268,7 +2351,7 @@ int ChunkMgr::get_block( glm::vec3 const & pos_gw ) {
 		if( chunk.is_loaded ) {
 			glm::ivec3 pos_lc;
 			Directional::pos_gw_to_lc( pos_gw, pos_lc );
-			return iter->second.get( ).block_set.get_data( pos_lc.x, pos_lc.y, pos_lc.z );
+			return iter->second.get( ).block_set.get( pos_lc.x, pos_lc.y, pos_lc.z );
 		}
 	}
 
@@ -2289,11 +2372,11 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, int const id ) {
 	glm::ivec3 pos_lc;
 	Directional::pos_gw_to_lc( pos_gw, pos_lc );
 
-	if( chunk.block_set.get_data( pos_lc.x, pos_lc.y, pos_lc.z ) == id ) {
+	if( chunk.block_set.get( pos_lc.x, pos_lc.y, pos_lc.z ) == id ) {
 		return;
 	}
 
-	chunk.block_set.set_data( pos_lc.x, pos_lc.y, pos_lc.z, id );
+	chunk.block_set.set( pos_lc.x, pos_lc.y, pos_lc.z, id );
 
 	{
 		std::lock_guard< std::mutex > lock( chunk.mtx_adj );
@@ -2342,9 +2425,9 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 		auto & chunk = state.iter->second.get( );
 
 		if( chunk.is_loaded &&
-			chunk.block_set.get_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
+			chunk.block_set.get( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
 
-			chunk.block_set.set_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
+			chunk.block_set.set( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
 
 			state.map_queue_dirty.insert( { chunk.hash_lw, chunk } );
 			std::lock_guard< std::mutex > lock( chunk.mtx_adj );
@@ -2391,9 +2474,9 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 			auto & chunk = state.iter->second.get( );
 
 			if( chunk.is_loaded &&
-				chunk.block_set.get_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
+				chunk.block_set.get( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z ) != id ) {
 
-				chunk.block_set.set_data( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
+				chunk.block_set.set( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
 
 				state.map_queue_dirty.insert( { Directional::get_hash( state.pos_lw ), chunk } );
 				std::lock_guard< std::mutex > lock( chunk.mtx_adj );
@@ -2847,6 +2930,30 @@ void ChunkMgr::print_center_chunk_mesh( ) {
 		chunk.handle_solid.print_vbo( ) << "\n" << 
 		"commands: " << "\n" <<
 		chunk.handle_solid.print_commands( ) << "\n";
+}
+
+void ChunkMgr::print_rle( ) { 
+	glm::ivec3 pos_lw;
+	glm::ivec3 pos_lc;
+
+	Directional::pos_gw_to_lw( client.entity_mgr.entity_player->h_state.get( ).pos, pos_lw );
+	Directional::pos_gw_to_lc( client.entity_mgr.entity_player->h_state.get( ).pos, pos_lc );
+
+	auto iter = map_chunks.find( Directional::get_hash( pos_lw ) );
+
+	if( iter != map_chunks.end( ) ) {
+		auto & run = iter->second.get( ).block_set.mat_runs[ pos_lc.x ][ pos_lc.z ];
+		auto & out = client.display_mgr.out;
+		out.str( "" );
+		out << "RLE run at: " << pos_lc.x << ", " << pos_lc.z;
+		client.gui_mgr.print_to_console( out.str( ) );
+
+		out.str( "" );
+		for( auto & pair : run.run ) {
+			out << "[" << pair.cnt << ", " << pair.id << "], ";
+		}
+		client.gui_mgr.print_to_console( out.str( ) );
+	}
 }
 
 inline void put_face( SMTerrain::SMTHandle & handle, glm::ivec3 const & pos,

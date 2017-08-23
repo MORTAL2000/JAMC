@@ -18,7 +18,7 @@ QuickBarPage::QuickBarPage( Client & client ) {
 		page->is_visible = true;
 
 		auto clickable_page = page->add_comp( "ClickablePage", "Clickable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ClickableComp::ClickableData >( );
+			auto data = comp->get< ClickableComp::ClickableData >( );
 
 			data->func_hold = [ &client = client ] ( PComp * comp ) {
 				comp->offset += client.input_mgr.get_mouse_delta( );
@@ -30,7 +30,7 @@ QuickBarPage::QuickBarPage( Client & client ) {
 		} );
 
 		auto resizable_border = page->add_comp( "ResizableBorder", "Resizable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim;
@@ -43,7 +43,7 @@ QuickBarPage::QuickBarPage( Client & client ) {
 		} );
 
 		auto border_page = resizable_border->add_comp( "BorderPage", "BorderImage", [ &client = client ] ( PComp * comp ) { 
-			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
+			auto data = comp->get< BorderImageComp::BorderImageData >( );
 			data->set_texture( client, "Gui", "Default/PageBG", 8 );
 			data->padding_border = 4;
 
@@ -51,7 +51,7 @@ QuickBarPage::QuickBarPage( Client & client ) {
 		} );
 		
 		auto resizable_borders = page->add_comp( "ResizableBorders", "Resizable", [ &client = client ] ( PComp * comp ) { 
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client ] ( PComp * comp ) {
 				comp->dim = { comp->parent->dim.y - 8, comp->parent->dim.y - 8 };
@@ -66,12 +66,12 @@ QuickBarPage::QuickBarPage( Client & client ) {
 		resizable_borders->add_comp( "BorderOptions", "BorderImage", [ &client = client ] ( PComp * comp ) {
 			comp->anchor.x = 0.25f;
 
-			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
+			auto data = comp->get< BorderImageComp::BorderImageData >( );
 			data->set_texture( client, "Gui", "Default/PageBG", 8 );
 			data->padding_border = 4;
 
 			comp->add_comp( "ClickableOptions", "Clickable", [ &client = client ] ( PComp * comp ) {
-				auto data = comp->get_data< ClickableComp::ClickableData >( );
+				auto data = comp->get< ClickableComp::ClickableData >( );
 				data->func_up = [ &client = client ] ( PComp * comp ) {
 					if( Directional::is_point_in_rect(
 						client.input_mgr.get_mouse( ),
@@ -101,12 +101,12 @@ QuickBarPage::QuickBarPage( Client & client ) {
 		resizable_borders->add_comp( "BorderGraph", "BorderImage", [ &client = client ] ( PComp * comp ) {
 			comp->anchor.x = 0.75f;
 
-			auto data = comp->get_data< BorderImageComp::BorderImageData >( );
+			auto data = comp->get< BorderImageComp::BorderImageData >( );
 			data->set_texture( client, "Gui", "Default/PageBG", 8 );
 			data->padding_border = 4;
 
 			comp->add_comp( "ClickableGraph", "Clickable", [ &client = client ] ( PComp * comp ) {
-				auto data = comp->get_data< ClickableComp::ClickableData >( );
+				auto data = comp->get< ClickableComp::ClickableData >( );
 
 				data->func_up = [ &client = client ] ( PComp * comp ) {
 					static int id_graph = 0;
@@ -140,7 +140,7 @@ QuickBarPage::QuickBarPage( Client & client ) {
 		} );
 
 		auto resizable_icons = page->add_comp( "ResizableIcons", "Resizable", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get_data< ResizableComp::ResizableData >( );
+			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client ] ( PComp * comp ) {
 				comp->dim = { ( comp->parent->dim.y - 8 ) * 0.75f, ( comp->parent->dim.y - 8 ) * 0.75f };
@@ -155,7 +155,7 @@ QuickBarPage::QuickBarPage( Client & client ) {
 		resizable_icons->add_comp( "IconOptions", "Image", [ &client = client ] ( PComp * comp ) {
 			comp->anchor.x = 0.25f;
 
-			auto data = comp->get_data< ImageComp::ImageData >( );
+			auto data = comp->get< ImageComp::ImageData >( );
 			data->id_subtex = client.texture_mgr.get_texture_layer( "Gui", "Default/Cog" );
 
 			return 0;
@@ -164,7 +164,7 @@ QuickBarPage::QuickBarPage( Client & client ) {
 		resizable_icons->add_comp( "IconGraph", "Image", [ &client = client ] ( PComp * comp ) {
 			comp->anchor.x = 0.75f;
 
-			auto data = comp->get_data< ImageComp::ImageData >( );
+			auto data = comp->get< ImageComp::ImageData >( );
 			data->id_subtex = client.texture_mgr.get_texture_layer( "Gui", "Default/Graph" );
 
 			return 0;

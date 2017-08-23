@@ -11,7 +11,7 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 		auto & ec_state = entity.h_state.get( );
 		ec_state.is_gravity = false;
 
-		auto & ec_water = entity.get_data< ECWater >( ).get( );
+		auto & ec_water = entity.get< ECWater >( ).get( );
 		ec_water.time_now = client.time_mgr.get_time( TimeStrings::GAME );
 		ec_water.time_update = ec_water.time_now;
 		ec_water.time_static = ec_water.time_now;
@@ -38,7 +38,7 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 	},
 	[ ] ( Client & client, Entity & entity ) {
 		auto & ec_state = entity.h_state.get( );
-		auto & ec_water = entity.get_data< ECWater >( ).get( );
+		auto & ec_water = entity.get< ECWater >( ).get( );
 		auto block_water = client.block_mgr.get_block_loader( "Water" );
 		auto block_grass_blade = client.block_mgr.get_block_loader( "Grass Blade" );
 

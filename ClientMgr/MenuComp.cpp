@@ -8,20 +8,20 @@
 void MenuComp::MenuData::add_entry( Client & client, std::string const & label_text, PCFunc func_up ) {
 	auto image = comp->add_comp(std::string( "Image" ) + std::to_string( id_entry++ ), "Image", PageComponentLoader::func_null );
 	image->anchor = { 0.0f, 0.0f };
-	auto image_data = image->get_data< ImageComp::ImageData >( );
+	auto image_data = image->get< ImageComp::ImageData >( );
 	image_data->set_texture( client, "Materials", "Details/Solid" );
 	image_data->color = color_default;
 
 	auto label = image->add_comp( "Label", "Label", func_null );
 	label->anchor = { 0.5f, 0.5f };
-	auto label_data = label->get_data< LabelComp::LabelData >( );
+	auto label_data = label->get< LabelComp::LabelData >( );
 	label_data->text = label_text;
 	label_data->size_text = 12;
 	label_data->alignment_h = label_data->AH_Center;
 	label_data->alignment_v = label_data->AV_Center;
 
 	auto clickable = image->add_comp( "Clickable", "Clickable", func_null );
-	auto clickable_data = clickable->get_data< ClickableComp::ClickableData >( );
+	auto clickable_data = clickable->get< ClickableComp::ClickableData >( );
 
 	clickable_data->func_down = [ &client = client, image_data, this ] ( PComp * comp ) {
 		image_data->color = color_down;
@@ -50,7 +50,7 @@ void MenuComp::MenuData::add_entry( Client & client, std::string const & label_t
 	};
 
 	auto overable = image->add_comp( "Overable", "Overable", func_null );
-	auto overable_data = overable->get_data< OverableComp::OverableData >( );
+	auto overable_data = overable->get< OverableComp::OverableData >( );
 	overable_data->func_enter = [ &client = client, image_data, this ] ( PComp * comp ) {
 		if( !( image_data->color == color_down ) ) { 
 			image_data->color = color_over;
@@ -118,7 +118,7 @@ MenuComp::MenuComp( Client & client ) {
 		data->color_down = { 0.7f, 0.0f, 0.0f, 0.3f };
 
 		data->comp_border = comp->add_comp( "Border", "BorderImage", func_null );
-		data->data_border = data->comp_border->get_data< BorderImageComp::BorderImageData >( );
+		data->data_border = data->comp_border->get< BorderImageComp::BorderImageData >( );
 		data->data_border->padding_border = 4;
 
 		data->reposition( );
