@@ -1317,6 +1317,8 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 			index_start = chunk.ptr_file->file_header.array_index[ index_region ].index_section[ index_section ];
 
 			if( index_start != -1 ) {
+				BlockRegion< WorldSize::Chunk::size_x, WorldSize::Chunk::size_y, WorldSize::Chunk::size_z > block_region;
+
 				chunk.ptr_file->file_stream.seekg( sizeof( FileHeader ) + index_start );
 				chunk.ptr_file->file_stream.read( ( char * ) & buffer_section, SectionIndex::size_section_bytes );
 
@@ -1360,11 +1362,13 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 								id = buffer_section[ index_buffer + 1 ];
 							}
 
-							chunk.block_set.set( k, i, j, id );
+							block_region.set( k, i, j, id );
 							num_block--;
 						}
 					}
 				}
+
+				chunk.block_set.set_data( block_region );
 
 				chunk.is_loaded = true;
 			}
