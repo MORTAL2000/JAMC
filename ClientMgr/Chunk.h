@@ -43,7 +43,6 @@ enum ChunkState {
 	CS_Init,
 	CS_Read,
 	CS_Load,
-	CS_Wait,
 	CS_Gen,
 	CS_Manip,
 	CS_Encode,

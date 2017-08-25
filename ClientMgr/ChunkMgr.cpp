@@ -81,7 +81,7 @@ int time_last_remesh = 0;
 int cooldown_remesh = 200;
 glm::ivec3 vect_refresh = { 1, 1, 1 };
 
-int num_chunks_refresh = 16;
+int num_chunks_refresh = 8;
 int index = 0;
 
 void ChunkMgr::update( ) {
@@ -93,7 +93,7 @@ void ChunkMgr::update( ) {
 
 	int const time_now = client.time_mgr.get_time( TimeStrings::GAME );
 
-	/*
+	
 	for( int i = 0; i < num_chunks_refresh; ++i ) {
 		glm::ivec3 dim_world = WorldSize::World::vec_size * 2 + glm::ivec3{ 1, 1, 1 };
 
@@ -121,10 +121,10 @@ void ChunkMgr::update( ) {
 
 		++index;
 	}
-	*/
+	
 
-	if( time_now - time_last_map > cooldown_map ) {
-		client.thread_mgr.task_async( 10, [ & ] ( ) {
+	//if( time_now - time_last_map > cooldown_map ) {
+		//client.thread_mgr.task_async( 10, [ & ] ( ) {
 			std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
 
 			chunk_add( pos_center_chunk_lw );
@@ -136,11 +136,12 @@ void ChunkMgr::update( ) {
 					&& chunk.is_loaded
 					&& !chunk.is_shutdown ) {
 
-					if( !Directional::is_within_range( chunk.pos_lw, WorldSize::World::vec_size, pos_center_chunk_lw ) ) {
+					if( !Directional::is_within_range( chunk.pos_lw, WorldSize::World::vec_size /*+ glm::ivec3( 1, 1, 1 )*/, pos_center_chunk_lw ) ) {
 						chunk_state( chunk, ChunkState::CS_Save, true );
 						chunk_state( chunk, ChunkState::CS_Remove, true );
 						chunk.is_shutdown = true;
 					}
+					//else if(  )
 					else {
 						glm::ivec3 pos_adj;
 
@@ -155,14 +156,14 @@ void ChunkMgr::update( ) {
 						}
 					}
 				}
-			}
-		} );
+		//	}
+		//} );
 
 		time_last_map = time_now;
 	}
 
 	if( time_now - time_last_remesh > cooldown_remesh ) {
-		client.thread_mgr.task_async( 10, [ & ] ( ) {
+		//client.thread_mgr.task_async( 10, [ & ] ( ) {
 			std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
 
 			glm::ivec3 pos_chunk;
@@ -181,7 +182,7 @@ void ChunkMgr::update( ) {
 					}
 				}
 			}
-		} );
+		//} );
 
 		time_last_remesh = time_now;
 	}

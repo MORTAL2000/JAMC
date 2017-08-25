@@ -94,7 +94,7 @@ private:
 	SMTerrain sm_terrain;
 	SMChunkIncl sm_inclusive;
 
-	std::vector< SMChunkIncl::SMHandle > list_handles_inclusive;
+	///std::vector< SMChunkIncl::SMHandle > list_handles_inclusive;
 
 	static int const dist_sun = WorldSize::Chunk::size_x * WorldSize::World::size_x;
 	bool is_sun_pause;
