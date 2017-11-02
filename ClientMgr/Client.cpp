@@ -51,6 +51,7 @@ void Client::main_loop( ) {
 		TranslateMessage( &msg );
 		DispatchMessage( &msg );
 	}
+
 	time_mgr.end_record( RecordStrings::UPDATE_PRE );
 	time_mgr.push_record( RecordStrings::UPDATE_PRE );
 
@@ -175,11 +176,11 @@ void Client::init_mgrs( ) {
 	thread_mgr.init( );
 	display_mgr.init( );
 
-	// Init things that depend on opengl
 	GL_CHECK( time_mgr.init( ) );
 	GL_CHECK( input_mgr.init( ) );
 	GL_CHECK( texture_mgr.init( ) );
 	GL_CHECK( gui_mgr.init( ) );
+
 	GL_CHECK( block_mgr.init( ) );
 	GL_CHECK( biome_mgr.init( ) );
 	GL_CHECK( chunk_mgr.init( ) );
@@ -279,16 +280,6 @@ void Client::end( ) {
 }
 
 void Client::sec( ) {
-	
-	std::ostringstream out;
-
-	out << "Game Time: " << client.time_mgr.get_time( TimeStrings::GAME );
-	gui_mgr.print_to_console( out.str( ) );
-
-	out.str( "" );
-	out << "Sleep cnt: " << cnt_sleep << std::endl;
-	gui_mgr.print_to_console( out.str( ) );
-	
 	cnt_sleep = 0;
 
 	resource_mgr.sec( );
@@ -301,6 +292,10 @@ void Client::sec( ) {
 	update_cnt = 0;
 	render_last = render_cnt;
 	render_cnt = 0;
+}
+
+int Client::cnt_update( ) { 
+	return update_cnt;
 }
 
 LRESULT CALLBACK Client::WndProc( HWND p_hWnd, UINT p_uiMessage, WPARAM p_wParam, LPARAM p_lParam ) {

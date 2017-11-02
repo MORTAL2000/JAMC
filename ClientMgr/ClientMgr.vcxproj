@@ -157,6 +157,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="StatisticsPage.cpp" />
+    <ClCompile Include="UpdatedLabelComp.cpp" />
     <ClCompile Include="BaseBiome.cpp" />
     <ClCompile Include="BiomeLoader.cpp" />
     <ClCompile Include="BiomeMgr.cpp" />
@@ -256,6 +258,7 @@
     <ClInclude Include="ResizeComp.h" />
     <ClInclude Include="SliderComp.h" />
     <ClInclude Include="SliderVComp.h" />
+    <ClInclude Include="StatisticsPage.h" />
     <ClInclude Include="TextButtonComp.h" />
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="ChunkData.h" />
@@ -298,6 +301,7 @@
     <ClInclude Include="ThreadMgr.h" />
     <ClInclude Include="TimeMgr.h" />
     <ClInclude Include="Tnt.h" />
+    <ClInclude Include="UpdatedLabelComp.h" />
     <ClInclude Include="VBO.h" />
     <ClInclude Include="WaterBlock.h" />
     <ClInclude Include="WorldSize.h" />

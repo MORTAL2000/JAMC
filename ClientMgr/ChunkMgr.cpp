@@ -35,7 +35,7 @@ void ChunkMgr::init( ) {
 
 	pos_center_chunk_lw = glm::ivec3( 0, 0, 0 );
 
-	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 6;
+	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 3;
 	GLuint num_verts = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 8;
 	GLuint num_buff = 1024;
 	GLuint size_buff_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4 * 2;
@@ -53,7 +53,7 @@ void ChunkMgr::init( ) {
 	GL_CHECK( init_shadowmap( ) );
 	GL_CHECK( init_debug( ) );
 
-	//delete_world( );
+	delete_world( );
 
 	dim_world_current = WorldSize::World::vec_size;
 
@@ -72,6 +72,80 @@ void ChunkMgr::init( ) {
 	is_wireframe = false;
 	is_render_solid = true;
 	is_render_trans = true;
+
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+		out << "Chunks: " << map_chunks.size( );
+		return out.str( );
+	} );
+
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+		out << "Dirty: " << map_dirty.size( );
+		return out.str( );
+	} );
+
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+		out << "Render List: " << list_render.size( );
+		return out.str( );
+	} );
+
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) { 
+		int unsigned num_current = sm_terrain.num_primitives( );
+		float num_current_mill = num_current / 1000;
+		num_current_mill = ( int ) num_current_mill;
+		num_current_mill /= 1000;
+
+		int unsigned num_total = 0;
+		{
+			std::lock_guard< std::recursive_mutex > lock( mtx_chunks );
+
+			for( auto & chunk : map_chunks ) {
+				num_total += chunk.second.get( ).handle_solid.num_primitives( );
+				num_total += chunk.second.get( ).handle_trans.num_primitives( );
+			}
+		}
+
+		float num_total_mill = num_total / 1000;
+		num_total_mill = ( int ) num_total_mill;
+		num_total_mill /= 1000;
+
+		float size = num_total * sizeof( VertTerrain );
+		size /= 1024;
+		size /= 1024;
+		size *= 100;
+		size = ( int ) size;
+		size /= 100;
+
+
+		std::ostringstream out;
+		out << "Num triangles: " << num_current_mill << "(MM)/" << num_total_mill << "(MM) size: " << size << "MB" << std::endl;
+
+		return out.str( );
+	} );
+	
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		int cnt = 0;
+
+		{
+			std::lock_guard< std::recursive_mutex > lock( mtx_chunks );
+
+			auto iter = map_chunks.begin( );
+			while( iter != map_chunks.end( ) ) {
+				cnt += sizeof( iter->second.get( ).block_set );
+				++iter;
+			}
+		}
+
+		std::ostringstream out;
+		out << "Chunk Memory -";
+		out << " Average: " << cnt / 1024.0f / 1024.0f / map_chunks.size( ) << "MB";
+		out << " Total: " << cnt / 1024.0f / 1024.0f << "MB";
+
+		
+		return out.str( );
+	} );
 }
 
 int time_last_map = 0;
@@ -93,7 +167,7 @@ void ChunkMgr::update( ) {
 
 	int const time_now = client.time_mgr.get_time( TimeStrings::GAME );
 
-	
+	/*
 	for( int i = 0; i < num_chunks_refresh; ++i ) {
 		glm::ivec3 dim_world = WorldSize::World::vec_size * 2 + glm::ivec3{ 1, 1, 1 };
 
@@ -122,81 +196,102 @@ void ChunkMgr::update( ) {
 		++index;
 	}
 	
+	{
+		std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
 
-	//if( time_now - time_last_map > cooldown_map ) {
-		//client.thread_mgr.task_async( 10, [ & ] ( ) {
-			std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
+		chunk_add( pos_center_chunk_lw );
 
-			chunk_add( pos_center_chunk_lw );
+		for( auto & pair_handle : map_chunks ) {
+			auto & chunk = pair_handle.second.get( );
 
-			for( auto & pair_handle : map_chunks ) {
-				auto & chunk = pair_handle.second.get( );
+			if( chunk.cnt_adj != 6
+				&& chunk.is_loaded
+				&& !chunk.is_shutdown ) {
 
-				if( chunk.cnt_adj != 6
-					&& chunk.is_loaded
-					&& !chunk.is_shutdown ) {
-
-					if( !Directional::is_within_range( chunk.pos_lw, WorldSize::World::vec_size /*+ glm::ivec3( 1, 1, 1 )*/, pos_center_chunk_lw ) ) {
-						chunk_state( chunk, ChunkState::CS_Save, true );
-						chunk_state( chunk, ChunkState::CS_Remove, true );
-						chunk.is_shutdown = true;
-					}
-					//else if(  )
-					else {
-						glm::ivec3 pos_adj;
-
-						for( int i = 0; i < FaceDirection::FD_Size; i++ ) {
-							if( chunk.ptr_adj[ i ] == nullptr ) {
-								pos_adj = chunk.pos_lw + Directional::get_vec_dir_i( ( FaceDirection ) i );
-
-								if( Directional::is_within_range( pos_adj, WorldSize::World::vec_size, pos_center_chunk_lw ) ) {
-									chunk_add( pos_adj );
-								}
-							}
-						}
-					}
+				if( !Directional::is_within_range( chunk.pos_lw, WorldSize::World::vec_size /*+ glm::ivec3( 1, 1, 1 ), pos_center_chunk_lw ) ) {
+					chunk_state( chunk, ChunkState::CS_Save, true );
+					chunk_state( chunk, ChunkState::CS_Remove, true );
+					chunk.is_shutdown = true;
 				}
-		//	}
-		//} );
+				else {
+					glm::ivec3 pos_adj;
 
-		time_last_map = time_now;
-	}
+					for( int i = 0; i < FaceDirection::FD_Size; i++ ) {
+						if( chunk.ptr_adj[ i ] == nullptr ) {
+							pos_adj = chunk.pos_lw + Directional::get_vec_dir_i( ( FaceDirection ) i );
 
-	if( time_now - time_last_remesh > cooldown_remesh ) {
-		//client.thread_mgr.task_async( 10, [ & ] ( ) {
-			std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
-
-			glm::ivec3 pos_chunk;
-			auto iter_chunks = map_chunks.end( );
-			for( int i = pos_center_chunk_lw.x - vect_refresh.x; i <= pos_center_chunk_lw.x + vect_refresh.x; i++ ) {
-				for( int j = pos_center_chunk_lw.y - vect_refresh.y; j <= pos_center_chunk_lw.y + vect_refresh.y; j++ ) {
-					for( int k = pos_center_chunk_lw.z - vect_refresh.z; k <= pos_center_chunk_lw.z + vect_refresh.z; k++ ) {
-						pos_chunk = glm::ivec3( i, j, k );
-						iter_chunks = map_chunks.find( Directional::get_hash( pos_chunk ) );
-						if( iter_chunks != map_chunks.end( ) ) {
-							auto & chunk = iter_chunks->second.get( );
-							if( chunk.is_loaded && !chunk.is_shutdown ) {
-								chunk_state( chunk, ChunkState::CS_TMesh, true );
+							if( Directional::is_within_range( pos_adj, WorldSize::World::vec_size, pos_center_chunk_lw ) ) {
+								chunk_add( pos_adj );
 							}
 						}
 					}
 				}
 			}
-		//} );
+		}
+
+		time_last_map = time_now;
+	}
+
+	if( time_now - time_last_remesh > cooldown_remesh ) {
+		std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
+
+		glm::ivec3 pos_chunk;
+		auto iter_chunks = map_chunks.end( );
+		for( int i = pos_center_chunk_lw.x - vect_refresh.x; i <= pos_center_chunk_lw.x + vect_refresh.x; i++ ) {
+			for( int j = pos_center_chunk_lw.y - vect_refresh.y; j <= pos_center_chunk_lw.y + vect_refresh.y; j++ ) {
+				for( int k = pos_center_chunk_lw.z - vect_refresh.z; k <= pos_center_chunk_lw.z + vect_refresh.z; k++ ) {
+					pos_chunk = glm::ivec3( i, j, k );
+					iter_chunks = map_chunks.find( Directional::get_hash( pos_chunk ) );
+					if( iter_chunks != map_chunks.end( ) ) {
+						auto & chunk = iter_chunks->second.get( );
+						if( chunk.is_loaded && !chunk.is_shutdown ) {
+							chunk_state( chunk, ChunkState::CS_TMesh, true );
+						}
+					}
+				}
+			}
+		}
+
+		time_last_remesh = time_now;
+	}
+	*/
+
+	chunk_add( pos_center_chunk_lw );
+
+	if( time_now - time_last_remesh > cooldown_remesh ) {
+		std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
+
+		glm::ivec3 pos_chunk;
+		auto iter_chunks = map_chunks.end( );
+		for( int i = pos_center_chunk_lw.x - vect_refresh.x; i <= pos_center_chunk_lw.x + vect_refresh.x; i++ ) {
+			for( int j = pos_center_chunk_lw.y - vect_refresh.y; j <= pos_center_chunk_lw.y + vect_refresh.y; j++ ) {
+				for( int k = pos_center_chunk_lw.z - vect_refresh.z; k <= pos_center_chunk_lw.z + vect_refresh.z; k++ ) {
+					pos_chunk = glm::ivec3( i, j, k );
+					iter_chunks = map_chunks.find( Directional::get_hash( pos_chunk ) );
+					if( iter_chunks != map_chunks.end( ) ) {
+						auto & chunk = iter_chunks->second.get( );
+						if( chunk.is_loaded && !chunk.is_shutdown ) {
+							chunk_state( chunk, ChunkState::CS_TMesh, true );
+						}
+					}
+				}
+			}
+		}
 
 		time_last_remesh = time_now;
 	}
 
 	{
-		std::lock_guard< std::recursive_mutex > lock_dirty( mtx_dirty );
+		std::lock_guard< std::recursive_mutex > lock( mtx_dirty );
 
 		auto iter = map_dirty.begin( );
 		while( iter != map_dirty.end( ) ) {
 			auto & chunk = iter->second;
 
-			if( chunk.cnt_states ) {
+			std::lock_guard< std::recursive_mutex > lock_state( chunk.mtx_state );
+			if( chunk.cnt_states != 0 ) {
 				chunk_update( chunk );
-				iter++;
+				++iter;
 			}
 			else {
 				iter = map_dirty.erase( iter );
@@ -578,60 +673,6 @@ void ChunkMgr::end( ) {
 }
 
 void ChunkMgr::sec( ) {
-	client.thread_mgr.task_main( 1, [ & ] ( ) {
-		int unsigned num_current = sm_terrain.num_primitives( );
-		float num_current_mill = num_current / 1000;
-		num_current_mill = ( int ) num_current_mill;
-		num_current_mill /= 1000;
-
-		int unsigned num_total = 0;
-		for( auto & chunk : map_chunks ) {
-			num_total += chunk.second.get( ).handle_solid.num_primitives( );
-			num_total += chunk.second.get( ).handle_trans.num_primitives( );
-		}
-		float num_total_mill = num_total / 1000;
-		num_total_mill = ( int ) num_total_mill;
-		num_total_mill /= 1000;
-
-		float size = num_total * sizeof( VertTerrain );
-		size /= 1024;
-		size /= 1024;
-		size *= 100;
-		size = ( int ) size;
-		size /= 100;
-
-		
-		std::ostringstream out;
-		out << "Num triangles: " << num_current_mill << "(MM)/" << num_total_mill << "(MM) size: " << size << "MB" << std::endl;
-
-		client.gui_mgr.print_to_console( out.str( ) );
-
-		out.str( "" );
-		out << "Render List: " << list_render.size( );
-		client.gui_mgr.print_to_console( out.str( ) );
-
-		out.str( "" );
-		out << "Chunks: " << map_chunks.size( );
-		client.gui_mgr.print_to_console( out.str( ) );
-
-		out.str( "" );
-		out << "Dirty: " << map_dirty.size( );
-		client.gui_mgr.print_to_console( out.str( ) );
-
-		out.str( "" );
-		int cnt = 0;
-		auto iter = map_chunks.begin( );
-		while( iter != map_chunks.end( ) ) {
-			cnt += sizeof( iter->second.get( ).block_set );
-
-			++iter;
-		}
-
-		out << "Block Set total: " << cnt / 1024.0f / 1024.0f << "MB";
-		out << " | Block Set avrg: " << cnt / 1024.0f / 1024.0f / map_chunks.size( ) << "MB";
-		client.gui_mgr.print_to_console( out.str( ) );
-		
-	} );
 }
 
 void ChunkMgr::save_all( ) {
@@ -879,9 +920,9 @@ void ChunkMgr::init_shadowmap( ) {
 		depth_cascades[ i ] = 0;
 	}
 	depth_cascades[ 0 ] = 16.0f;
-	depth_cascades[ 1 ] = 64.0f;
-	depth_cascades[ 2 ] = 256.0f;
-	depth_cascades[ 3 ] = 512.0f;
+	depth_cascades[ 1 ] = 32.0f;
+	depth_cascades[ 2 ] = 128.0;
+	depth_cascades[ 3 ] = 256.0f;
 
 	client.texture_mgr.update_uniform( "SMShadowMapSolid", "frag_sampler", ( GLint ) 0 );
 	client.texture_mgr.update_uniform( "SMShadowMapTrans", "frag_sampler", ( GLint ) 0 );
@@ -1017,9 +1058,63 @@ void ChunkMgr::chunk_update( Chunk & chunk ) {
 			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_remove( chunk );
 		}
+
+		return;
 	}
-	else if( chunk.is_loaded ) {
-		if( chunk.states[ CS_Gen ] ) {
+
+	if( !Directional::is_within_range( chunk.pos_lw,
+		WorldSize::World::vec_size + glm::ivec3( 1, 1, 1 ),
+		pos_center_chunk_lw ) ) {
+		chunk_state( chunk, ChunkState::CS_Save, true );
+		chunk_state( chunk, ChunkState::CS_Remove, true );
+		chunk.is_shutdown = true;
+		return;
+	}
+
+	if( chunk.is_loaded ) {
+		if( chunk.states[ CS_Adj ] ) {
+			chunk.is_working = true;
+			client.thread_mgr.task_main( 1, [ & ] ( ) {
+				std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
+				std::lock_guard< std::recursive_mutex > lock_adj( chunk.mtx_adj );
+
+				if( chunk.cnt_adj == 6 ) {
+					//client.gui_mgr.print_to_console( "is six" );
+					for( int i = 0; i < 6; ++i ) {
+						if( chunk.ptr_adj[ i ] && !chunk.ptr_adj[ i ]->is_loaded ) {
+							chunk.is_working = false;
+							return;
+						}
+					}
+
+					/*
+					for( int i = 0; i < 6; ++i ) {
+						if( chunk.ptr_adj[ i ]->cnt_adj != 6 ) {
+							chunk_state( *chunk.ptr_adj[ i ], ChunkState::CS_Adj, true );
+						}
+					}
+					*/
+
+					chunk_state( chunk, ChunkState::CS_Adj, false );
+					chunk.is_working = false;
+					return;
+				}
+
+				for( int i = 0; i < 6; ++i ) {
+					if( chunk.ptr_adj[ i ] == nullptr ) {
+						auto new_pos = chunk.pos_lw + Directional::get_vec_dir_i( ( FaceDirection ) i );
+						if( Directional::is_within_range( new_pos,
+							WorldSize::World::vec_size + glm::ivec3( 1, 1, 1 ),
+							pos_center_chunk_lw ) ) {
+							chunk_add( new_pos );
+						}
+					}
+				}
+
+				chunk.is_working = false;
+			} );
+		}
+		else if( chunk.states[ CS_Gen ] ) {
 			//std::ostringstream out;
 			//out << "Chunk Generate";
 			//client.gui_mgr.print_to_console( out.str( ) );
@@ -1043,8 +1138,11 @@ void ChunkMgr::chunk_update( Chunk & chunk ) {
 			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_save( chunk );
 		}
+
+		return;
 	}
-	else if( !chunk.is_loaded ) {
+
+	if( !chunk.is_loaded ) {
 		if( chunk.states[ CS_Init ] ) {
 			//std::ostringstream out;
 			//out << "Chunk Init";
@@ -1063,6 +1161,8 @@ void ChunkMgr::chunk_update( Chunk & chunk ) {
 			//client.gui_mgr.print_to_console( out.str( ) );
 			chunk_load( chunk );
 		}
+
+		return;
 	}
 }
 
@@ -1127,14 +1227,14 @@ void ChunkMgr::chunk_add( glm::ivec3 const & pos_lw ) {
 			ptr_adj_chunk = &iter->second.get( );
 
 			{
-				std::lock_guard< std::mutex > lock( chunk->mtx_adj );
+				std::lock_guard< std::recursive_mutex > lock( chunk->mtx_adj );
 
 				chunk->ptr_adj[ face_adj ] = ptr_adj_chunk;
 				chunk->cnt_adj += 1;
 			}
 
 			{
-				std::lock_guard< std::mutex > lock( ptr_adj_chunk->mtx_adj );
+				std::lock_guard< std::recursive_mutex > lock( ptr_adj_chunk->mtx_adj );
 				if( face_adj % 2 == 0 ) {
 					ptr_adj_chunk->ptr_adj[ face_adj + 1 ] = chunk;
 				}
@@ -1377,15 +1477,16 @@ void ChunkMgr::chunk_read( Chunk & chunk ) {
 
 		if( chunk.is_loaded ) {
 			{
-				std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+				std::lock_guard< std::recursive_mutex > lock( chunk.mtx_adj );
 				for( int i = 0; i < FD_Size; i++ ) {
 					if( chunk.ptr_adj[ i ] != nullptr ) {
-						chunk_state( *chunk.ptr_adj[ i ], ChunkState::CS_SMesh, true );
-						chunk_state( *chunk.ptr_adj[ i ], ChunkState::CS_TMesh, true );
+						//chunk_state( *chunk.ptr_adj[ i ], ChunkState::CS_SMesh, true );
+						//chunk_state( *chunk.ptr_adj[ i ], ChunkState::CS_TMesh, true );
 					}
 				}
 			}
 
+			chunk_state( chunk, ChunkState::CS_Adj, true );
 			chunk_state( chunk, ChunkState::CS_SMesh, true );
 			chunk_state( chunk, ChunkState::CS_TMesh, true );
 		}
@@ -1460,6 +1561,7 @@ void ChunkMgr::chunk_load( Chunk & chunk ) {
 		chunk.block_set.set_data( block_region );
 
 		chunk.is_loaded = true;
+		chunk_state( chunk, ChunkState::CS_Adj, true );
 		chunk_state( chunk, ChunkState::CS_Gen, true );
 
 		chunk.is_working = false;
@@ -1569,7 +1671,7 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 		proc_set_state( state );
 
 		{
-			std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+			std::lock_guard< std::recursive_mutex > lock( chunk.mtx_adj );
 			for( int i = 0; i < FD_Size; i++ ) {
 				if( chunk.ptr_adj[ i ] != nullptr ) {
 					chunk_state( *chunk.ptr_adj[ i ], ChunkState::CS_SMesh, true );
@@ -1708,9 +1810,9 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
 								pos_adj -= Directional::get_vec_dir_i( dir_face )  * WorldSize::Chunk::vec_size;
 
-								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+								std::lock_guard< std::recursive_mutex > lock( chunk.mtx_adj );
 
-								if( chunk.ptr_adj[ dir_face ] == nullptr || !chunk.ptr_adj[ dir_face ]->is_loaded ) {
+								if( chunk.ptr_adj[ dir_face ] == nullptr || !chunk.ptr_adj[ dir_face ]->is_loaded || chunk.ptr_adj[ dir_face ]->is_shutdown ) {
 									// Chunk Aint loaded
 									list_id_last[ dir_face ].first = -1;
 
@@ -1817,7 +1919,7 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
 								pos_adj -= Directional::get_vec_dir_i( dir_face )  * WorldSize::Chunk::vec_size;
 
-								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+								std::lock_guard< std::recursive_mutex > lock( chunk.mtx_adj );
 
 								if( chunk.ptr_adj[ dir_face ] == nullptr || !chunk.ptr_adj[ dir_face ]->is_loaded ) {
 									// Chunk Aint loaded
@@ -1984,9 +2086,9 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 							if( !Directional::is_point_in_region( pos_adj, pos_min, pos_max ) ) {
 								pos_adj -= Directional::get_vec_dir_i( dir_face )  * WorldSize::Chunk::vec_size;
 
-								std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+								std::lock_guard< std::recursive_mutex > lock( chunk.mtx_adj );
 
-								if( chunk.ptr_adj[ dir_face ] == nullptr || !chunk.ptr_adj[ dir_face ]->is_loaded ) {
+								if( chunk.ptr_adj[ dir_face ] == nullptr || !chunk.ptr_adj[ dir_face ]->is_loaded || chunk.ptr_adj[ dir_face ]->is_shutdown ) {
 									continue;
 								}
 
@@ -2268,14 +2370,18 @@ void ChunkMgr::chunk_remove( Chunk & chunk ) {
 
 		{
 			Chunk * ptr_adj_chunk = nullptr;
-			std::lock_guard< std::recursive_mutex > lock( mtx_chunks );
+
+			std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
+			std::lock_guard< std::recursive_mutex > lock_adj( chunk.mtx_adj );
 
 			for( int i = 0; i < FD_Size; i++ ) {
 				if( chunk.ptr_adj[ i ] != nullptr ) {
 					ptr_adj_chunk = chunk.ptr_adj[ i ];
 
+					chunk_state( *ptr_adj_chunk, ChunkState::CS_Adj, true );
+
 					{
-						std::lock_guard< std::mutex > lock( ptr_adj_chunk->mtx_adj );
+						//std::lock_guard< std::mutex > lock( ptr_adj_chunk->mtx_adj );
 						if( i % 2 == 0 ) {
 							ptr_adj_chunk->ptr_adj[ i + 1 ] = nullptr;
 						}
@@ -2285,7 +2391,6 @@ void ChunkMgr::chunk_remove( Chunk & chunk ) {
 						ptr_adj_chunk->cnt_adj -= 1;
 					}
 
-					std::lock_guard< std::mutex > lock( chunk.mtx_adj );
 					chunk.ptr_adj[ i ] = nullptr;
 					chunk.cnt_adj -= 1;
 				}
@@ -2384,7 +2489,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, int const id ) {
 	chunk.block_set.set( pos_lc.x, pos_lc.y, pos_lc.z, id );
 
 	{
-		std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+		std::lock_guard< std::recursive_mutex > lock( chunk.mtx_adj );
 		if( pos_lc.x == 0 && chunk.ptr_adj[ FD_Right ] != nullptr ) {
 			chunk_state( *chunk.ptr_adj[ FD_Right ], ChunkState::CS_SMesh, true );
 			chunk_state( *chunk.ptr_adj[ FD_Right ], ChunkState::CS_TMesh, true );
@@ -2435,7 +2540,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 			chunk.block_set.set( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
 
 			state.map_queue_dirty.insert( { chunk.hash_lw, chunk } );
-			std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+			std::lock_guard< std::recursive_mutex > lock( chunk.mtx_adj );
 			if( state.pos_lc.x == 0 && chunk.ptr_adj[ FD_Right ] != nullptr ) {
 				state.map_queue_dirty.insert( {
 					chunk.ptr_adj[ FD_Right ]->hash_lw,
@@ -2484,7 +2589,7 @@ void ChunkMgr::set_block( glm::ivec3 const & pos_gw, SetState & state,	int const
 				chunk.block_set.set( state.pos_lc.x, state.pos_lc.y, state.pos_lc.z, id );
 
 				state.map_queue_dirty.insert( { Directional::get_hash( state.pos_lw ), chunk } );
-				std::lock_guard< std::mutex > lock( chunk.mtx_adj );
+				std::lock_guard< std::recursive_mutex > lock( chunk.mtx_adj );
 				if( state.pos_lc.x == 0 && chunk.ptr_adj[ FD_Right ] != nullptr ) {
 					state.map_queue_dirty.insert( {
 						chunk.ptr_adj[ FD_Right ]->hash_lw,

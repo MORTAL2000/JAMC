@@ -60,13 +60,13 @@ float shadow_calc( ) {
 	float delta_view = length( g_in.vert_view.z );
 	uint idx_shadow = 0;
 
-	if( delta_view > 512.0 ) {
+	if( delta_view > 256.0 ) {
 		return 0.0;
 	}
-	else if( delta_view > 256.0 ) {
+	else if( delta_view > 128.0 ) {
 		idx_shadow = 3;
 	}
-	else if( delta_view > 64.0 ) {
+	else if( delta_view > 32.0 ) {
 		idx_shadow = 2;
 	}
 	else if( delta_view > 16.0 ) {

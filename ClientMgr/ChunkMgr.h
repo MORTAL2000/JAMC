@@ -121,7 +121,7 @@ private:
 	std::mutex mtx_file;
 
 	// Chunk data container mutex
-	std::recursive_mutex mtx_chunks, mtx_dirty, mtx_edge, mtx_render;
+	std::recursive_mutex mtx_chunks, mtx_dirty, mtx_render;
 
 	// Chunk data containers
 	std::unordered_map< int, Handle< Chunk > > map_chunks;
@@ -129,7 +129,6 @@ private:
 	std::unordered_map< int, ChunkFile > map_file;
 
 	std::unordered_map< int, Chunk & > map_dirty;
-	std::unordered_map< int, Chunk & > map_edge;
 
 	std::unordered_map< int, Chunk & > map_render;
 

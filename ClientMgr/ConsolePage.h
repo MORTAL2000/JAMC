@@ -7,6 +7,8 @@
 #include "TextFieldComp.h"
 #include "SliderVComp.h"
 
+#include <mutex>
+
 class ConsolePage : public PageLoader {
 
 public:
@@ -28,6 +30,9 @@ public:
 		int idx_history;
 		int idx_history_recall;
 
+		int size_title;
+		int size_text_title;
+
 		std::vector< std::string > list_history;
 		std::vector< PComp * > list_labels;
 
@@ -41,6 +46,8 @@ public:
 		SliderVComp::SliderVData * data_slider;
 
 		void clear_text( ) { 
+			std::lock_guard< std::recursive_mutex > lock( console->client->gui_mgr.mtx_console );
+
 			int idx;
 			for( int i = 0; i < num_visible; ++i ) { 
 				idx = idx_labels - idx_visible - i;
@@ -61,6 +68,8 @@ public:
 		}
 
 		void set_text_size( unsigned int const size ) {
+			std::lock_guard< std::recursive_mutex > lock( console->client->gui_mgr.mtx_console );
+
 			size_text = size;
 
 			for( auto label : list_labels ) { 
@@ -69,6 +78,8 @@ public:
 		}
 
 		void check_visibles( ) { 
+			std::lock_guard< std::recursive_mutex > lock( console->client->gui_mgr.mtx_console );
+
 			int new_num_visible = ( comp_border_text->dim.y - padding ) / ( size_text + padding_text );
 
 			if( new_num_visible > size_labels - idx_visible ) { 
@@ -100,6 +111,8 @@ public:
 		}
 
 		void reposition_labels( ) {
+			std::lock_guard< std::recursive_mutex > lock( console->client->gui_mgr.mtx_console );
+
 			int idx;
 
 			for( int i = 0; i < num_visible; ++i ) { 
@@ -114,7 +127,9 @@ public:
 			}
 		}
 
-		void push_command( ) { 
+		void push_command( ) {
+			std::lock_guard< std::recursive_mutex > lock( console->client->gui_mgr.mtx_console );
+
 			if( !data_input->text.size( ) ) { 
 				return; 
 			}
@@ -147,6 +162,8 @@ public:
 		}
 
 		void push_text( std::string const & string ) { 
+			std::lock_guard< std::recursive_mutex > lock( console->client->gui_mgr.mtx_console );
+
 			idx_labels++;
 			idx_labels = idx_labels % num_text_max;
 
@@ -172,6 +189,8 @@ public:
 		}
 
 		void set_idx_visible( int new_idx_visible ) { 
+			std::lock_guard< std::recursive_mutex > lock( console->client->gui_mgr.mtx_console );
+
 			if( new_idx_visible > idx_visible ) {
 				int idx;
 				

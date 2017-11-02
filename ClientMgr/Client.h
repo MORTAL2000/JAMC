@@ -66,5 +66,7 @@ public:
 	void end();
 	void sec();
 
+	int cnt_update( );
+
 	LRESULT CALLBACK WndProc( HWND p_hWnd, UINT p_uiMessage, WPARAM p_wParam, LPARAM p_lParam );
 };

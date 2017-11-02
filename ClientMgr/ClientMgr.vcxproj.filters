@@ -369,6 +369,12 @@
     <ClCompile Include="SliderVComp.cpp">
       <Filter>Source Files\Managers\GuiMgr\Components</Filter>
     </ClCompile>
+    <ClCompile Include="UpdatedLabelComp.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="StatisticsPage.cpp">
+      <Filter>Source Files\Managers\GuiMgr\Pages</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Globals.h">
@@ -586,6 +592,12 @@
     </ClInclude>
     <ClInclude Include="SliderVComp.h">
       <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="UpdatedLabelComp.h">
+      <Filter>Header Files\Managers\GuiMgr\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="StatisticsPage.h">
+      <Filter>Header Files\Managers\GuiMgr\Pages</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

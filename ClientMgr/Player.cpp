@@ -136,6 +136,10 @@ Player::Player( ) :
 					ec_state.veloc.y += 5.2f;
 				}
 
+				if( client.input_mgr.is_key( 'E' ) ) {
+					ec_state.accel.y += 19.62f;
+				}
+
 				if( accel_input != glm::vec3 { 0, 0, 0 } )
 					accel_input = glm::normalize( accel_input );
 

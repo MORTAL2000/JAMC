@@ -52,11 +52,13 @@ struct BlockRegion {
 template< int unsigned t_x, int unsigned t_z >
 struct BlockSet {
 	std::array< std::array< RLERun, t_z >, t_x > mat_runs;
-	std::array< std::mutex, t_x > mat_mutex;
+	//std::array< std::mutex, t_x > mat_mutex;
+	std::mutex mat_mutex;
 
 	void clear( ) { 
 		for( int unsigned i = 0; i < t_x; ++i ) {
-			std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
+			std::lock_guard< std::mutex > lock( mat_mutex );
+			//std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
 			for( int unsigned j = 0; j < t_z; ++j ) {
 				mat_runs[ i ][ j ].clear( );
 			}
@@ -64,8 +66,9 @@ struct BlockSet {
 	};
 	
 	void clear_fill( int unsigned size, short id ) { 
+		std::lock_guard< std::mutex > lock( mat_mutex );
 		for( int unsigned i = 0; i < t_x; ++i ) {
-			std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
+			//std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
 			for( int unsigned j = 0; j < t_z; ++j ) {
 				mat_runs[ i ][ j ].clear_fill( size, id );
 			}
@@ -73,19 +76,22 @@ struct BlockSet {
 	};
 
 	void set( int unsigned x, int unsigned y, int unsigned z, short id ) { 
-		std::lock_guard< std::mutex > lock( mat_mutex[ x ] );
+		std::lock_guard< std::mutex > lock( mat_mutex );
+		//std::lock_guard< std::mutex > lock( mat_mutex[ x ] );
 		mat_runs[ x ][ z ].set( y, id );
 	};
 
-	short get( int unsigned x, int unsigned y, int unsigned z ) { 
-		std::lock_guard< std::mutex > lock( mat_mutex[ x ] );
+	short get( int unsigned x, int unsigned y, int unsigned z ) {
+		std::lock_guard< std::mutex > lock( mat_mutex );
+		//std::lock_guard< std::mutex > lock( mat_mutex[ x ] );
 		return mat_runs[ x ][ z ].get( y );
 	};
 
 	template< int unsigned t_y >
 	void set_data( BlockRegion< t_x, t_y, t_z > & region ) {
+		std::lock_guard< std::mutex > lock( mat_mutex );
 		for( int unsigned i = 0; i < t_x; ++i ) {
-			std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
+			//std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
 
 			for( int unsigned j = 0; j < t_z; ++j ) {
 				mat_runs[ i ][ j ].run.clear( );
@@ -114,8 +120,9 @@ struct BlockSet {
 
 	template< int unsigned t_y >
 	void get_data( BlockRegion< t_x, t_y, t_z > & region ) {
+		std::lock_guard< std::mutex > lock( mat_mutex );
 		for( int unsigned i = 0; i < t_x; ++i ) {
-			std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
+			//std::lock_guard< std::mutex > lock( mat_mutex[ i ] );
 
 			for( int unsigned j = 0; j < t_z; ++j ) {
 

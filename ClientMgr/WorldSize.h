@@ -17,8 +17,8 @@ public:
 		static int const size_z = 16;
 		static glm::ivec3 const vec_size;
 		static int const num_chunks =
-			( size_x * 2 + 1 ) * ( size_y * 2 + 1 ) * ( size_z * 2 + 1 ) +
-			( size_x * 2 + 1 ) * ( size_z * 2 + 1 );
+			( size_x * 2 + 3 ) * ( size_y * 2 + 3 ) * ( size_z * 2 + 3 ) +
+			( size_x * 2 + 3 ) * ( size_z * 2 + 3 );
 		static int const level_sea = 0;
 	};
 

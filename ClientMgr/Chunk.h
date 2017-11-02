@@ -43,6 +43,7 @@ enum ChunkState {
 	CS_Init,
 	CS_Read,
 	CS_Load,
+	CS_Adj,
 	CS_Gen,
 	CS_Manip,
 	CS_Encode,
@@ -74,7 +75,7 @@ public:
 	bool states[ CS_Size ];
 
 	int cnt_adj;
-	std::mutex mtx_adj;
+	std::recursive_mutex mtx_adj;
 	std::array< Chunk *, FD_Size > ptr_adj;
 
 	SMTerrain::SMTHandle handle_solid;

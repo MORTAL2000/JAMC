@@ -32,8 +32,8 @@ void ThreadMgr::init() {
 		client.is_running = false;
 	}
 	else {
-		size_io = 2;
-		size_async = total_threads - 3;
+		size_io = 1;
+		size_async = total_threads - 2;
 		size_async = std::max( 2u, size_async );
 		size_sync = size_async;
 	}

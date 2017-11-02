@@ -4,6 +4,7 @@
 #include "PageComponentLoader.h"
 
 #include "LabelComp.h"
+#include "BorderImageComp.h"
 
 class TextFieldComp : public PageComponentLoader {
 public:
@@ -21,6 +22,7 @@ public:
 
 		PComp * comp_label;
 		LabelComp::LabelData * data_label;
+		BorderImageComp::BorderImageData * data_border;
 		PComp * comp_cursor;
 		PComp * comp_highlight;
 	};

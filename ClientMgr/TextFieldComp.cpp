@@ -39,9 +39,9 @@ TextFieldComp::TextFieldComp( Client & client ) {
 			return 0;
 		} );
 
-		auto border = resizable->add_comp( "Border", "BorderImage", [ &client = client ] ( PComp * comp ) {
-			auto data = comp->get< BorderImageComp::BorderImageData >( );
-			data->padding_border = 4;
+		auto border = resizable->add_comp( "Border", "BorderImage", [ &client = client, data ] ( PComp * comp ) {
+			data->data_border = comp->get< BorderImageComp::BorderImageData >( );
+			data->data_border->padding_border = 4;
 
 			return 0;
 		} );

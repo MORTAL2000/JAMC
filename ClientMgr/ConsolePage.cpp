@@ -32,6 +32,9 @@ ConsolePage::ConsolePage( Client & client ) {
 		data_console->idx_history_recall = 0;
 		data_console->list_history.resize( ConsoleData::num_history_max );
 
+		data_console->size_title = 24;
+		data_console->size_text_title = 18;
+
 		auto resizable_root = page->add_comp( "ResizableRoot", "Resizable", [ &client = client ] ( PComp * comp ) {
 			auto data = comp->get< ResizableComp::ResizableData >( );
 
@@ -63,16 +66,30 @@ ConsolePage::ConsolePage( Client & client ) {
 			return 0;
 		} );
 
-		auto resizable_text = page->add_comp( "ResizableText", "Resizable", [ &client = client, data_console ] ( PComp * comp ) {
+		auto label_title = border_root->add_comp( "LabelTitle", "Label", [ &client = client, data_console ] ( PComp * comp ) {
+			auto data = comp->get< LabelComp::LabelData >( );
+			data->text = "Console";
+			data->size_text = data_console->size_text_title;
+			data->alignment_v = LabelComp::LabelData::AlignVertical::AV_Center;
+
+			comp->anchor = { 0.0f, 1.0f };
+			comp->offset = { data_console->padding * 2, -data_console->padding - data_console->size_title / 2  };
+
+			return 0;
+		} );
+
+		auto resizable_text = border_root->add_comp( "ResizableText", "Resizable", [ &client = client, data_console ] ( PComp * comp ) {
 			auto data = comp->get< ResizableComp::ResizableData >( );
 
 			data->func_resize = [ &client = client, data_console ] ( PComp * comp ) {
 				comp->dim = comp->parent->dim;
 				comp->dim.x -= data_console->padding * 2;
 				comp->dim.y -= data_console->dy_input + data_console->padding * 3;
+				comp->dim.y -= data_console->size_title;
 
 				comp->offset = -comp->dim / 2;
 				comp->offset.y += ( ( data_console->dy_input + data_console->padding ) / 2 );
+				comp->offset.y -= data_console->size_title / 2;
 
 				data_console->check_visibles( );
 				data_console->reposition_labels( );
@@ -86,7 +103,7 @@ ConsolePage::ConsolePage( Client & client ) {
 		data_console->comp_border_text = resizable_text->add_comp( "BorderText", "BorderImage", [ &client = client ] ( PComp * comp ) {
 			auto data = comp->get< BorderImageComp::BorderImageData >( );
 			data->padding_border = 4;
-
+			data->color *= 0.75f;
 			return 0;
 		} );
 
@@ -121,6 +138,8 @@ ConsolePage::ConsolePage( Client & client ) {
 			data_console->data_slider->set_labels_visible( false );
 
 			data_console->data_slider->func_write = [ &client = client, data_console ] ( PComp * comp ) {
+				std::lock_guard< std::recursive_mutex > lock( client.gui_mgr.mtx_console );
+
 				data_console->set_idx_visible( std::round(
 					data_console->data_slider->ratio *
 					std::max( 0, data_console->size_labels - data_console->num_visible ) 
@@ -148,10 +167,10 @@ ConsolePage::ConsolePage( Client & client ) {
 			return 0;
 		} );
 
-		
 		auto textfield_input = resizable_input->add_comp( "TextFieldInput", "TextField", [ &client = client, data_console ] ( PComp * comp ) {
 			data_console->data_input = comp->get< TextFieldComp::TextFieldData >( );
 			data_console->data_input->text = "";
+			data_console->data_input->data_border->color *= 0.75f;
 
 			return 0;
 		} );

@@ -27,8 +27,6 @@ private:
 
 	PComp * comp_selected;
 
-	std::mutex mtx_console;
-
 	std::vector< PCLoader > list_page_component_loaders;
 	std::unordered_map< std::string, int > map_page_component_loaders;
 
@@ -40,6 +38,8 @@ private:
 	std::queue< std::string > queue_remove;
 
 public:
+	std::recursive_mutex mtx_console;
+
 	BlockSelector block_selector;
 
 	GuiMgr( Client & client );
@@ -116,6 +116,7 @@ public:
 
 	void process_input( );
 
+	void add_statistics_entry( std::function< std::string( ) > func_entry );
 	void print_to_console( std::string const & str_out );
 };
 

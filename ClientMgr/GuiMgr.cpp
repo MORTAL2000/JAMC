@@ -11,6 +11,7 @@
 #include "QuickBarPage.h"
 #include "GraphPage.h"
 #include "ConsolePage.h"
+#include "StatisticsPage.h"
 
 #include "RootComp.h"
 #include "ContainerComp.h"
@@ -56,6 +57,10 @@ void GuiMgr::init( ) {
 	printf( "\nLoading Pages...\n\n" );
 	load_pages( );
 
+	add_statistics_entry( [ & ] ( ) { 
+		return "Game Time: " + std::to_string( ( int ) client.time_mgr.get_time( TimeStrings::GAME ) );
+	} );
+
 	is_visible = true;
 }
 
@@ -89,12 +94,14 @@ void GuiMgr::load_pages( ) {
 	add_page_loader( QuickBarPage( client ) );
 	add_page_loader( GraphPage( client ) );
 	add_page_loader( ConsolePage( client ) ); 
+	add_page_loader( StatisticsPage( client ) );
 
 	//add_page( "TestPage", "Test", PageLoader::func_null );
 
 	add_page( "Options", "Options", PageLoader::func_null );
 	add_page( "QuickBar", "QuickBar", PageLoader::func_null );
 	add_page( "Console", "Console", PageLoader::func_null );
+	add_page( "Statistics", "Statistics", PageLoader::func_null );
 
 	int cnt = 1;
 	for( auto str_record : { RecordStrings::SLEEP, RecordStrings::FRAME, 
@@ -176,6 +183,7 @@ void GuiMgr::on_over( ) {
 		}
 		else if( comp_over ) { 
 			comp_over_last->pc_loader->func_exit( comp_over_last );
+
 			comp_over_last = comp_over;
 			comp_over_last->pc_loader->func_enter( comp_over_last );
 		}
@@ -427,7 +435,7 @@ PComp * GuiMgr::get_named_parent( PComp * comp, std::string const & name ) {
 
 void GuiMgr::mesh_page( Page * page ) {
 	if( page->is_visible && page->is_remesh ) {
-		client.thread_mgr.task_main( 10, [ this, page ] ( ) {
+		//client.thread_mgr.task_main( 10, [ this, page ] ( ) {
 			page->vbo_mesh.clear( );
 
 			page->loader->func_mesh( page );
@@ -435,7 +443,7 @@ void GuiMgr::mesh_page( Page * page ) {
 			mesh_comp( page->root );
 
 			page->vbo_mesh.buffer( );
-		} );
+		//} );
 
 		page->is_remesh = false;
 	}
@@ -1330,7 +1338,11 @@ void GuiMgr::process_input( ) {
 	data->text.clear( );
 }
 
-void GuiMgr::print_to_console( std::string const & str_out ) { 
+void GuiMgr::add_statistics_entry( std::function<std::string( )> func_entry ) { 
+	get_page( "Statistics" )->get< StatisticsPage::StatisticsData >( )->add_entry( func_entry );
+}
+
+void GuiMgr::print_to_console( std::string const & str_out ) {
 	auto page = get_page( "Console" );
 
 	if( !page ) { 

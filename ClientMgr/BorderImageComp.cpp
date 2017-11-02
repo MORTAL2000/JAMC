@@ -38,11 +38,11 @@ BorderImageComp::BorderImageComp( Client & client ) {
 
 		float p_x[ ] = { 
 			( float ) comp->pos.x, comp->pos.x + data->padding_border,
-			( float ) comp->pos.x + comp->dim.x - data->padding_border, comp->pos.x + comp->dim.x };
+			( float ) comp->pos.x + comp->dim.x - data->padding_border, ( float ) comp->pos.x + comp->dim.x };
 
 		float p_y[ ] = { 
 			( float ) comp->pos.y, comp->pos.y + data->padding_border,
-			( float ) comp->pos.y + comp->dim.y - data->padding_border, comp->pos.y + comp->dim.y };
+			( float ) comp->pos.y + comp->dim.y - data->padding_border, ( float ) comp->pos.y + comp->dim.y };
 
 		float p_uv[ ] = { 
 			data->dh_pix, data->dh_pix + data->d_uv,
