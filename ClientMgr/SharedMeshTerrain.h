@@ -295,14 +295,18 @@ public:
 			}
 		}
 
-		int unsigned num_primitives( ) {
+		GLuint num_cmd_primitives( ) {
 			int unsigned cnt = 0;
 
 			for( GLuint i = 0; i < list_cmds.size( ); ++i ) {
-				cnt += list_cmds[ i ].second.count_vert * 2;
+				cnt += list_cmds[ i ].second.count_vert;
 			}
 
 			return cnt;
+		}
+
+		GLuint num_vbo_blocks( ) { 
+			return list_vbo_blocks.size( );
 		}
 
 		void clear( ) {
@@ -317,7 +321,6 @@ public:
 
 			size_vbo = 0;
 		}
-
 
 		bool swap_handle( SharedMeshTerrainHandle & handle_swap ) {
 			if( ptr_parent != handle_swap.ptr_parent ) {
@@ -377,6 +380,9 @@ private:
 	std::vector< SMTBlock > list_vbo_blocks;
 	std::queue< std::pair< GLuint, SMTBlock * > > queue_vbo_avail;
 	std::unordered_map< GLuint, SMTBlock * > map_vbo_live;
+
+	//Total Size data
+	GLuint size_bytes_vbo;
 
 	// Command data and lists
 	GLuint num_commands;
@@ -526,13 +532,13 @@ public:
 		glGenBuffers( 1, &id_vecs_model );
 
 		// Some size vars
-		std::cout << "Size of vertex: " << sizeof( Vertex ) << std::endl;
-		GLuint size_bytes_vbo = size_vbo_block * num_vbo_blocks * sizeof( Vertex );
-		printf( "\nSize vertices buffer: %f\n", size_bytes_vbo / 1024.0f / 1024.0f );
+		//std::cout << "Size of vertex: " << sizeof( Vertex ) << std::endl;
+		size_bytes_vbo = size_vbo_block * num_vbo_blocks * sizeof( Vertex );
+		//printf( "\nSize vertices buffer: %f\n", size_bytes_vbo / 1024.0f / 1024.0f );
 
-		float size_mb_total = size_bytes_vbo / 1024.0f / 1024.0f;
+		//float size_mb_total = size_bytes_vbo / 1024.0f / 1024.0f;
 
-		printf( "\nSize total: %f\n", size_mb_total );
+		//printf( "\nSize total: %f\n", size_mb_total );
 
 		// Allocate Space
 		glBindBuffer( GL_ARRAY_BUFFER, id_vbo );
@@ -664,7 +670,11 @@ public:
 		return ( GLuint ) map_buffer_live.size( );
 	}
 
-	GLuint num_primitives( ) { 
+	GLuint size_bytes_total( ) { 
+		return size_bytes_vbo;
+	}
+
+	GLuint num_cmd_primitives( ) { 
 		GLuint total = 0;
 
 		for( auto & cmd : list_commands ) {

@@ -35,8 +35,9 @@ void ChunkMgr::init( ) {
 
 	pos_center_chunk_lw = glm::ivec3( 0, 0, 0 );
 
-	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 3;
-	GLuint num_verts = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 8;
+	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z / 2;
+	GLuint num_verts = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 32;
+
 	GLuint num_buff = 1024;
 	GLuint size_buff_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4 * 2;
 
@@ -92,39 +93,56 @@ void ChunkMgr::init( ) {
 	} );
 
 	client.gui_mgr.add_statistics_entry( [ & ] ( ) { 
-		int unsigned num_current = sm_terrain.num_primitives( );
-		float num_current_mill = num_current / 1000;
-		num_current_mill = ( int ) num_current_mill;
-		num_current_mill /= 1000;
+		int unsigned num_prim = 0;
 
-		int unsigned num_total = 0;
 		{
 			std::lock_guard< std::recursive_mutex > lock( mtx_chunks );
 
-			for( auto & chunk : map_chunks ) {
-				num_total += chunk.second.get( ).handle_solid.num_primitives( );
-				num_total += chunk.second.get( ).handle_trans.num_primitives( );
+			for( auto & pair_chunk : map_chunks ) {
+				auto & chunk = pair_chunk.second.get( );
+
+				num_prim += chunk.handle_solid.num_cmd_primitives( );
+				num_prim += chunk.handle_trans.num_cmd_primitives( );
 			}
 		}
 
-		float num_total_mill = num_total / 1000;
-		num_total_mill = ( int ) num_total_mill;
-		num_total_mill /= 1000;
-
-		float size = num_total * sizeof( VertTerrain );
-		size /= 1024;
-		size /= 1024;
-		size *= 100;
-		size = ( int ) size;
-		size /= 100;
-
+		float num_current_mill = ( ( int ) ( sm_terrain.num_cmd_primitives( ) / 1000.0f ) ) / 1000.0f;
+		float num_prim_mill = ( ( int ) ( num_prim / 1000.0f ) ) / 1000.0f;
 
 		std::ostringstream out;
-		out << "Num triangles: " << num_current_mill << "(MM)/" << num_total_mill << "(MM) size: " << size << "MB" << std::endl;
+		out << "TMesh Prims - Rend: " << num_current_mill << "(MM) Tot: " << num_prim_mill << "(MM)";
 
 		return out.str( );
 	} );
 	
+	client.gui_mgr.add_statistics_entry( [ &, size_verts = size_verts ] ( ) {
+		int unsigned num_prim = 0;
+		int unsigned num_vbo_blocks = 0;
+		{
+			std::lock_guard< std::recursive_mutex > lock( mtx_chunks );
+
+			for( auto & pair_chunk : map_chunks ) {
+				auto & chunk = pair_chunk.second.get( );
+
+				num_prim += chunk.handle_solid.num_cmd_primitives( );
+				num_prim += chunk.handle_trans.num_cmd_primitives( );
+
+				num_vbo_blocks += chunk.handle_solid.num_vbo_blocks( );
+				num_vbo_blocks += chunk.handle_trans.num_vbo_blocks( );
+			}
+		}
+
+		float num_prim_mill = ( ( int ) ( num_prim / 1000.0f ) ) / 1000.0f;
+		float size_total_cmd = ( ( int ) ( ( num_prim * sizeof( VertTerrain ) ) / ( 1024.0f * 1024.0f ) * 100.0f ) ) / 100.0f;
+
+		float size_total_cmd_actual = ( ( int ) ( ( num_vbo_blocks * sizeof( VertTerrain ) * size_verts ) / ( 1024.0f * 1024.0f ) * 100.0f ) ) / 100.0f;
+
+		std::ostringstream out;
+		out << "TMesh Size - Theo: " << size_total_cmd << "(MB) Act: " << size_total_cmd_actual << "(MB) Tot: " << this->sm_terrain.size_bytes_total( ) / 1024.0f / 1024.0f << "(MB)" << std::endl;
+
+		return out.str( );
+	} );
+
 	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
 		int cnt = 0;
 
@@ -139,9 +157,9 @@ void ChunkMgr::init( ) {
 		}
 
 		std::ostringstream out;
-		out << "Chunk Memory -";
-		out << " Average: " << cnt / 1024.0f / 1024.0f / map_chunks.size( ) << "MB";
-		out << " Total: " << cnt / 1024.0f / 1024.0f << "MB";
+		out << "Chunk Mem -";
+		out << " Avg: " << cnt / 1024.0f / 1024.0f / map_chunks.size( ) << "MB";
+		out << " Tot: " << cnt / 1024.0f / 1024.0f << "MB";
 
 		
 		return out.str( );
@@ -153,9 +171,9 @@ int cooldown_map = 100;
 
 int time_last_remesh = 0;
 int cooldown_remesh = 200;
-glm::ivec3 vect_refresh = { 1, 1, 1 };
+glm::ivec3 vect_refresh = { 2, 2, 2 };
 
-int num_chunks_refresh = 8;
+int num_chunks_refresh = 4;
 int index = 0;
 
 void ChunkMgr::update( ) {
@@ -167,7 +185,7 @@ void ChunkMgr::update( ) {
 
 	int const time_now = client.time_mgr.get_time( TimeStrings::GAME );
 
-	/*
+	
 	for( int i = 0; i < num_chunks_refresh; ++i ) {
 		glm::ivec3 dim_world = WorldSize::World::vec_size * 2 + glm::ivec3{ 1, 1, 1 };
 
@@ -195,7 +213,7 @@ void ChunkMgr::update( ) {
 
 		++index;
 	}
-	
+	/*
 	{
 		std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
 
@@ -443,7 +461,7 @@ void ChunkMgr::render_build( ) {
 	sm_terrain.buffer_commands( );
 
 	num_cmds += sm_terrain.size_commands( );
-	num_triangles += sm_terrain.num_primitives( );
+	num_triangles += sm_terrain.num_cmd_primitives( );
 }
 
 void ChunkMgr::render_pass_shadow( ) {
@@ -796,15 +814,15 @@ void ChunkMgr::mesh_skybox( ) {
 		float constexpr dy = 1.0f / 1024.0f;
 
 		static std::vector< std::string > const name_skyboxes = { 
-			"Default",
-			"Grimm Night",
-			"Interstellar Day",
+			//"Default",
+			//"Grimm Night",
+			//"Interstellar Day",
 			"Interstellar Night",
-			"Miramar Day",
+			//"Miramar Day",
 			"Miramar Day NS",
-			"Stormy Day",
-			"Summer Sky",
-			"The Wizard",
+			//"Stormy Day",
+			//"Summer Sky",
+			//"The Wizard",
 			"Poppy"
 		};
 
