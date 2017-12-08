@@ -1047,7 +1047,10 @@ void GuiMgr::process_input( ) {
 				print_to_console( out.str( ) );
 
 				client.thread_mgr.task_async( 10, [ &, vec_pos, vec_dim, id ] ( ) {
+					int time_start = client.time_mgr.get_time( TimeStrings::GAME );
 					client.chunk_mgr.set_rect( vec_pos, vec_dim, id );
+					time_start = client.time_mgr.get_time( TimeStrings::GAME ) - time_start;
+					print_to_console( "Done setting rectangle, took " + std::to_string( time_start ) + "ms" );
 				} );
 			}
 			else { 

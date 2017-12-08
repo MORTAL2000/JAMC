@@ -1298,13 +1298,13 @@ void ChunkMgr::chunk_shutdown( Chunk & chunk ) {
 	chunk.is_shutdown = true;
 }
 
-void ChunkMgr::chunk_set_manip( Chunk & chunk, short unsigned x, short unsigned y, short unsigned z, short id ) {
+//void ChunkMgr::chunk_set_manip( Chunk & chunk, short unsigned x, short unsigned y, short unsigned z, short id ) {
 	//chunk_state( chunk, ChunkState::CS_Manip, true );
 
 	//chunk.list_block_manip.push_back( { { x, y, z }, id } );
-}
+//}
 
-void ChunkMgr::chunk_manip( Chunk & chunk ) { 
+//void ChunkMgr::chunk_manip( Chunk & chunk ) { 
 	//chunk_state( chunk, ChunkState::CS_Manip, false );
 	//PosBlock * pos;
 
@@ -1319,7 +1319,7 @@ void ChunkMgr::chunk_manip( Chunk & chunk ) {
 
 	//chunk_state( chunk, ChunkState::CS_SMesh, true );
 	//chunk_state( chunk, ChunkState::CS_TMesh, true );
-}
+//}
 
 void ChunkMgr::chunk_init( Chunk & chunk ) {
 	chunk.is_working = true;

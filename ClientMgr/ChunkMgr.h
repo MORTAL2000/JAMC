@@ -114,7 +114,7 @@ private:
 	int size_chunk_outline;
 
 	// Center chunk pos
-	glm::ivec3 pos_center_chunk_lw;
+	glm::ivec3 pos_center_chunk_lw ;
 
 	// Map container mutex
 	std::mutex mtx_noise;
@@ -203,8 +203,10 @@ private:
 
 	//void chunk_wait( Chunk & chunk );
 
-	void chunk_set_manip( Chunk & chunk, short unsigned x, short unsigned y, short unsigned z, short id );
-	void chunk_manip( Chunk & chunk );
+	//void chunk_set_manip( Chunk & chunk, short unsigned x, short unsigned y, short unsigned z, short id );
+	//void chunk_manip( Chunk & chunk );
+
+	//void chunk_adj( Chunk & chunk );
 
 	void chunk_init( Chunk & chunk );
 	void chunk_read( Chunk & chunk );
