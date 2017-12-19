@@ -196,7 +196,7 @@ void TextureMgr::bind_texture_array( GLuint const id_active, GLuint const id_tex
 }
 
 void TextureMgr::load_textures( ) { 
-	using namespace std::tr2::sys;
+	using namespace std::experimental::filesystem;
 	path path_base( "./Textures" );
 	path path_multitex;
 	tinyxml2::XMLDocument doc;

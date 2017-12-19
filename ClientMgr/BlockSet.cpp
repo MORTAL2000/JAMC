@@ -86,7 +86,7 @@ void RLERun::set( short index, short id ) {
 		return;
 	}
 
-	// If our pair count is one, merge lef or right pair
+	// If our pair count is one, merge left or right pair
 	if( run[ idx_run ].cnt == 1 ) {
 		if( idx_run > 0 && run[ idx_run - 1 ].id == id ) {
 			run[ idx_run ].cnt += run[ idx_run - 1 ].cnt;
@@ -158,4 +158,8 @@ void RLERun::print( ) {
 	}
 
 	std::cout << " ]" << std::endl;
+}
+
+int unsigned RLERun::size_bytes() {
+	return sizeof( RLERun ) + sizeof( RLEPair ) * run.size( );
 }

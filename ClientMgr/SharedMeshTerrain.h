@@ -678,7 +678,7 @@ public:
 		GLuint total = 0;
 
 		for( auto & cmd : list_commands ) {
-			total += cmd.count_vert * 2;
+			total += cmd.count_vert;
 		}
 
 		return total;

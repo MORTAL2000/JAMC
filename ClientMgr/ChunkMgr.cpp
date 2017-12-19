@@ -58,7 +58,7 @@ void ChunkMgr::init( ) {
 
 	dim_world_current = WorldSize::World::vec_size;
 
-	using namespace std::tr2::sys;
+	using namespace std::experimental::filesystem;
 	path path_world( "./World" );
 
 	if( !exists( path_world ) ) {
@@ -106,7 +106,9 @@ void ChunkMgr::init( ) {
 			}
 		}
 
-		float num_current_mill = ( ( int ) ( sm_terrain.num_cmd_primitives( ) / 1000.0f ) ) / 1000.0f;
+		num_prim *= 2;
+
+		float num_current_mill = ( ( int ) ( sm_terrain.num_cmd_primitives( ) * 2 / 1000.0f ) ) / 1000.0f;
 		float num_prim_mill = ( ( int ) ( num_prim / 1000.0f ) ) / 1000.0f;
 
 		std::ostringstream out;
@@ -143,6 +145,7 @@ void ChunkMgr::init( ) {
 		return out.str( );
 	} );
 
+	/*
 	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
 		int cnt = 0;
 
@@ -151,19 +154,21 @@ void ChunkMgr::init( ) {
 
 			auto iter = map_chunks.begin( );
 			while( iter != map_chunks.end( ) ) {
-				cnt += sizeof( iter->second.get( ).block_set );
+				auto & chunk = iter->second.get( );
+				cnt += sizeof( Chunk ) + chunk.block_set.size_bytes();
 				++iter;
 			}
 		}
 
 		std::ostringstream out;
 		out << "Chunk Mem -";
-		out << " Avg: " << cnt / 1024.0f / 1024.0f / map_chunks.size( ) << "MB";
+		out << " Avg: " << ( ( int ) ( cnt / 1024.0f / 1024.0f / map_chunks.size( ) * 1000.0f ) ) / 1000.0f << "MB";
 		out << " Tot: " << cnt / 1024.0f / 1024.0f << "MB";
 
 		
 		return out.str( );
 	} );
+	*/
 }
 
 int time_last_map = 0;
@@ -213,6 +218,7 @@ void ChunkMgr::update( ) {
 
 		++index;
 	}
+
 	/*
 	{
 		std::lock_guard< std::recursive_mutex > lock_chunks( mtx_chunks );
@@ -715,7 +721,7 @@ void ChunkMgr::wait_on_shutdown( ) {
 }
 
 void ChunkMgr::delete_world( ) {
-	using namespace std::tr2::sys;
+	using namespace std::experimental::filesystem;
 	path path_world( "./World" );
 	std::error_code error;
 
@@ -1370,7 +1376,7 @@ void ChunkMgr::chunk_init( Chunk & chunk ) {
 }
 
 void ChunkMgr::chunk_read( Chunk & chunk ) { 
-	using namespace std::tr2::sys;
+	using namespace std::experimental::filesystem;
 	chunk.is_working = true;
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
@@ -2237,7 +2243,7 @@ void ChunkMgr::chunk_buffer( Chunk & chunk ) {
 }
 
 void ChunkMgr::chunk_save( Chunk & chunk ) {
-	using namespace std::tr2::sys;
+	using namespace std::experimental::filesystem;
 	chunk.is_working = true;
 
 	//int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );

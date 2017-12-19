@@ -22,11 +22,14 @@ struct RLERun {
 	void clear_fill( short size, short id );
 
 	void print( );
+
+	int unsigned size_bytes( );
 };
 
 template< int unsigned t_x, int unsigned t_y, int unsigned t_z >
 struct BlockRegion { 
 	typedef std::array< std::array< std::array< short, t_y >, t_z >, t_x > BlockData;
+
 	BlockData blocks;
 
 	BlockRegion( ) :
@@ -144,4 +147,16 @@ struct BlockSet {
 			}
 		}
 	};
+
+	int unsigned size_bytes() {
+		int unsigned size = sizeof( BlockSet );
+
+		for (int i = 0; i < t_x; ++i) {
+			for (int k = 0; k < t_z; ++k) {
+				size += mat_runs[i][k].size_bytes();
+			}
+		}
+
+		return size;
+	}
 };
