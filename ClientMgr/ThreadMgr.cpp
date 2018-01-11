@@ -33,7 +33,7 @@ void ThreadMgr::init() {
 	}
 	else {
 		size_io = 1;
-		size_async = total_threads - 4;
+		size_async = total_threads - 2;
 		size_async = std::max( 2u, size_async );
 		size_sync = size_async;
 	}
@@ -101,6 +101,110 @@ void ThreadMgr::init() {
 	std::cout << std::endl;
 }
 
+void ThreadMgr::post_init( ) { 
+	// Main Queues
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+		int total = 0;
+
+		for( int i = 0; i < funcs_main.size( ); i++ ) {
+			total += ( int ) funcs_main[ i ].size( );
+		}
+
+		out << "[Main Queue]: " << total;
+
+		return out.str( );
+	} );
+
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+
+		out << "[Main Cnt] total: " << cnt_main_total;
+
+		return out.str( );
+	} );
+
+	// IO Queues
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+
+		int total = 0;
+		for( int i = 0; i < funcs_io.size( ); i++ ) {
+			total += ( int ) funcs_io[ i ].size( );
+		}
+
+		out << "[Io Queue]: " << total;
+
+		return out.str( );
+	} );
+
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+
+		out << "[Io Cnt]";
+		for( int i = 0; i < cnt_io.size( ); i++ ) {
+			out << " t" << i << ": " << cnt_io[ i ];
+		}
+
+		return out.str( );
+	} );
+
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+
+		out << "[Io Cnt]";
+		out << " total: " << cnt_io_total;
+
+		return out.str( );
+	} );
+
+	// Async Queues
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+		int total = 0;
+
+		for( int i = 0; i < funcs_async.size( ); i++ ) {
+			total += ( int ) funcs_async[ i ].size( );
+		}
+
+		out.str( "" );
+		out << "[Async Queue]: " << total;
+
+		return out.str( );
+	} );
+
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+
+		out << "[Async Cnt]";
+		for( int i = 0; i < cnt_async.size( ) / 2; i++ ) {
+			out << " t" << i << ": " << cnt_async[ i ];
+		}
+
+		return out.str( );
+	} );
+
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+
+		out << "[Async Cnt]";
+		for( int i = ( int ) cnt_async.size( ) / 2; i < ( int ) cnt_async.size( ); i++ ) {
+			out << " t" << i << ": " << cnt_async[ i ];
+		}
+
+		return out.str( );
+	} );
+
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
+		std::ostringstream out;
+
+		out << "[Async Cnt]";
+		out << " total: " << cnt_async_total;
+
+		return out.str( );
+	} );
+}
+
 void ThreadMgr::update( ) {
 	auto & out = client.display_mgr.out;
 	int total = 0;
@@ -146,68 +250,6 @@ void ThreadMgr::update( ) {
 		client.gui_mgr.print_to_console( out.str( ) );
 	}
 	*/
-
-	/*
-	out.str( "" );
-	out << "[Main Queue]: " << total;
-	client.gui_mgr.print_to_static( out.str( ) );
-
-	out.str( "" );
-	out << "[Main Cnt] total: " << cnt_main_total;
-	client.gui_mgr.print_to_static( out.str( ) );
-
-	// Print Io cnts
-	total = 0;
-	for( int i = 0; i < funcs_io.size( ); i++ ) {
-		total += ( int ) funcs_io[ i ].size( );
-	}
-
-	out.str( "" );
-	out << "[Io Queue] Io: " << total;
-	client.gui_mgr.print_to_static( out.str( ) );
-
-	out.str( "" );
-	out << "[Io Cnt]";
-	for( int i = 0; i < cnt_io.size( ); i++ ) {
-		out << " t" << i << ": " << cnt_io[ i ];
-	}
-	client.gui_mgr.print_to_static( out.str( ) );
-
-	out.str( "" );
-	out << "[Io Cnt]";
-	out << " total: " << cnt_io_total;
-	client.gui_mgr.print_to_static( out.str( ) );
-
-	// Print Async cnts
-	total = 0;
-	for( int i = 0; i < funcs_async.size( ); i++ ) { 
-		total += ( int ) funcs_async[ i ].size( );
-	}
-
-	out.str( "" );
-	out << "[Async Queue]: " << total;
-	client.gui_mgr.print_to_static( out.str( ) );
-
-	out.str( "" );
-	out << "[Async Cnt]";
-	for( int i = 0; i < cnt_async.size( ) / 2; i++ ) {
-		out << " t" << i << ": " << cnt_async[ i ];
-	}
-	client.gui_mgr.print_to_static( out.str( ) );
-
-	out.str( "" );
-	out << "[Async Cnt]";
-	for( int i = ( int ) cnt_async.size( ) / 2; i < ( int ) cnt_async.size( ); i++ ) {
-		out << " t" << i << ": " << cnt_async[ i ];
-	}
-	client.gui_mgr.print_to_static( out.str( ) );
-
-	out.str( "" );
-	out << "[Async Cnt]";
-	out << " total: " << cnt_async_total;
-	client.gui_mgr.print_to_static( out.str( ) );
-	*/
-
 }
 
 void ThreadMgr::end() {

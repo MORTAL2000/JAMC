@@ -159,6 +159,8 @@ void Client::main_loop( ) {
 void Client::init( ) {
 	init_mgrs( );
 
+	thread_mgr.post_init( );
+
 	// Sets pointer to thing
 	SetWindowLongPtr( display_mgr.get_HWND(), GWLP_USERDATA, ( LONG_PTR )this );
 

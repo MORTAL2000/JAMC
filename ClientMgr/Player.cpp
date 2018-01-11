@@ -14,7 +14,7 @@ Player::Player( ) :
 			entity.id = 0;
 
 			auto & ec_state = entity.h_state.get( );
-			ec_state.is_gravity = true;
+			ec_state.gravity = { 0.0f, -9.81f, 0.0f };
 			ec_state.dim = { 0.5f, 1.8f, 0.5f };
 
 			ec_state.pos = { 0.0f, WorldSize::Chunk::size_y / 2.0f + 5.0f, 0.0f };
@@ -52,10 +52,10 @@ Player::Player( ) :
 				if( client.input_mgr.is_key( VK_OEM_3 ) ) {
 					ec_player.is_godmode = !ec_player.is_godmode;
 					if( ec_player.is_godmode ) {
-						ec_state.is_gravity = false;
+						ec_state.gravity = { 0.0f, 0.0f, 0.0f };
 					}
 					else {
-						ec_state.is_gravity = true;
+						ec_state.gravity = { 0.0f, -9.81f, 0.0f };
 					}
 					if( ec_player.is_godmode ) {
 						//client.gui_mgr.print_to_console( "Godmode set!" );

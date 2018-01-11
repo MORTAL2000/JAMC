@@ -73,6 +73,8 @@ void EntityMgr::init( ) {
 
 		ec_state.dim = { 1.0f, 1.0f, 1.0f };
 
+		ec_state.gravity = { 0.0f, 0.0f, 0.0f };
+
 		return ErrorEntity::EE_Ok;
 	};
 
@@ -100,6 +102,24 @@ void EntityMgr::init( ) {
 	} );
 
 	entity_player = &list_entity[ 0 ].get( );
+
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) { 
+		std::ostringstream out;
+
+		out << "[Entity] live: " << list_entity.size( ) << " total: " << num_entity;
+
+		return out.str( );
+	} );
+
+	//auto & out = client.display_mgr.out;
+	//out.str( "" );
+	//out << "[Entity Live] Entity: " << list_entity.size( );
+	//client.gui_mgr.print_to_static( out.str( ) );
+
+	//out.str( "" );
+	//auto & ecp_state = entity_player->h_state.get( );
+	//out << "[Player ] Veloc: " << Directional::print_vec( ecp_state.veloc );
+	//client.gui_mgr.print_to_static( out.str( ) );
 }
 
 static const int UPDATE_STEPS = 2;
@@ -118,9 +138,7 @@ void EntityMgr::update( ) {
 		}
 	}
 
-	client.resource_mgr.pool< Entity >().apply_func_live_threads( client.thread_mgr,
-		10, client.thread_mgr.cnt_thread_sync( ) * 3, [ & ] ( Entity & entity ) {
-
+	client.resource_mgr.pool< Entity >( ).apply_func_live( [ & ] ( Entity & entity ) {
 		auto & state = entity.h_state.get( );
 
 		for( int i = 0; i < UPDATE_STEPS; ++i ) {
@@ -139,16 +157,6 @@ void EntityMgr::update( ) {
 		state.mat_model = glm::scale( state.mat_model, state.dim );
 		state.mat_norm = glm::inverseTranspose( glm::mat3( state.mat_model ) );
 	} );
-
-	auto & out = client.display_mgr.out;
-	out.str( "" );
-	out << "[Entity Live] Entity: " << list_entity.size( );
-	//client.gui_mgr.print_to_static( out.str( ) );
-
-	out.str( "" );
-	auto & ecp_state = entity_player->h_state.get( );
-	out << "[Player ] Veloc: " << Directional::print_vec( ecp_state.veloc );
-	//client.gui_mgr.print_to_static( out.str( ) );
 }
 
 void EntityMgr::render( ) {
@@ -381,7 +389,7 @@ static const float DELTA_CORRECT_STEPS = DELTA_CORRECT / UPDATE_STEPS;
 void EntityMgr::entity_integrate( ECState & ec_state ) {
 	ec_state.pos_last = ec_state.pos;
 
-	if( ec_state.is_gravity ) ec_state.accel += vec_gravity;
+	ec_state.accel += ec_state.gravity;
 	ec_state.veloc += ec_state.accel * DELTA_CORRECT_STEPS;
 	ec_state.pos_delta = ( ec_state.veloc + ( ec_state.accel / 2.0f ) * DELTA_CORRECT_STEPS ) * DELTA_CORRECT_STEPS;
 	ec_state.pos += ec_state.pos_delta;
@@ -398,13 +406,16 @@ void EntityMgr::entity_terrain_collide( ECState & ec_state ) {
 	fill_array( ec_state.is_coll_face, false );
 
 	if( ec_state.pos_delta.z < 0 ) entity_terrain_collide_f( ec_state );
-	else if( ec_state.pos_delta.z > 0 ) entity_terrain_collide_b( ec_state );
+	//else if( ec_state.pos_delta.z > 0 ) entity_terrain_collide_b( ec_state );
+	else entity_terrain_collide_b( ec_state );
 
 	if( ec_state.pos_delta.x < 0 ) entity_terrain_collide_l( ec_state );
-	else if( ec_state.pos_delta.x > 0 ) entity_terrain_collide_r( ec_state );
+	//else if( ec_state.pos_delta.x > 0 ) entity_terrain_collide_r( ec_state );
+	else entity_terrain_collide_r( ec_state );
 
 	if( ec_state.pos_delta.y < 0 ) entity_terrain_collide_d( ec_state );
-	else if( ec_state.pos_delta.y > 0 ) entity_terrain_collide_u( ec_state );
+	//else if( ec_state.pos_delta.y > 0 ) entity_terrain_collide_u( ec_state );
+	else entity_terrain_collide_u( ec_state );
 }
 
 void EntityMgr::entity_terrain_collide_f( ECState & ec_state ) {

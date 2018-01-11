@@ -53,9 +53,10 @@ struct ECState {
 	glm::mat4 mat_model;
 	glm::mat3 mat_norm;
 
+	glm::vec3 gravity;
+
 	int id_block;
 
-	bool is_gravity = false;
 	bool is_coll;
 	bool is_coll_face[ 6 ];
 };
@@ -63,6 +64,7 @@ struct ECState {
 class Entity {
 public:
 	Handle< ECState > h_state;
+
 	SMEntity::SMHandle h_mesh;
 
 	int id = 0;

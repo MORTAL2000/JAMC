@@ -13,7 +13,6 @@ LineBlock::LineBlock( ) :
 			state.pos = client.display_mgr.camera.pos_camera;
 			state.veloc = client.display_mgr.camera.vec_front * 50.0f;
 			state.rot = client.display_mgr.camera.rot_camera;
-			state.is_gravity = false;
 
 			return ErrorEntity::EE_Ok;
 		},

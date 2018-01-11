@@ -9,7 +9,6 @@ WaterBlock::WaterBlock( ) : EntityLoader {
 		}
 
 		auto & ec_state = entity.h_state.get( );
-		ec_state.is_gravity = false;
 
 		auto & ec_water = entity.get< ECWater >( ).get( );
 		ec_water.time_now = client.time_mgr.get_time( TimeStrings::GAME );

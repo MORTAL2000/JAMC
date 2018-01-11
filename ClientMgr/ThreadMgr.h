@@ -42,6 +42,7 @@ public:
 	~ThreadMgr();
 
 	void init();
+	void post_init( );
 	void update( );
 	void render() {}
 	void end();

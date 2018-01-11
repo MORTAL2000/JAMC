@@ -11,7 +11,7 @@ Tnt::Tnt( ) :
 			}
 
 			auto & ec_state = entity.h_state.get( );
-			ec_state.is_gravity = true;
+			ec_state.gravity = { 0.0f, -9.81f, 0.0f };
 
 			auto & ec_tnt = entity.get< ECTnt >( ).get( );
 			ec_tnt.time_last = client.time_mgr.get_time( TimeStrings::GAME );

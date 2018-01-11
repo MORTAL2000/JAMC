@@ -38,7 +38,7 @@ void ChunkMgr::init( ) {
 	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z / 2;
 	GLuint num_verts = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 32;
 
-	GLuint num_buff = 1024;
+	GLuint num_buff = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 );
 	GLuint size_buff_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4 * 2;
 
 	sm_terrain.init( size_verts, num_verts, num_buff, size_buff_verts );

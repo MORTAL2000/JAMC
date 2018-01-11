@@ -13,9 +13,6 @@ WormBlock::WormBlock( )	:
 
 			entity.id = client.block_mgr.get_block_loader( "Gold Block" )->id;
 
-			auto & ec_state = entity.h_state.get( );
-			ec_state.is_gravity = false;
-
 			auto & ec_worm = entity.get< ECWorm >( ).get( );
 			ec_worm.num_visited = 0;
 			ec_worm.cnt_step = 0;

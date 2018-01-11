@@ -17,7 +17,6 @@ SpawnBlock::SpawnBlock( ) :
 			ec_state.pos = client.display_mgr.camera.pos_camera;
 			ec_state.veloc = client.display_mgr.camera.vec_front * 50.0f;
 			ec_state.rot = client.display_mgr.camera.rot_camera;
-			ec_state.is_gravity = false;
 
 			auto & ec_spawn = entity.get< ECSpawnBlock >( ).get( );
 			ec_spawn.time_life = 3000;
