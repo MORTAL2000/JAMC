@@ -1,9 +1,12 @@
 #pragma once
 
 #include "Globals.h"
-#include "glm\glm.hpp"
+
+#include "glew\include\GL\glew.h"
+#include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtc/matrix_inverse.hpp"
+
 #include <iostream>
 #include <vector>
 #include <queue>
@@ -69,12 +72,12 @@ public:
 		TG_Size
 	};
 
-	 GLuint constexpr static GeomNumIndsLookup[ TypeGeometry::TG_Size ] = {
-		1, 2, 3
-	};
-
 	 GLuint constexpr static GeomGLTypeLookup[ TypeGeometry::TG_Size ] = {
 		GL_POINTS, GL_LINES, GL_TRIANGLES
+	};
+
+	 GLuint constexpr static GeomNumIndsLookup[ TypeGeometry::TG_Size ] = {
+		1, 2, 3
 	};
 
 	 using Vertex = T_vert;

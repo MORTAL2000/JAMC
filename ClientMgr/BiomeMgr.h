@@ -11,7 +11,7 @@
 class BiomeMgr : public Manager {
 private:
 	std::vector< BiomeLoader > list_biomes;
-	std::unordered_map< std::string, GLuint > map_biome_name;
+	std::unordered_map< std::string, int > map_biome_name;
 
 public:
 	BiomeMgr( Client & client );

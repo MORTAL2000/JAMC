@@ -4,11 +4,14 @@
 
 #include "glm/gtc/type_ptr.hpp"
 #include "tinyxml2-master/tinyxml2.h"
+#include "soil\src\SOIL.h"
 
 #include <iostream>
 #include <filesystem>
 #include <sstream>
 #include <fstream>
+
+#include "Errors.h"
 
 TextureMgr::TextureMgr( Client & client ) :
 	path_shaders( "./Shaders/" ),

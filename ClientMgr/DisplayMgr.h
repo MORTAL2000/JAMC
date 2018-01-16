@@ -9,6 +9,7 @@
 #include "GuiMgr.h"
 #include "Chunk.h"
 
+#define NOMINMAX
 #include <Windows.h>
 #include <sstream>
 

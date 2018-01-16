@@ -7,6 +7,8 @@
 #include "TextFieldComp.h"
 #include "SliderVComp.h"
 
+//#include <stdlib.h>
+#include <algorithm>
 #include <mutex>
 
 class ConsolePage : public PageLoader {

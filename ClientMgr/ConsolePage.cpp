@@ -7,6 +7,9 @@
 #include "BorderImageComp.h"
 #include "ResizeComp.h"
 
+//#include <stdlib.h>
+#include <algorithm>
+
 ConsolePage::ConsolePage( Client & client ) { 
 	name = "Console";
 

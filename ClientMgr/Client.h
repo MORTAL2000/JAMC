@@ -1,6 +1,8 @@
 #pragma once
 #include "Globals.h"
 
+#include "StaticLibs.h"
+
 #include "Manager.h"
 #include "ResourceMgr.h"
 #include "TextureMgr.h"
@@ -14,6 +16,7 @@
 #include "BiomeMgr.h"
 #include "BlockMgr.h"
 
+//#include <stdlib.h>
 #include <iostream>
 
 class Client : 
@@ -67,6 +70,4 @@ public:
 	void sec();
 
 	int cnt_update( );
-
-	LRESULT CALLBACK WndProc( HWND p_hWnd, UINT p_uiMessage, WPARAM p_wParam, LPARAM p_lParam );
 };

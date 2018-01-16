@@ -4,6 +4,7 @@
 #include "Tnt.h"
 #include "WorldSize.h"
 
+//#include <stdlib.h>
 #include <iostream>
 
 // *** Input Manager ***
@@ -13,6 +14,9 @@ InputMgr::InputMgr( Client & client ) :
 InputMgr::~InputMgr() {}
 
 void InputMgr::init() {
+	// Sets pointer to thing
+	SetWindowLongPtr( client.display_mgr.get_HWND( ), GWLP_USERDATA, ( LONG_PTR ) this );
+
 	printTabbedLine( 0, "Init InputMgr..." );
 	toggle_cursor_vis( );
 	last_command = client.time_mgr.get_time( std::string( "Game" ) );
@@ -442,5 +446,58 @@ void InputMgr::toggle_cursor_vis() {
 		SetCursorPos( mouse.point_poll.x, mouse.point_poll.y );
 
 		ShowCursor( false );
+	}
+}
+
+
+LRESULT CALLBACK InputMgr::WndProc( HWND p_hWnd, UINT p_uiMessage, WPARAM p_wParam, LPARAM p_lParam ) {
+	switch( p_uiMessage ) {
+		case WM_CLOSE:
+		//is_running = false;
+		return 0;
+
+		case WM_LBUTTONDOWN:
+		set_mouse_button( 0, true );
+		return 0;
+
+		case WM_RBUTTONDOWN:
+		set_mouse_button( 1, true );
+		return 0;
+
+		case WM_LBUTTONUP:
+		set_mouse_button( 0, false );
+		return 0;
+
+		case WM_RBUTTONUP:
+		set_mouse_button( 1, false );
+		return 0;
+
+		case WM_MOUSEWHEEL:
+		add_wheel_delta( GET_WHEEL_DELTA_WPARAM( p_wParam ) / 120.0f );
+		return 0;
+
+		case WM_KEYDOWN:
+		set_key( p_wParam, true );
+		return 0;
+
+		case WM_KEYUP:
+		set_key( p_wParam, false );
+		return 0;
+
+		case WM_CHAR:
+		{
+			if( client.gui_mgr.get_is_input( ) ) {
+				client.gui_mgr.handle_char( ( char ) p_wParam );
+			}
+
+			return 0;
+		}
+
+		case WM_SIZE:
+		client.display_mgr.resize_window( glm::ivec2( LOWORD( p_lParam ), HIWORD( p_lParam ) ) );
+		return 0;
+
+		default:
+		return DefWindowProc( p_hWnd, p_uiMessage, p_wParam, p_lParam );
 	}
 }

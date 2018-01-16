@@ -2,8 +2,9 @@
 
 #include <sstream>
 #include <iomanip>
-#include <Windows.h>
 #include <timeapi.h>
+
+#include "Errors.h"
 
 Client::Client( ) :
 	Manager( *this ), is_running( true ),
@@ -161,9 +162,6 @@ void Client::init( ) {
 
 	thread_mgr.post_init( );
 
-	// Sets pointer to thing
-	SetWindowLongPtr( display_mgr.get_HWND(), GWLP_USERDATA, ( LONG_PTR )this );
-
 	#if defined( GL_DEBUG ) || defined( _DEBUG )
 	system( "PAUSE" );
 	#endif
@@ -298,55 +296,4 @@ void Client::sec( ) {
 
 int Client::cnt_update( ) { 
 	return update_cnt;
-}
-
-LRESULT CALLBACK Client::WndProc( HWND p_hWnd, UINT p_uiMessage, WPARAM p_wParam, LPARAM p_lParam ) {
-	switch( p_uiMessage ) {
-		case WM_CLOSE:
-			is_running = false;
-		return 0;
-
-		case WM_LBUTTONDOWN:
-			input_mgr.set_mouse_button( 0, true );
-		return 0;
-
-		case WM_RBUTTONDOWN:
-			input_mgr.set_mouse_button( 1, true );
-		return 0;
-
-		case WM_LBUTTONUP:
-			input_mgr.set_mouse_button( 0, false );
-		return 0;
-
-		case WM_RBUTTONUP:
-			input_mgr.set_mouse_button( 1, false );
-		return 0;
-
-		case WM_MOUSEWHEEL:
-			input_mgr.add_wheel_delta( GET_WHEEL_DELTA_WPARAM( p_wParam ) / 120.0f );
-		return 0;
-
-		case WM_KEYDOWN:
-			input_mgr.set_key( p_wParam, true );
-		return 0;
-
-		case WM_KEYUP:
-			input_mgr.set_key( p_wParam, false );
-		return 0;
-
-		case WM_CHAR: {
-			if( client.gui_mgr.get_is_input( ) ) {
-				client.gui_mgr.handle_char( ( char ) p_wParam );
-			}
-
-			return 0;
-		}
-
-		case WM_SIZE:
-			display_mgr.resize_window( glm::ivec2( LOWORD( p_lParam ), HIWORD( p_lParam ) ) );
-		return 0;
-
-		default:
-			return DefWindowProc( p_hWnd, p_uiMessage, p_wParam, p_lParam );
-	}
 }

@@ -2,8 +2,21 @@
 #include "Client.h"
 
 #include "ChunkMgr.h"
+#include "InputMgr.h"
 
+#define NOMINMAX
+#include <Windows.h>
 #include <iostream>
+
+LRESULT CALLBACK WndProc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam ) {
+	InputMgr* winptr = ( InputMgr* ) GetWindowLongPtr( hwnd, GWLP_USERDATA );
+
+	if( winptr == NULL ) {
+		return DefWindowProc( hwnd, message, wParam, lParam );
+	} else {
+		return winptr->WndProc( hwnd, message, wParam, lParam );
+	}
+}
 
 Camera::Camera( ) :
 	pos_camera( 0, WorldSize::Chunk::size_y * 2 / 3, 0 ),
@@ -28,7 +41,7 @@ void DisplayMgr::init( ) {
 	init_gl( );
 	set_proj( );
 
-	freq_display = get_refresh( );
+	freq_display = 144; // get_refresh( );
 
 	out.str( "" );
 	out << "Display freq: " << freq_display;

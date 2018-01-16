@@ -18,10 +18,10 @@ public:
 	glm::vec3 rot;
 	glm::vec4 color;
 
-	GLuint occlude;
+	int unsigned occlude;
 
 	std::string subtex;
-	GLuint id_subtex;
+	int unsigned id_subtex;
 
 	FaceVerts verts;
 	FaceUvs uvs;
@@ -49,7 +49,7 @@ public:
 	std::vector< int > include_lookup;
 
 	std::string texture;
-	GLuint id_texture;
+	int unsigned id_texture;
 
 	bool is_trans;
 	bool is_coll;

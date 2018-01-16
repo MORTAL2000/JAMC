@@ -5,6 +5,9 @@
 #include <iostream>
 #include <sstream>
 
+//#include <stdlib.h>
+#include <algorithm>
+
 int const ThreadMgr::size_prio_init = 10;
 int const ThreadMgr::size_func_init = 3000;
 

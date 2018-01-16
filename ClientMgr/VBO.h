@@ -3,6 +3,8 @@
 #include "Globals.h"
 
 #include <vector>
+
+#include "glew\include\GL\glew.h"
 #include "glm\glm.hpp"
 
 class VBO {

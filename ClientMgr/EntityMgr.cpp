@@ -10,6 +10,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtc/matrix_inverse.hpp"
 #include "Shapes.h"
+#include "Errors.h"
 
 const char * ErrorEntityLookup::to_text[ ] = {
 	"No entity error!",

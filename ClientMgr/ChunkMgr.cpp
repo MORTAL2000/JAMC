@@ -1,20 +1,24 @@
 #include "ChunkMgr.h"
-
+#define NOMINMAX
 #include "Client.h"
 
+#include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/norm.hpp"
 #include "tinyxml2-master\tinyxml2.h"
 
+//#include <stdlib.h>
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <limits>
-#include <sstream>
 
+#include "Errors.h"
 #include "simplexnoise.h"
+
+
 
 ChunkMgr::ChunkMgr( Client & client ) :
 	Manager( client ),

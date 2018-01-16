@@ -35,6 +35,7 @@
 
 #include "GraphComp.h"
 
+#include "Errors.h"
 
 GuiMgr::GuiMgr( Client & client ) :
 	Manager( client ),

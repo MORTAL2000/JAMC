@@ -5,6 +5,12 @@
 #include "Manager.h"
 #include "glm/glm.hpp"
 
+#include "Format.h"
+
+#define NOMINMAX
+#include <Windows.h>
+#include <algorithm>
+
 struct Mouse {
 	glm::ivec2 pos;
 	glm::ivec2 pos_relative;
@@ -96,4 +102,5 @@ public:
 	bool is_cursor_vis( );
 	void toggle_cursor_vis( );
 
+	LRESULT CALLBACK WndProc( HWND p_hWnd, UINT p_uiMessage, WPARAM p_wParam, LPARAM p_lParam );
 };

@@ -7,6 +7,7 @@
 #include <array>
 #include <unordered_map>
 
+#include "glew\include\GL\glew.h"
 #include "glm\glm.hpp"
 
 typedef std::array< std::array< float, 2 >, 4 > face_uvs;

@@ -71,21 +71,21 @@ public:
 	}
 
 	static inline void Directional::pos_gw_to_lw( glm::ivec3 const & pos_gw, glm::ivec3 & pos_lw ) {
-		pos_lw.x = floor( float( pos_gw.x ) / WorldSize::Chunk::size_x );
-		pos_lw.y = floor( float( pos_gw.y ) / WorldSize::Chunk::size_y );
-		pos_lw.z = floor( float( pos_gw.z ) / WorldSize::Chunk::size_z );
+		pos_lw.x = ( int ) floor( float( pos_gw.x ) / WorldSize::Chunk::size_x );
+		pos_lw.y = ( int ) floor( float( pos_gw.y ) / WorldSize::Chunk::size_y );
+		pos_lw.z = ( int ) floor( float( pos_gw.z ) / WorldSize::Chunk::size_z );
 	}
 
 	static inline void Directional::pos_gw_to_lw( glm::vec3 const & pos_gw, glm::ivec3 & pos_lw ) {
-		pos_lw.x = floor( pos_gw.x / WorldSize::Chunk::size_x );
-		pos_lw.y = floor( pos_gw.y / WorldSize::Chunk::size_y );
-		pos_lw.z = floor( pos_gw.z / WorldSize::Chunk::size_z );
+		pos_lw.x = ( int ) floor( pos_gw.x / WorldSize::Chunk::size_x );
+		pos_lw.y = ( int ) floor( pos_gw.y / WorldSize::Chunk::size_y );
+		pos_lw.z = ( int ) floor( pos_gw.z / WorldSize::Chunk::size_z );
 	}
 
 	static inline void Directional::pos_lw_to_r( glm::ivec3 const & pos_lw, glm::ivec3 & pos_r ) {
-		pos_r.x = floor( float( pos_lw.x ) / WorldSize::Region::size_x );
-		pos_r.y = floor( float( pos_lw.y ) / WorldSize::Region::size_y );
-		pos_r.z = floor( float( pos_lw.z ) / WorldSize::Region::size_z );
+		pos_r.x = ( int ) floor( float( pos_lw.x ) / WorldSize::Region::size_x );
+		pos_r.y = ( int ) floor( float( pos_lw.y ) / WorldSize::Region::size_y );
+		pos_r.z = ( int ) floor( float( pos_lw.z ) / WorldSize::Region::size_z );
 	}
 
 	static inline void Directional::pos_lw_to_lr( glm::ivec3 const & pos_lw, glm::ivec3 & pos_lr ) {
@@ -99,9 +99,9 @@ public:
 	}
 
 	static inline void Directional::pos_trim( glm::vec3 & pos_gw, glm::ivec3 & pos_trim ) {
-		pos_trim.x = floor( pos_gw.x );
-		pos_trim.y = floor( pos_gw.y );
-		pos_trim.z = floor( pos_gw.z );
+		pos_trim.x = ( int ) floor( pos_gw.x );
+		pos_trim.y = ( int ) floor( pos_gw.y );
+		pos_trim.z = ( int ) floor( pos_gw.z );
 	}
 
 	static inline void Directional::pos_trim( glm::vec3 & pos_gw, glm::vec3 & pos_trim ) {

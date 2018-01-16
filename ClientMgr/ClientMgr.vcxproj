@@ -141,7 +141,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -158,6 +158,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Errors.cpp" />
+    <ClCompile Include="Format.cpp" />
+    <ClCompile Include="StaticLibs.cpp" />
     <ClCompile Include="StatisticsPage.cpp" />
     <ClCompile Include="UpdatedLabelComp.cpp" />
     <ClCompile Include="BaseBiome.cpp" />
@@ -245,6 +248,8 @@
     <ClInclude Include="ClickableComp.h" />
     <ClInclude Include="ConsolePage.h" />
     <ClInclude Include="ContainerComp.h" />
+    <ClInclude Include="Errors.h" />
+    <ClInclude Include="Format.h" />
     <ClInclude Include="GraphComp.h" />
     <ClInclude Include="GraphPage.h" />
     <ClInclude Include="ImageButtonComp.h" />
@@ -259,6 +264,7 @@
     <ClInclude Include="ResizeComp.h" />
     <ClInclude Include="SliderComp.h" />
     <ClInclude Include="SliderVComp.h" />
+    <ClInclude Include="StaticLibs.h" />
     <ClInclude Include="StatisticsPage.h" />
     <ClInclude Include="TextButtonComp.h" />
     <ClInclude Include="Chunk.h" />

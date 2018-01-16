@@ -275,7 +275,7 @@ public:
 	void explode_sphere_recur( glm::vec3 const & pos_gw, int const size, int depth );
 
 	void set_sun_deg( int deg ) {
-		pos_deg_light = deg;
+		pos_deg_light = ( float ) deg;
 	}
 
 	float get_sun_deg( ) { 
