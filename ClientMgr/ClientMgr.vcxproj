@@ -160,6 +160,7 @@
   <ItemGroup>
     <ClCompile Include="Errors.cpp" />
     <ClCompile Include="Format.cpp" />
+    <ClCompile Include="SharedMeshTerrainInstance.cpp" />
     <ClCompile Include="StaticLibs.cpp" />
     <ClCompile Include="StatisticsPage.cpp" />
     <ClCompile Include="UpdatedLabelComp.cpp" />
@@ -191,7 +192,6 @@
     <ClCompile Include="SliderVComp.cpp" />
     <ClCompile Include="TextButtonComp.cpp" />
     <ClCompile Include="Chunk.cpp" />
-    <ClCompile Include="ChunkData.cpp" />
     <ClCompile Include="ChunkMgr.cpp" />
     <ClCompile Include="CircularDequeue.cpp" />
     <ClCompile Include="Client.cpp" />
@@ -262,13 +262,13 @@
     <ClInclude Include="QuickBarPage.h" />
     <ClInclude Include="ResizableComp.h" />
     <ClInclude Include="ResizeComp.h" />
+    <ClInclude Include="SharedMeshTerrainInstance.h" />
     <ClInclude Include="SliderComp.h" />
     <ClInclude Include="SliderVComp.h" />
     <ClInclude Include="StaticLibs.h" />
     <ClInclude Include="StatisticsPage.h" />
     <ClInclude Include="TextButtonComp.h" />
     <ClInclude Include="Chunk.h" />
-    <ClInclude Include="ChunkData.h" />
     <ClInclude Include="ChunkMgr.h" />
     <ClInclude Include="CircularDequeue.h" />
     <ClInclude Include="Client.h" />

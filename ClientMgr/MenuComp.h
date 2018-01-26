@@ -1,11 +1,10 @@
 #pragma once
 
-#include <vector>
-
 #include "Client.h"
 #include "PageComponentLoader.h"
 #include "BorderImageComp.h"
 
+#include <vector>
 
 class MenuComp : public PageComponentLoader {
 public:	

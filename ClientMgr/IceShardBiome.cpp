@@ -1,6 +1,7 @@
 #include "IceShardBiome.h"
-
 #include "Client.h"
+
+#include "BlockMgr.h"
 
 IceShardBiome::IceShardBiome( Client & client ) { 
 	name_biome = "Ice Shards";

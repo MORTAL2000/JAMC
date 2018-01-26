@@ -1,6 +1,11 @@
 #include "WormBlock.h"
 
 #include "Client.h"
+
+#include "BlockMgr.h"
+#include "TimeMgr.h"
+#include "ChunkMgr.h"
+
 #include "simplexnoise.h"
 
 WormBlock::WormBlock( )	:

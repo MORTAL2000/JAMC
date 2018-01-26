@@ -1,6 +1,6 @@
 #pragma once
-
 #include "Globals.h"
+
 #include "Entity.h"
 
 #include "glm\gtx\hash.hpp"

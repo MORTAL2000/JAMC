@@ -1,5 +1,9 @@
 #include "OverableComp.h"
 
+#include "ResourceMgr.h"
+
+#include "Page.h"
+
 OverableComp::OverableComp( Client & client ) {
 	name = "Overable";
 

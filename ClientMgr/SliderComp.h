@@ -1,12 +1,13 @@
 #pragma once
 
-#include <iostream>
-#include <iomanip>
-
 #include "Client.h"
 #include "PageComponentLoader.h"
 #include "BorderImageComp.h"
 #include "LabelComp.h"
+
+#include <iostream>
+#include <iomanip>
+#include <sstream>
 
 class SliderComp : public PageComponentLoader {
 public:

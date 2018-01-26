@@ -1,5 +1,10 @@
 #include "ImageComp.h"
 
+#include "ResourceMgr.h"
+#include "TextureMgr.h"
+
+#include "Page.h"
+
 ImageComp::ImageComp( Client & client ) {
 	name = "Image";
 

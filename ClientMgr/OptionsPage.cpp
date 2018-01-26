@@ -1,5 +1,11 @@
 #include "OptionsPage.h"
 
+#include "ChunkMgr.h"
+#include "DisplayMgr.h"
+#include "InputMgr.h"
+
+#include "Page.h"
+
 #include "ResizableComp.h"
 #include "ImageComp.h"
 #include "BorderImageComp.h"

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Client.h"
+
+#include "TimeMgr.h"
 #include "PageComponentLoader.h"
 #include "LabelComp.h"
 

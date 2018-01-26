@@ -1,8 +1,5 @@
 #include "BiomeMgr.h"
-
 #include "Client.h"
-
-#include "simplexnoise.h"
 
 #include "BaseBiome.h"
 #include "IceShardBiome.h"
@@ -12,6 +9,7 @@
 #include "GrassPlateauBiome.h"
 #include "OceanBiome.h"
 #include "SandFlatsBiome.h"
+#include "simplexnoise.h"
 
 BiomeMgr::BiomeMgr( Client & client ) : 
 	Manager( client ) { }
@@ -57,7 +55,7 @@ void BiomeMgr::add_biome( BiomeLoader * loader_biome ) {
 	}
 
 	list_biomes.push_back( biome );
-	map_biome_name.insert( { biome.name_biome, ( GLuint ) list_biomes.size( ) - 1 } );
+	map_biome_name.insert( { biome.name_biome, ( int ) list_biomes.size( ) - 1 } );
 }
 
 int BiomeMgr::get_num_biomes( ) { 
@@ -133,7 +131,7 @@ void BiomeMgr::get_biome_data( int x, int y, int & id_biome, int & height_biome 
 	id_biome = 0;
 	height_biome = noise_total;
 
-	for( GLuint idx_biome = 1; idx_biome < client.biome_mgr.get_num_biomes( ); ++idx_biome ) {
+	for( int unsigned idx_biome = 1; idx_biome < client.biome_mgr.get_num_biomes( ); ++idx_biome ) {
 		auto biome = client.biome_mgr.get_biome( idx_biome );
 		auto & layer_biome = biome->noise_biome;
 
@@ -196,68 +194,3 @@ void BiomeMgr::get_biome_data( int x, int y, int & id_biome, int & height_biome 
 		}
 	}
 }
-
-/*
-int BiomeMgr::get_biome_noise_id( int x, int y ) {
-	BiomeLoader * biome_loader;
-	NoiseLayer * biome_layer;
-	std::pair< float, float > * biome_bounds;
-	float noise, id_biome;
-
-	noise = 0;
-	id_biome = 0;
-	for( int i = 0; i < get_num_biomes( ); ++i ) { 
-		biome_loader = get_biome( i );
-		biome_layer = &biome_loader->noise_biome;
-
-		noise = raw_noise_2d(
-			( biome_layer->seed_x + x ) * biome_layer->scale_x,
-			( biome_layer->seed_y + y ) * biome_layer->scale_y
-		) * biome_layer->scale_height;
-
-		for( int j = 0; j < biome_layer->list_bounds.size( ); ++j ) {
-			biome_bounds = &biome_layer->list_bounds[ j ];
-
-			if( noise >= biome_bounds->first && noise <= biome_bounds->second ) { 
-				id_biome = i;
-			}
-		}
-	}
-
-	return id_biome;
-}
-
-int BiomeMgr::get_biome_noise_height( int x, int y, int id_biome ) {
-	BiomeLoader * biome_loader;
-	NoiseLayer * layer;
-	std::pair< float, float > * bounds;
-	float noise, height, lerp;
-
-	noise = 0;
-	height = 0;
-
-	biome_loader = get_biome( "Base" );
-
-	for( int i = 0; i < biome_loader->list_noise.size( ); ++i ) {
-		layer = &biome_loader->list_noise[ i ];
-
-		noise = raw_noise_2d(
-			( layer->seed_x + x ) * layer->scale_x,
-			( layer->seed_y + y ) * layer->scale_y
-		) * layer->scale_height;
-
-		for( int j = 0; j < layer->list_bounds.size( ); ++j ) {
-			bounds = &layer->list_bounds[ j ];
-
-			if( noise >= bounds->first && noise <= bounds->second ) {
-				noise += layer->height_base;
-
-				if( noise > layer->height_max ) noise = layer->height_max;
-				if( noise < layer->height_min ) noise = layer->height_min;
-
-				break;
-			}
-		}
-	}
-}
-*/

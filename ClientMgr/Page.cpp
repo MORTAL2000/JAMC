@@ -1,6 +1,9 @@
 #include "Page.h"
 
 #include "Client.h"
+
+#include "DisplayMgr.h"
+
 #include "Directional.h"
 
 const glm::vec3 verts_page[ 4 ] = { 

@@ -19,7 +19,6 @@
 #ifndef SIMPLEX_H_
 #define SIMPLEX_H_
 
-#include "Globals.h"
 #include <math.h>
 
 /* 2D, 3D and 4D Simplex Noise functions return 'random' values in (-1, 1).

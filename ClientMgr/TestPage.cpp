@@ -1,5 +1,10 @@
 #include "TestPage.h"
 
+#include "InputMgr.h"
+#include "ChunkMgr.h"
+
+#include "Page.h"
+
 #include "ResizableComp.h"
 #include "LabelComp.h"
 #include "TextButtonComp.h"
@@ -8,7 +13,6 @@
 #include "SliderVComp.h"
 #include "ClickableComp.h"
 #include "TextFieldComp.h"
-
 
 TestPage::TestPage( Client & client ) {
 	name = "Test";

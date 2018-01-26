@@ -1,4 +1,5 @@
 #pragma once
+
 #include "BiomeLoader.h"
 
 class SandFlatsBiome : public BiomeLoader {

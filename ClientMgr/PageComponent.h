@@ -1,12 +1,12 @@
 #pragma once
 
-#include <unordered_map>
-#include <typeindex>
+#include "ResourceMgr.h"
+#include "PageComponentLoader.h"
 
 #include "glm\glm.hpp"
 
-#include "ResourceMgr.h"
-#include "PageComponentLoader.h"
+#include <unordered_map>
+#include <typeindex>
 
 class Page;
 class Client;

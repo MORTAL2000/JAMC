@@ -1,5 +1,13 @@
 #include "BlockSelector.h"
+
 #include "Client.h"
+
+#include "BlockMgr.h"
+#include "InputMgr.h"
+#include "TextureMgr.h"
+#include "DisplayMgr.h"
+
+//#include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
 BlockSelector::BlockSelector( Client & client ) :

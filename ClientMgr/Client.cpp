@@ -1,19 +1,48 @@
 #include "Client.h"
 
+#include "StaticLibs.h"
+
 #include <sstream>
 #include <iomanip>
 #include <timeapi.h>
 
 #include "Errors.h"
 
+#include "ResourceMgr.h"
+#include "TextureMgr.h"
+#include "TimeMgr.h"
+#include "ThreadMgr.h"
+#include "DisplayMgr.h"
+#include "InputMgr.h"
+#include "GuiMgr.h"
+#include "ChunkMgr.h"
+#include "EntityMgr.h"
+#include "BiomeMgr.h"
+#include "BlockMgr.h"
+
 Client::Client( ) :
 	Manager( *this ), is_running( true ),
 	update_last( 0 ), render_last( 0 ), update_cnt( 0 ), render_cnt( 0 ),
-	resource_mgr( client ), texture_mgr( client ), time_mgr( client ), thread_mgr( client ),
-	display_mgr( client ), input_mgr( client ), gui_mgr( client ), block_mgr( client ),
-	biome_mgr( client ), chunk_mgr( client ), entity_mgr( client ) { }
+	resource_mgr( * new ResourceMgr( client ) ), texture_mgr( * new TextureMgr( client ) ), 
+	time_mgr( * new TimeMgr( client ) ), thread_mgr( * new ThreadMgr( client ) ),
+	display_mgr( * new DisplayMgr( client ) ), input_mgr( * new InputMgr( client ) ), 
+	gui_mgr( * new GuiMgr( client ) ), block_mgr( * new BlockMgr( client ) ),
+	biome_mgr( * new BiomeMgr( client ) ), chunk_mgr( * new ChunkMgr( client ) ), 
+	entity_mgr( * new EntityMgr( client ) ) { }
 
-Client::~Client( ) { }
+Client::~Client( ) { 
+	delete( &resource_mgr );
+	delete( &texture_mgr );
+	delete( &time_mgr );
+	delete( &thread_mgr );
+	delete( &display_mgr );
+	delete( &input_mgr );
+	delete( &gui_mgr );
+	delete( &block_mgr );
+	delete( &biome_mgr );
+	delete( &chunk_mgr );
+	delete( &entity_mgr );
+}
 
 void Client::thread_main_loop( ) {
 	is_running = true;
@@ -31,6 +60,8 @@ void Client::thread_main_loop( ) {
 static int cnt_sleep = 0;
 
 void Client::main_loop( ) { 
+	MSG msg;
+
 	time_mgr.end_record( RecordStrings::FRAME );
 
 	time_mgr.begin_record( RecordStrings::UPDATE_PRE );

@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Client.h"
-
 #include "PageLoader.h"
-
+#include "Page.h"
 #include "TextFieldComp.h"
 #include "SliderVComp.h"
 

@@ -1,6 +1,7 @@
 #include "OceanBiome.h"
-
 #include "Client.h"
+
+#include "BlockMgr.h"
 
 OceanBiome::OceanBiome( Client & client ) { 
 	name_biome = "Ocean";

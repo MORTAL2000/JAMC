@@ -1,6 +1,8 @@
 #include "ContainerComp.h"
 
+#include "ResourceMgr.h"
 
+#include "PageComponent.h"
 
 ContainerComp::ContainerComp( Client & client ) { 
 	name = "Container";

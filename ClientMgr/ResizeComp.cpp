@@ -1,5 +1,10 @@
 #include "ResizeComp.h"
 
+#include "ResourceMgr.h"
+#include "InputMgr.h"
+
+#include "Page.h"
+
 #include "ResizableComp.h"
 
 ResizeComp::ResizeComp( Client & client ) {

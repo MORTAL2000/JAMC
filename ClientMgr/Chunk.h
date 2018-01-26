@@ -1,21 +1,14 @@
 #pragma once
-
 #include "Globals.h"
 
-#include "Directional.h"
 #include "SharedMesh.h"
 #include "SharedMeshTerrain.h"
 #include "BlockSet.h"
+#include "Directional.h"
 
 #include <array>
 #include <mutex>
 #include <vector>
-
-struct PosBlock { 
-	uint16_t x : 5;			// 0-4
-	uint16_t y : 6;			// 5-10
-	uint16_t z : 5;			// 11-15
-};
 
 struct VertTerrain {
 	uint64_t x : 5;			// 0-4
@@ -38,6 +31,7 @@ using SMTerrain = SharedMeshTerrain< VertTerrain >;
 
 using InclusiveVert = BaseVertex< GLfloat, GLfloat, GLfloat, GLfloat >;
 using SMChunkIncl = SharedMesh< InclusiveVert >;
+using SMHandle = SMChunkIncl::SharedMeshHandle;
 
 enum ChunkState {
 	CS_Init,
@@ -67,7 +61,6 @@ public:
 	int hash_lw;
 	int hash_lw_2d;
 
-	//std::vector< std::pair< PosBlock, short > > list_block_manip;
 	BlockSet< WorldSize::Chunk::size_x, WorldSize::Chunk::size_z > block_set;
 
 	std::recursive_mutex mtx_state;
@@ -76,16 +69,16 @@ public:
 
 	int cnt_adj;
 	std::recursive_mutex mtx_adj;
-	std::array< Chunk *, FD_Size > ptr_adj;
+	std::array< Chunk *, FaceDirection::FD_Size > ptr_adj;
+
+	SMHandle handle_inclusive;
+	SMHandle handle_inclusive_temp;
 
 	SMTerrain::SMTHandle handle_solid;
 	SMTerrain::SMTHandle handle_solid_temp;
 
 	SMTerrain::SMTHandle handle_trans;
 	SMTerrain::SMTHandle handle_trans_temp;
-
-	//std::vector< std::tuple< float, GLuint, glm::vec3 > > list_incl_solid;
-	//std::vector< std::tuple< float, GLuint, glm::vec3 > > list_incl_trans;
 	
 	ChunkFile * ptr_file;
 	ChunkNoise * ptr_noise;

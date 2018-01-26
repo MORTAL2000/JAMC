@@ -1,10 +1,9 @@
 #pragma once
-
 #include "Globals.h"
+
 #include "Manager.h"
 #include "BlockLoader.h"
 
-#include <vector>
 #include <unordered_map>
 
 class BlockMgr : public Manager {

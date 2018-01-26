@@ -1,13 +1,11 @@
 #pragma once
 
 #include "Client.h"
-
+#include "GuiMgr.h"
 #include "PageLoader.h"
-
 #include "TextFieldComp.h"
 #include "SliderVComp.h"
 
-//#include <stdlib.h>
 #include <algorithm>
 #include <mutex>
 

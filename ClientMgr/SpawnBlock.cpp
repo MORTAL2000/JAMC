@@ -2,6 +2,11 @@
 
 #include "Client.h"
 
+#include "GuiMgr.h"
+#include "BlockMgr.h"
+#include "DisplayMgr.h"
+#include "EntityMgr.h"
+
 SpawnBlock::SpawnBlock( ) :
 	EntityLoader { 
 		"Spawn Block",

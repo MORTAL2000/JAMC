@@ -1,6 +1,12 @@
 #include "InputMgr.h"
 
 #include "Client.h"
+
+#include "TimeMgr.h"
+#include "DisplayMgr.h"
+#include "BlockMgr.h"
+#include "EntityMgr.h"
+
 #include "Tnt.h"
 #include "WorldSize.h"
 
@@ -453,7 +459,7 @@ void InputMgr::toggle_cursor_vis() {
 LRESULT CALLBACK InputMgr::WndProc( HWND p_hWnd, UINT p_uiMessage, WPARAM p_wParam, LPARAM p_lParam ) {
 	switch( p_uiMessage ) {
 		case WM_CLOSE:
-		//is_running = false;
+		client.is_running = false;
 		return 0;
 
 		case WM_LBUTTONDOWN:

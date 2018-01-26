@@ -2,8 +2,8 @@
 #include "Globals.h"
 
 #include "ChunkMgr.h"
-#include "VBO.h"
 #include "SharedMesh.h"
+#include "VBO.h"
 
 class BlockSelector {
 private:

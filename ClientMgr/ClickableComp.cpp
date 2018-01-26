@@ -1,5 +1,8 @@
 #include "ClickableComp.h"
 
+#include "ResourceMgr.h"
+
+#include "PageComponent.h"
 
 ClickableComp::ClickableComp( Client & client ) { 
 	name = "Clickable";

@@ -2,6 +2,8 @@
 
 #include "StatisticsPage.h"
 
+#include "InputMgr.h"
+
 #include "ResizableComp.h"
 #include "ClickableComp.h"
 #include "LabelComp.h"

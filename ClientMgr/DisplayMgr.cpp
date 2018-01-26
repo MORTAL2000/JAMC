@@ -3,6 +3,7 @@
 
 #include "ChunkMgr.h"
 #include "InputMgr.h"
+#include "EntityMgr.h"
 
 #define NOMINMAX
 #include <Windows.h>

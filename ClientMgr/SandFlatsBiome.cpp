@@ -1,7 +1,7 @@
 #include "SandFlatsBiome.h"
-
 #include "Client.h"
 
+#include "BlockMgr.h"
 
 SandFlatsBiome::SandFlatsBiome( Client & client ) : 
 	BiomeLoader( ) { 

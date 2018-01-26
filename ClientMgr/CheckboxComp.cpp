@@ -1,5 +1,13 @@
 #include "CheckboxComp.h"
 
+#include "ResourceMgr.h"
+#include "InputMgr.h"
+
+#include "Page.h"
+#include "PageComponent.h"
+
+#include "Directional.h"
+
 #include "ResizableComp.h"
 #include "OverableComp.h"
 #include "ImageComp.h"

@@ -1,6 +1,7 @@
 #include "SandPlateauBiome.h"
-
 #include "Client.h"
+
+#include "BlockMgr.h"
 
 SandPlateauBiome::SandPlateauBiome( Client & client ) { 
 	name_biome = "Sand Plateau";

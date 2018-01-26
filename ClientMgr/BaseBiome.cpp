@@ -1,8 +1,7 @@
 #include "BaseBiome.h"
-
 #include "Client.h"
-//#include "BlockMgr.h"
-//#include "BlockLoader.h"
+
+#include "BlockMgr.h"
 
 BaseBiome::BaseBiome( Client & client ) {
 	name_biome = "Base";

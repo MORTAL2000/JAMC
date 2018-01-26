@@ -1,5 +1,9 @@
 #include "WaterBlock.h"
+
 #include "Client.h"
+#include "TimeMgr.h"
+#include "BlockMgr.h"
+#include "ChunkMgr.h"
 
 WaterBlock::WaterBlock( ) : EntityLoader {
 	"Water Block",

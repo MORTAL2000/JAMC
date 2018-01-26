@@ -4,7 +4,6 @@
 #include "Directional.h"
 
 #include <string>
-#include <array>
 #include <vector>
 
 typedef std::array< glm::vec3, 4 > FaceVerts;

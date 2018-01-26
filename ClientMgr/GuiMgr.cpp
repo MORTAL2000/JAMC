@@ -6,6 +6,12 @@
 #include "Client.h"
 #include "WorldSize.h"
 
+#include "InputMgr.h"
+#include "DisplayMgr.h"
+#include "EntityMgr.h"
+#include "BlockMgr.h"
+#include "ResourceMgr.h"
+
 #include "TestPage.h"
 #include "OptionsPage.h"
 #include "QuickBarPage.h"

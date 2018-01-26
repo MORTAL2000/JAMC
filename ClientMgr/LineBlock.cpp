@@ -2,6 +2,11 @@
 
 #include "Client.h"
 
+#include "GuiMgr.h"
+#include "DisplayMgr.h"
+#include "BlockMgr.h"
+#include "EntityMgr.h"
+
 LineBlock::LineBlock( ) :
 	EntityLoader { 
 		"Line Block",

@@ -1,4 +1,10 @@
 #include "SliderComp.h"
+
+#include "InputMgr.h"
+#include "ResourceMgr.h"
+
+#include "Page.h"
+
 #include "ResizableComp.h"
 #include "OverableComp.h"
 #include "ClickableComp.h"

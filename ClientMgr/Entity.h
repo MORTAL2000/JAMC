@@ -1,9 +1,10 @@
 #pragma once
-
 #include "Globals.h"
+
 #include "ResourceMgr.h"
-#include "glm\glm.hpp"
 #include "SharedMesh.h"
+
+#include "glm\glm.hpp"
 
 #include <functional>
 #include <typeindex>

@@ -1,5 +1,7 @@
 #include "ConsolePage.h"
 
+#include "InputMgr.h"
+
 #include "ResizableComp.h"
 #include "ClickableComp.h"
 #include "TextFieldComp.h"
@@ -174,6 +176,9 @@ ConsolePage::ConsolePage( Client & client ) {
 			data_console->data_input = comp->get< TextFieldComp::TextFieldData >( );
 			data_console->data_input->text = "";
 			data_console->data_input->data_border->color *= 0.75f;
+
+			data_console->data_input->comp_cursor->dim.x /= 2;
+			data_console->data_input->comp_cursor->dim.y -= 4;
 
 			return 0;
 		} );

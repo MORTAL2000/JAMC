@@ -1,5 +1,10 @@
 #include "QuickBarPage.h"
 
+#include "InputMgr.h"
+#include "GuiMgr.h"
+
+#include "Page.h"
+
 #include "ResizableComp.h"
 #include "ClickableComp.h"
 #include "ImageComp.h"

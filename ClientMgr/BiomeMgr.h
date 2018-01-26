@@ -1,12 +1,10 @@
 #pragma once
-
 #include "Globals.h"
-
-#include <vector>
-#include <unordered_map>
 
 #include "Manager.h"
 #include "BiomeLoader.h"
+
+#include <unordered_map>
 
 class BiomeMgr : public Manager {
 private:
@@ -38,8 +36,4 @@ public:
 	BiomeLoader * get_biome_safe( std::string const & name_biome );
 
 	void get_biome_data( int x, int y, int & id_biome, int & height_biome );
-
-	//int get_biome_noise_id( int x, int y );
-	//int get_biome_noise_height( int x, int y, int id_biome );
-
 };

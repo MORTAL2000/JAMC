@@ -1,11 +1,10 @@
 #pragma once
-
 #include "Globals.h"
 
 #include "Manager.h"
-#include "glm/glm.hpp"
-
 #include "Format.h"
+
+#include "glm/glm.hpp"
 
 #define NOMINMAX
 #include <Windows.h>

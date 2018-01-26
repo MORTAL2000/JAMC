@@ -2,6 +2,8 @@
 
 #include "Client.h"
 
+#include "DisplayMgr.h"
+
 #include "glm/gtc/type_ptr.hpp"
 #include "tinyxml2-master/tinyxml2.h"
 #include "soil\src\SOIL.h"

@@ -1,9 +1,10 @@
 #pragma once
-
 #include "Globals.h"
+
 #include "WorldSize.h"
 
 #include "glm/glm.hpp"
+
 #include <array>
 
 enum FaceDirection {

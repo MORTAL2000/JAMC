@@ -2,6 +2,11 @@
 
 #include "ResizableComp.h"
 
+#include "Page.h"
+#include "PageComponent.h"
+
+#include "ResourceMgr.h"
+
 BorderImageComp::BorderImageComp( Client & client ) { 
 	name = "BorderImage";
 

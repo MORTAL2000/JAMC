@@ -1,7 +1,10 @@
 #include "PageComponent.h"
 
-#include "Page.h"
 #include "Client.h"
+
+#include "GuiMgr.h"
+
+#include "Page.h"
 
 PageComponent::PageComponent( ) { }
 

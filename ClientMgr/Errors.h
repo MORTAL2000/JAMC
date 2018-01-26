@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
-
 #include "glew\include\GL\glew.h"
 #include "glew\include\GL\wglew.h"
+
+#include <string>
 
 // Opengl functions
 extern inline std::string getGLErrorString( int err );

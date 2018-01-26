@@ -1,16 +1,16 @@
 #pragma once
-
 #include "Globals.h"
+
+#include "ResourceMgr.h"
+#include "PageLoader.h"
+#include "PageComponent.h"
+#include "VBO.h"
 
 #include <vector>
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
 
-#include "ResourceMgr.h"
-#include "PageLoader.h"
-#include "PageComponent.h"
-#include "VBO.h"
 
 class Page {
 public:

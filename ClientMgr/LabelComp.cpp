@@ -1,5 +1,10 @@
 #include "LabelComp.h"
 
+#include "ResourceMgr.h"
+#include "TextureMgr.h"
+
+#include "Page.h"
+
 #include "Shapes.h"
 
 LabelComp::LabelComp( Client & client ) { 

@@ -1,5 +1,11 @@
 #include "UpdatedLabelComp.h"
 
+#include "TextureMgr.h"
+#include "ResourceMgr.h"
+
+#include "Page.h"
+#include "PageComponent.h"
+
 #include "Shapes.h"
 
 UpdatedLabelComp::UpdatedLabelComp( Client & client ) {

@@ -1,15 +1,14 @@
 #pragma once
 
-#include "glm\glm.hpp"
-
 #include "Client.h"
 #include "PageComponentLoader.h"
-
 #include "ContainerComp.h"
 #include "ClickableComp.h"
 #include "OverableComp.h"
 #include "BorderImageComp.h"
 #include "LabelComp.h"
+
+#include "glm\glm.hpp"
 
 class TextButtonComp : public PageComponentLoader {
 public:

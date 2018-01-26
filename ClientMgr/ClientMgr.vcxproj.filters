@@ -216,9 +216,6 @@
     <ClCompile Include="GuiMgr.cpp">
       <Filter>Source Files\Managers\GuiMgr</Filter>
     </ClCompile>
-    <ClCompile Include="ChunkData.cpp">
-      <Filter>Source Files\Managers\ChunkMgr</Filter>
-    </ClCompile>
     <ClCompile Include="Page.cpp">
       <Filter>Source Files\Managers\GuiMgr</Filter>
     </ClCompile>
@@ -384,6 +381,9 @@
     <ClCompile Include="Format.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SharedMeshTerrainInstance.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Globals.h">
@@ -442,9 +442,6 @@
     </ClInclude>
     <ClInclude Include="GuiMgr.h">
       <Filter>Header Files\Managers\GuiMgr</Filter>
-    </ClInclude>
-    <ClInclude Include="ChunkData.h">
-      <Filter>Header Files\Managers\ChunkMgr</Filter>
     </ClInclude>
     <ClInclude Include="Page.h">
       <Filter>Header Files\Managers\GuiMgr</Filter>
@@ -616,6 +613,9 @@
     </ClInclude>
     <ClInclude Include="Format.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SharedMeshTerrainInstance.h">
+      <Filter>Header Files\Objects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

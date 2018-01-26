@@ -1,9 +1,16 @@
 #include "GraphPage.h"
+
+#include "InputMgr.h"
+#include "GuiMgr.h"
+#include "ResourceMgr.h"
+
+#include "Page.h"
+#include "PageComponent.h"
+
 #include "ResizableComp.h"
 #include "BorderImageComp.h"
 #include "ClickableComp.h"
 #include "ImageComp.h"
-
 
 GraphPage::GraphPage( Client & client ) { 
 	name = "Graph";

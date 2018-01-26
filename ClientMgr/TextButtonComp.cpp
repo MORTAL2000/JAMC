@@ -1,5 +1,12 @@
 #include "TextButtonComp.h"
 
+#include "ResourceMgr.h"
+#include "InputMgr.h"
+
+#include "Page.h"
+
+#include "Directional.h"
+
 TextButtonComp::TextButtonComp( Client & client ) {
 	name = "TextButton";
 

@@ -1,5 +1,11 @@
 #include "TextFieldComp.h"
 
+#include "InputMgr.h"
+#include "ResourceMgr.h"
+
+#include "Page.h"
+#include "PageComponent.h"
+
 #include "ResizableComp.h"
 #include "ClickableComp.h"
 #include "ImageComp.h"
@@ -72,7 +78,7 @@ TextFieldComp::TextFieldComp( Client & client ) {
 
 		data->comp_cursor = border->add_comp( "CursorImage", "Image", [ &client = client, data ] ( PComp * comp ) {
 			comp->anchor = { 0.0f, 0.5f };
-			comp->dim = { data->data_label->size_text + 6 , data->data_label->size_text + 6 };
+			comp->dim = { data->data_label->size_text + 6, data->data_label->size_text + 6 };
 			comp->offset = { data->padding + -comp->dim.x / 2, -comp->dim.y / 2 };
 
 			auto data_cursor = comp->get< ImageComp::ImageData >( );

@@ -1,8 +1,7 @@
 #include "CobblestoneChasmBiome.h"
+#include "Client.h"
 
 #include "BlockMgr.h"
-
-#include "Client.h"
 
 CobblestoneChasmBiome::CobblestoneChasmBiome( Client & client ) {
 	name_biome = "Cobblestone Chasm";

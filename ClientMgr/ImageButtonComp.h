@@ -2,7 +2,6 @@
 
 #include "Client.h"
 #include "PageComponentLoader.h"
-
 #include "BorderImageComp.h"
 #include "ImageComp.h"
 

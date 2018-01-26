@@ -1,5 +1,8 @@
 #include "ResizableComp.h"
 
+#include "ResourceMgr.h"
+
+#include "Page.h"
 
 ResizableComp::ResizableComp( Client & client ) { 
 	name = "Resizable";

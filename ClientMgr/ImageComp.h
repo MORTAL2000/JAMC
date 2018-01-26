@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Client.h"
+#include "TextureMgr.h"
 #include "PageComponentLoader.h"
 
 class ImageComp : public PageComponentLoader {

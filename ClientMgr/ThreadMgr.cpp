@@ -2,6 +2,12 @@
 
 #include "Client.h"
 
+#include "GuiMgr.h"
+#include "DisplayMgr.h"
+#include "TimeMgr.h"
+
+#include "Format.h"
+
 #include <iostream>
 #include <sstream>
 

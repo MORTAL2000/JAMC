@@ -2,6 +2,12 @@
 #define NOMINMAX
 #include "Client.h"
 
+#include "TextureMgr.h"
+#include "DisplayMgr.h"
+#include "BlockMgr.h"
+#include "BiomeMgr.h"
+#include "EntityMgr.h"
+
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/norm.hpp"
@@ -16,6 +22,7 @@
 #include <limits>
 
 #include "Errors.h"
+#include "Format.h"
 #include "simplexnoise.h"
 
 
@@ -39,19 +46,30 @@ void ChunkMgr::init( ) {
 
 	pos_center_chunk_lw = glm::ivec3( 0, 0, 0 );
 
-	GLuint size_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z / 2;
-	GLuint num_verts = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 32;
+	// Init AA Terrain Shared Mesh
 
-	GLuint num_buff = ( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 );
-	GLuint size_buff_verts = WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4 * 2;
-
-	sm_terrain.init( size_verts, num_verts, num_buff, size_buff_verts );
+	sm_terrain.init( 
+		WorldSize::Chunk::size_x * WorldSize::Chunk::size_z / 2,								// Number of verts in VBO block
+		( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 32,		// Number of total VBO blocks
+		( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ),			// Number of floating buffers
+		WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4 * 2 );							// Size of floating buffers
 
 	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade", ( GLfloat ) WorldSize::Chunk::size_x * ( WorldSize::World::size_x - 1 ) );
 	client.texture_mgr.update_uniform( "SMTerrain", "dist_fade_cutoff", ( GLfloat ) WorldSize::Chunk::size_x * WorldSize::World::size_x );
 
 	client.texture_mgr.update_uniform( "SMTerrainBasic", "dist_fade", ( GLfloat ) WorldSize::Chunk::size_x * ( WorldSize::World::size_x - 1 ) );
 	client.texture_mgr.update_uniform( "SMTerrainBasic", "dist_fade_cutoff", ( GLfloat ) WorldSize::Chunk::size_x * WorldSize::World::size_x );
+
+	// Init Inclusive Terrain Shared Mesh
+
+	sm_inclusive.init( 
+		WorldSize::Chunk::size_x * WorldSize::Chunk::size_z / 2,								// Number of verts in VBO block
+		( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 32,		// Number of total VBO blocks
+		WorldSize::Chunk::size_x * WorldSize::Chunk::size_z / 2,								// Number of verts in IBO block
+		( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ) * 32,		// Number of total IBO blocks
+		( WorldSize::World::size_x * 2 + 1 ) * ( WorldSize::World::size_z * 2 + 1 ),			// Number of floating buffers
+		WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4 * 2,							// Size of floating VBO buffers
+		WorldSize::Chunk::size_x * WorldSize::Chunk::size_z * 4 * 2  );							// Size of floating IBO buffers
 
 	GL_CHECK( init_light( ) );
 	GL_CHECK( init_skybox( ) );
@@ -121,7 +139,7 @@ void ChunkMgr::init( ) {
 		return out.str( );
 	} );
 	
-	client.gui_mgr.add_statistics_entry( [ &, size_verts = size_verts ] ( ) {
+	client.gui_mgr.add_statistics_entry( [ & ] ( ) {
 		int unsigned num_prim = 0;
 		int unsigned num_vbo_blocks = 0;
 		{
@@ -141,7 +159,7 @@ void ChunkMgr::init( ) {
 		float num_prim_mill = ( ( int ) ( num_prim / 1000.0f ) ) / 1000.0f;
 		float size_total_cmd = ( ( int ) ( ( num_prim * sizeof( VertTerrain ) ) / ( 1024.0f * 1024.0f ) * 100.0f ) ) / 100.0f;
 
-		float size_total_cmd_actual = ( ( int ) ( ( num_vbo_blocks * sizeof( VertTerrain ) * size_verts ) / ( 1024.0f * 1024.0f ) * 100.0f ) ) / 100.0f;
+		float size_total_cmd_actual = ( ( int ) ( ( num_vbo_blocks * sizeof( VertTerrain ) * WorldSize::Chunk::size_x * WorldSize::Chunk::size_z / 2 ) / ( 1024.0f * 1024.0f ) * 100.0f ) ) / 100.0f;
 
 		std::ostringstream out;
 		out << "TMesh Size - Theo: " << size_total_cmd << "(MB) Act: " << size_total_cmd_actual << "(MB) Tot: " << this->sm_terrain.size_bytes_total( ) / 1024.0f / 1024.0f << "(MB)" << std::endl;
@@ -1717,6 +1735,17 @@ void ChunkMgr::chunk_gen( Chunk & chunk ) {
 void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 	chunk.is_working = true;
 
+	if( chunk.states[ ChunkState::CS_SMesh ] && !chunk.handle_solid_temp.request_buffer( ) ) { 
+		chunk.is_working = false;
+		return;
+	}
+
+	if( chunk.states[ ChunkState::CS_TMesh ] && !chunk.handle_trans_temp.request_buffer( ) ) {
+		chunk.is_working = false;
+		return;
+	}
+
+	/*
 	if( ( chunk.states[ ChunkState::CS_SMesh ] && !chunk.handle_solid_temp.request_buffer( ) ) &&
 		( chunk.states[ ChunkState::CS_TMesh ] && !chunk.handle_trans_temp.request_buffer( ) ) ) {
 		chunk.is_working = false;
@@ -1731,21 +1760,21 @@ void ChunkMgr::chunk_mesh( Chunk & chunk ) {
 		!chunk.states[ ChunkState::CS_SMesh ] ) {
 		chunk.is_working = false;
 		return;
-	}
+	}*/
 
 	int max_dir = Directional::get_max( pos_center_chunk_lw - chunk.pos_lw );
 	int priority = 3;
 	priority = priority + ( 1.0f - float( max_dir ) / Directional::get_max( WorldSize::World::vec_size ) ) * ( client.thread_mgr.get_max_prio( ) / 2 );
 
 	client.thread_mgr.task_async( priority, [ & ] ( ) {
-		static FaceDirection list_face_z[ ] = { FD_Up, FD_Down, FD_Left, FD_Right };
-		static FaceDirection list_face_x[ ] = { FD_Front, FD_Back };
-		static glm::vec3 list_scale_verts[ ] = {
+		constexpr FaceDirection list_face_z[ ] = { FD_Up, FD_Down, FD_Left, FD_Right };
+		constexpr FaceDirection list_face_x[ ] = { FD_Front, FD_Back };
+		static const glm::vec3 list_scale_verts[ ] = {
 			{ 1, 0, 0 }, { 1, 0, 0 },	// Front / Back
 			{ 0, 0, 1 }, { 0, 0, 1 },	// Left / Right
 			{ 0, 0, 1 }, { 0, 0, 1 }	// Up / Down
 		};
-		static glm::vec2 list_scale_uvs[ ] = {
+		static const glm::vec2 list_scale_uvs[ ] = {
 			{ 1, 0 }, { 1, 0 },		// Front / Back
 			{ 1, 0 }, { 1, 0 },		// Left / Right
 			{ 0, 1 }, { 0, 1 }		// Up / Down
@@ -3126,7 +3155,7 @@ inline void ChunkMgr::put_sort( std::vector< std::pair< float, GLuint > > & list
 	glm::vec3 & pos_gw, BlockLoader * block, FaceDirection face ) {
 
 	list_sort.push_back( {
-		glm::length2( pos_gw + block->faces[ face ].offset - client.display_mgr.camera.pos_camera ),
+		glm::length2( pos_gw + block->faces[ face ].offset - ( client.display_mgr.camera.pos_camera - client.display_mgr.camera.vec_front * 5.0f ) ),
 		( GLuint ) list_sort.size( )
 	} );
 }
@@ -3136,7 +3165,7 @@ inline void ChunkMgr::put_sort( std::vector< std::pair< float, GLuint > > & list
 
 
 	list_sort.push_back( {
-		glm::length2( pos_gw + block->faces[ face ].offset * scale - client.display_mgr.camera.pos_camera ),
+		glm::length2( pos_gw + block->faces[ face ].offset * scale - ( client.display_mgr.camera.pos_camera - client.display_mgr.camera.vec_front * 5.0f ) ),
 		( GLuint ) list_sort.size( )
 	} );
 }

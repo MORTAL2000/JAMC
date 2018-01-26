@@ -1,6 +1,6 @@
 #pragma once
 
-// Forward Decl
+// Forward Decls
 class Runnable;
 class Manager;
 
@@ -24,9 +24,6 @@ template< class T > class Handle;
 class Pool;
 template< class T > class ResPool;
 
-template< class T > class Vect2;
-template< class T > class Vect3;
-
 class Block;
 
 class Chunk;
@@ -43,7 +40,7 @@ class Page;
 #define PI 3.14159265f
 #define BUFFER_OFFSET(i) ((void*)(i))
 
-static const float UPDATE_RATE = 60;
-static const float TIME_MILLISEC = 1000.0f;
-static const float DELTA_CORRECT = 1.0f / UPDATE_RATE;
-static const float TIME_FRAME_MILLI = TIME_MILLISEC / UPDATE_RATE;
+constexpr float UPDATE_RATE = 60;
+constexpr float TIME_MILLISEC = 1000.0f;
+constexpr float DELTA_CORRECT = 1.0f / UPDATE_RATE;
+constexpr float TIME_FRAME_MILLI = TIME_MILLISEC / UPDATE_RATE;

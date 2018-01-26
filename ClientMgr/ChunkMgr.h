@@ -1,13 +1,12 @@
 #pragma once
-
 #include "Globals.h"
 
 #include "Manager.h"
-#include "Chunk.h"
-#include "WorldSize.h"
-#include "ResPool.h" 
-#include "VBO.h"
+#include "ResPool.h"
 #include "BlockLoader.h"
+#include "Chunk.h"
+#include "VBO.h"
+#include "WorldSize.h"
 
 #include <fstream>
 #include <unordered_map>
@@ -93,8 +92,6 @@ private:
 	VBO vbo_debug_chunk;
 	SMTerrain sm_terrain;
 	SMChunkIncl sm_inclusive;
-
-	///std::vector< SMChunkIncl::SMHandle > list_handles_inclusive;
 
 	static int const dist_sun = WorldSize::Chunk::size_x * WorldSize::World::size_x;
 	bool is_sun_pause;

@@ -1,6 +1,7 @@
 #include "GrassHillBiome.h"
-
 #include "Client.h"
+
+#include "BlockMgr.h"
 
 GrassHillBiome::GrassHillBiome( Client & client ) { 
 	name_biome = "Grass Hill";

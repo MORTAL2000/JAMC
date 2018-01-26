@@ -15,31 +15,8 @@
 #include <mutex>
 #include <sstream>
 
-/*
-template< typename T_data > static GLenum get_GL_type( );
-
-template<> static GLenum get_GL_type< GLbyte >( ) {
-	return GL_BYTE;
-}
-
-template< > static GLenum get_GL_type< GLubyte >( ) {
-	return GL_UNSIGNED_BYTE;
-}
-
-template< > static GLenum get_GL_type< GLuint >( ) {
-	return GL_UNSIGNED_INT;
-}
-
-template< > static GLenum get_GL_type< GLint >( ) {
-	return GL_INT;
-}
-
-template< > static GLenum get_GL_type< GLfloat >( ) {
-	return GL_FLOAT;
-}*/
-
 template< typename T_pos, typename T_color, typename T_norm, typename T_uvs >
-struct BaseVertex { 
+struct BaseVertex {
 	T_pos pos[ 3 ];
 	T_color color[ 4 ];
 	T_norm norm[ 3 ];
@@ -64,7 +41,7 @@ struct BaseVertex {
 
 template< typename T_vert >
 class SharedMesh {
-public:
+	public:
 	enum TypeGeometry {
 		TG_Points,
 		TG_Lines,
@@ -72,15 +49,15 @@ public:
 		TG_Size
 	};
 
-	 GLuint constexpr static GeomGLTypeLookup[ TypeGeometry::TG_Size ] = {
+	GLuint constexpr static GeomGLTypeLookup[ TypeGeometry::TG_Size ] = {
 		GL_POINTS, GL_LINES, GL_TRIANGLES
 	};
 
-	 GLuint constexpr static GeomNumIndsLookup[ TypeGeometry::TG_Size ] = {
+	GLuint constexpr static GeomNumIndsLookup[ TypeGeometry::TG_Size ] = {
 		1, 2, 3
 	};
 
-	 using Vertex = T_vert;
+	using Vertex = T_vert;
 
 	struct SharedMeshCommands {
 		GLuint count_inds;
@@ -140,7 +117,7 @@ public:
 	class SharedMeshHandle {
 		friend class SharedMesh;
 
-	private:
+		private:
 		SharedMesh * ptr_parent;
 
 		GLuint size_vbo_block;
@@ -160,13 +137,13 @@ public:
 		// Command List
 		std::vector< std::pair< GLuint, SMCommand > > list_cmds;
 
-	public:
+		public:
 		SMCBuffer * ptr_buffer;
 
 		SharedMeshHandle( ) :
 			ptr_parent( nullptr ) { }
 
-		SharedMeshHandle( SharedMeshHandle const & rho ) { 
+		SharedMeshHandle( SharedMeshHandle const & rho ) {
 			ptr_parent = rho.ptr_parent;
 			ptr_buffer = rho.ptr_buffer;
 
@@ -185,11 +162,15 @@ public:
 
 		~SharedMeshHandle( ) { }
 
-	private:
+		private:
 
-	public:
-		GLuint get_size_vbo( ) { return size_vbo; }
-		GLuint get_size_ibo( ) { return size_ibo; }
+		public:
+		GLuint get_size_vbo( ) {
+			return size_vbo;
+		}
+		GLuint get_size_ibo( ) {
+			return size_ibo;
+		}
 
 		void push_set( SMGSet & set ) {
 			set.idx_vbo = size_vbo;
@@ -279,7 +260,7 @@ public:
 		}
 
 		void submit_buffer( ) {
-			if( size_ibo == 0 || size_vbo == 0 ) { 
+			if( size_ibo == 0 || size_vbo == 0 ) {
 				return;
 			}
 
@@ -314,8 +295,7 @@ public:
 					( list_vbo_blocks[ idx_block_s ].second->index + idx_data_s ) * sizeof( Vertex ),
 					( idx_data_e - idx_data_s ) * sizeof( Vertex ),
 					ptr_buffer->list_verts.data( ) + idx_data_s );
-			}
-			else {
+			} else {
 				glBufferSubData( GL_ARRAY_BUFFER,
 					( list_vbo_blocks[ idx_block_s ].second->index + idx_data_s ) * sizeof( Vertex ),
 					( size_vbo_block - idx_data_s ) * sizeof( Vertex ),
@@ -347,8 +327,7 @@ public:
 					( list_ibo_blocks[ idx_block_s ].second->index + idx_data_s ) * sizeof( GLuint ),
 					( idx_data_e - idx_data_s ) * sizeof( GLuint ),
 					ptr_buffer->list_inds.data( ) + idx_data_s );
-			}
-			else {
+			} else {
 				glBufferSubData( GL_ELEMENT_ARRAY_BUFFER,
 					( list_ibo_blocks[ idx_block_s ].second->index + idx_data_s ) * sizeof( GLuint ),
 					( size_ibo_block - idx_data_s ) * sizeof( GLuint ),
@@ -384,21 +363,20 @@ public:
 						idx_data_e - idx_data_s, 1,
 						list_ibo_blocks[ idx_block_s ].second->index + idx_data_s,
 						0, 0
-					} } );
-				}
-				else {
+						} } );
+				} else {
 					list_cmds.push_back( { i, {
 						size_ibo_block - idx_data_s, 1,
 						list_ibo_blocks[ idx_block_s ].second->index + idx_data_s,
 						0, 0
-					} } );
+						} } );
 
 					for( GLuint i = idx_block_s + 1; i < idx_block_e; ++i ) {
 						list_cmds.push_back( { i, {
 							size_ibo_block, 1,
 							list_ibo_blocks[ i ].second->index,
 							0, 0
-						} } );
+							} } );
 					}
 
 					if( idx_data_e != 0 ) {
@@ -406,13 +384,13 @@ public:
 							idx_data_e, 1,
 							list_ibo_blocks[ idx_block_e ].second->index,
 							0, 0
-						} } );
+							} } );
 					}
 				}
 			}
 		}
 
-		void release_buffer( ) { 
+		void release_buffer( ) {
 			ptr_parent->release_buffer( ptr_buffer );
 		}
 
@@ -463,7 +441,7 @@ public:
 			return true;
 		}
 
-		std::string print_vbo( ) { 
+		std::string print_vbo( ) {
 			std::ostringstream out;
 			for( GLuint i = 0; i < list_vbo_blocks.size( ); ++i ) {
 				out << "Id: " << list_vbo_blocks[ i ].first << " Index: " << list_vbo_blocks[ i ].second->index << "\n";
@@ -471,7 +449,7 @@ public:
 			return out.str( );
 		}
 
-		std::string print_ibo( ) { 
+		std::string print_ibo( ) {
 			std::ostringstream out;
 			for( GLuint i = 0; i < list_ibo_blocks.size( ); ++i ) {
 				out << "Id: " << list_ibo_blocks[ i ].first << " Index: " << list_ibo_blocks[ i ].second->index << "\n";
@@ -479,7 +457,7 @@ public:
 			return out.str( );
 		}
 
-		std::string print_commands( ) { 
+		std::string print_commands( ) {
 			std::ostringstream out;
 			for( GLuint i = 0; i < list_cmds.size( ); ++i ) {
 				out << "Index: " << list_cmds[ i ].second.idx_inds << " Count: " << list_cmds[ i ].second.count_inds << "\n";
@@ -494,7 +472,7 @@ public:
 
 	typedef std::pair< GLuint, SMBlock * > SMBPair;
 
-	struct SharedMeshServerBuffer { 
+	struct SharedMeshServerBuffer {
 		GLuint id_buffer;
 		GLuint type_buffer;
 		GLuint stride_data;
@@ -502,7 +480,7 @@ public:
 
 	typedef SharedMeshServerBuffer SMSBuffer;
 
-	struct SharedMeshAttribute { 
+	struct SharedMeshAttribute {
 		GLuint idx_buffer;
 		GLuint type_data;
 		GLuint num_data;
@@ -511,7 +489,7 @@ public:
 
 	typedef SharedMeshAttribute SMAttribute;
 
-private:
+	private:
 	// GL id handles
 	GLuint id_vao;
 	GLuint id_vbo;
@@ -565,13 +543,13 @@ private:
 	std::mutex mtx_cmds;
 	std::mutex mtx_buffers;
 
-public:
+	public:
 	SharedMesh( ) :
 		id_vao( 0 ), id_ibo( 0 ), id_vbo( 0 ) { }
 
 	~SharedMesh( ) { }
 
-private:
+	private:
 	bool request_vbo_blocks( std::vector< SMBPair > & list_vbo_blocks, GLuint num_blocks ) {
 		std::lock_guard< std::mutex > lock( mtx_vbo );
 
@@ -721,8 +699,8 @@ private:
 		buffer = nullptr;
 	}
 
-public:
-	void attach_instace_buffer( GLenum type_buffer, GLuint stride_data ) { 
+	public:
+	void attach_instace_buffer( GLenum type_buffer, GLuint stride_data ) {
 		list_instance_buffers.push_back( { GLuint( ), type_buffer, stride } );
 	}
 
@@ -730,13 +708,13 @@ public:
 		list_vertex_attributes.push_back( { 0, type_data, num_data, offset } );
 	}
 
-	void attach_instance_attribute( GLenum type_data, GLuint num_data, GLuint offset ) { 
+	void attach_instance_attribute( GLenum type_data, GLuint num_data, GLuint offset ) {
 		if( !list_isntance_buffers.empty( ) ) {
 			list_instance_attributes.push_back( { list_instance_buffers.size( ) - 1, type_data, num_data, offset } );
 		}
 	}
 
-	void init( 
+	void init(
 		GLuint size_vbo_block, GLuint num_vbo_blocks,
 		GLuint size_ibo_block, GLuint num_ibo_blocks,
 		GLuint num_buffers, GLuint size_buffer_verts, GLuint size_buffer_inds ) {
@@ -759,7 +737,7 @@ public:
 			queue_buffer_avail.push( &list_buffers[ i ] );
 		}
 
-		
+
 		// Create Buffers
 		glGenVertexArrays( 1, &id_vao );
 
@@ -770,8 +748,8 @@ public:
 		glGenBuffers( 1, &id_mats_model );
 		glGenBuffers( 1, &id_mats_norm );
 
-		/*for( GLuint i = 0; i < list_instance_buffers.size( ); ++i ) { 
-			glGenBuffers( 1, &list_instance_buffers[ i ].id_buffer );
+		/*for( GLuint i = 0; i < list_instance_buffers.size( ); ++i ) {
+		glGenBuffers( 1, &list_instance_buffers[ i ].id_buffer );
 		}*/
 
 		// Some size vars
@@ -797,7 +775,7 @@ public:
 
 		// Enable attributes
 		GLuint num_attributes = ( GLuint ) list_vertex_attributes.size( ) + ( GLuint ) list_instance_attributes.size( );
-		for( GLuint i = 0; i < 10; ++i ) { 
+		for( GLuint i = 0; i < 10; ++i ) {
 			glEnableVertexAttribArray( i );
 		}
 
@@ -808,7 +786,7 @@ public:
 		glBindBuffer( GL_ARRAY_BUFFER, id_vbo );
 
 		offset_byte = 0;
-		for( GLuint i = 0; i < list_vertex_attributes.size( ); ++i ) { 
+		for( GLuint i = 0; i < list_vertex_attributes.size( ); ++i ) {
 			auto & attrib = list_vertex_attributes[ i ];
 
 			glVertexAttribIPointer( idx_attrib, attrib.num_data, attrib.type_data,
@@ -853,7 +831,7 @@ public:
 		idx_attrib += 1;
 
 		std::cout << "idx_attrib:" << idx_attrib << std::endl;
-		
+
 		glBindVertexArray( 0 );
 
 		// Setup VBO Blocks
@@ -862,7 +840,7 @@ public:
 		for( GLuint i = 0; i < num_vbo_blocks; ++i ) {
 			list_vbo_blocks.emplace_back( SMBlock {
 				size_vbo_block * i
-			} );
+				} );
 		}
 		list_vbo_blocks.shrink_to_fit( );
 
@@ -870,7 +848,7 @@ public:
 			queue_vbo_avail.push( {
 				i,
 				&list_vbo_blocks[ i ]
-			} );
+				} );
 		}
 
 		// Setup IBO Blocks
@@ -879,7 +857,7 @@ public:
 		for( GLuint i = 0; i < num_ibo_blocks; ++i ) {
 			list_ibo_blocks.emplace_back( SMBlock {
 				size_ibo_block * i
-			} );
+				} );
 		}
 		list_ibo_blocks.shrink_to_fit( );
 
@@ -887,7 +865,7 @@ public:
 			queue_ibo_avail.push( {
 				i,
 				&list_ibo_blocks[ i ]
-			} );
+				} );
 		}
 	}
 
@@ -984,15 +962,15 @@ public:
 
 	}
 
-	GLuint size_buffer_avail( ) { 
+	GLuint size_buffer_avail( ) {
 		return ( GLuint ) queue_buffer_avail.size( );
 	}
 
-	GLuint size_buffer_live( ) { 
+	GLuint size_buffer_live( ) {
 		return ( GLuint ) map_buffer_live.size( );
 	}
 
-	GLuint num_primitives( ) { 
+	GLuint num_primitives( ) {
 		GLuint total = 0;
 
 		for( auto & cmd : list_commands ) {
@@ -1002,7 +980,7 @@ public:
 		return total;
 	}
 
-	void render( Client & client ) { 
+	void render( Client & client ) {
 		glBindVertexArray( id_vao );
 		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 
@@ -1015,7 +993,7 @@ public:
 		glBindVertexArray( 0 );
 	}
 
-	void render_range( Client & client, GLuint idx_start, GLuint length ) { 
+	void render_range( Client & client, GLuint idx_start, GLuint length ) {
 		glBindVertexArray( id_vao );
 		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, id_cmd );
 

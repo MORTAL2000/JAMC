@@ -1,8 +1,7 @@
 #pragma once
-
 #include "Globals.h"
-#include "Manager.h"
 
+#include "Manager.h"
 #include "Page.h"
 #include "BlockSelector.h"
 

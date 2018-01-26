@@ -1,7 +1,14 @@
 #include "Player.h"
-#include "WormBlock.h"
+
 #include "Client.h"
 #include "WorldSize.h"
+
+#include "TimeMgr.h"
+#include "InputMgr.h"
+#include "EntityMgr.h"
+#include "ChunkMgr.h"
+
+#include "WormBlock.h"
 
 Player::Player( ) :
 	EntityLoader {

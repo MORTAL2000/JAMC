@@ -1,16 +1,14 @@
 #include "BlockMgr.h"
+#include "Client.h"
 
-#include <filesystem>
-#include <sstream>
-#include <iostream>
+#include "TextureMgr.h"
+#include "Directional.h"
 
 #include "glm\glm.hpp"
 #include "glm\gtx\transform.hpp"
 #include "tinyxml2-master\tinyxml2.h"
 
-#include "Client.h"
-#include "Directional.h"
-#include "TextureMgr.h"
+#include <filesystem>
 
 BlockMgr::BlockMgr( Client & client ) : 
 	Manager( client ) { }

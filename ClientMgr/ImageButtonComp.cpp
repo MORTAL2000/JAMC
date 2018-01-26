@@ -1,7 +1,14 @@
 #include "ImageButtonComp.h"
 
+#include "InputMgr.h"
+#include "ResourceMgr.h"
+
+#include "Page.h"
+
 #include "ClickableComp.h"
 #include "OverableComp.h"
+
+#include "Directional.h"
 
 ImageButtonComp::ImageButtonComp( Client & client ) { 
 	name = "ImageButton";

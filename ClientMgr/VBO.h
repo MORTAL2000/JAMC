@@ -2,10 +2,10 @@
 
 #include "Globals.h"
 
-#include <vector>
-
 #include "glew\include\GL\glew.h"
 #include "glm\glm.hpp"
+
+#include <vector>
 
 class VBO {
 public:

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Directional.h"
+
 #include "glm\glm.hpp"
 
 class Shapes {

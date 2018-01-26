@@ -1,6 +1,8 @@
 #include "GraphComp.h"
+
 #include "Page.h"
 
+#include "TextureMgr.h"
 
 GraphComp::GraphComp( Client & client ) { 
 	name = "Graph";

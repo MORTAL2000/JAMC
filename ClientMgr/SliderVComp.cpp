@@ -1,5 +1,9 @@
 #include "SliderVComp.h"
 
+#include "InputMgr.h"
+
+#include "Page.h"
+
 #include "ResizableComp.h"
 #include "OverableComp.h"
 #include "ClickableComp.h"

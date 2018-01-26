@@ -2,6 +2,10 @@
 
 #include "Client.h"
 
+#include "TimeMgr.h"
+#include "ChunkMgr.h"
+#include "EntityMgr.h"
+
 Tnt::Tnt( ) :
 	EntityLoader { 
 		"Tnt",

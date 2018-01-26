@@ -1,9 +1,17 @@
 #include "MenuComp.h"
 
+#include "InputMgr.h"
+
+#include "Page.h"
+
 #include "ImageComp.h"
 #include "LabelComp.h"
 #include "ClickableComp.h"
 #include "OverableComp.h"
+
+#include "Directional.h"
+
+#include <string>
 
 void MenuComp::MenuData::add_entry( Client & client, std::string const & label_text, PCFunc func_up ) {
 	auto image = comp->add_comp(std::string( "Image" ) + std::to_string( id_entry++ ), "Image", PageComponentLoader::func_null );

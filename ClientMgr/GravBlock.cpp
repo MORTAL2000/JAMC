@@ -2,6 +2,12 @@
 
 #include "Client.h"
 
+#include "TimeMgr.h"
+#include "ChunkMgr.h"
+#include "EntityMgr.h"
+
+#include "Directional.h"
+
 GravBlock::GravBlock( ) :
 	EntityLoader { 
 		"Grav Block",

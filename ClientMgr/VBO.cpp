@@ -1,5 +1,9 @@
 #include "VBO.h"
+
 #include "Client.h"
+
+#include "TextureMgr.h"	
+
 #include <iostream>
 
 GLuint const VBO::GeomNumIndsLookup[ ] = {

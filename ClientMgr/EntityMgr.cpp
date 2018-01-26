@@ -1,5 +1,7 @@
 #include "EntityMgr.h"
+
 #include "Client.h"
+
 #include "Player.h"
 #include "Tnt.h"
 #include "GravBlock.h"
@@ -7,8 +9,18 @@
 #include "SpawnBlock.h"
 #include "WormBlock.h"
 #include "WaterBlock.h"
+
+#include "TimeMgr.h"
+#include "TextureMgr.h"
+#include "GuiMgr.h"
+#include "BlockMgr.h"
+#include "DisplayMgr.h"
+
+#include "Format.h"
+
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtc/matrix_inverse.hpp"
+
 #include "Shapes.h"
 #include "Errors.h"
 

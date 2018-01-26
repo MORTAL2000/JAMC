@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Client.h"
+#include "PageComponent.h"
 #include "PageLoader.h"
 
 class QuickBarPage : public PageLoader {

@@ -2,7 +2,6 @@
 
 #include "Client.h"
 #include "PageComponentLoader.h"
-
 #include "LabelComp.h"
 #include "BorderImageComp.h"
 
